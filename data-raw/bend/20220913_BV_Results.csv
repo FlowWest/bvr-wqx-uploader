@@ -1,0 +1,141 @@
+,"Bend Genetics, LLC",,,Project:,Big Valley Rancheria,,
+,"107 Scripps Drive, Ste. 210",,,,Analysis for Toxigenic Cyanobacteria,,
+,"Sacramento, CA 95825",,,Project #:,HABS/317,,
+,Tel: (916) 550-1048,,,Reported:,9/13/2022 15:05,,
+,,,,,,,
+,,,,,,,
+ANALYTICAL REPORT FOR SAMPLES,,,,,,,
+Sample ID,Location,Date Collected,Date Received,Matrix,Preserved,BG_ID,
+1960,AND01,8/17/2022 10:09,8/25/2022 9:59,SPATT,N,BV668,
+1961,FC3,8/8/2022 10:45,8/25/2022 9:59,SPATT,N,BV669,
+1962,HB,8/23/2022 9:39,8/25/2022 9:59,Water,N,BV670,
+1963,GH,8/23/2022 14:56,8/25/2022 9:59,Water,N,BV671,
+1972,HSR1,8/8/2022 11:30,8/25/2022 9:59,Water,N,BV672,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,Page 2 of 4
+,"Bend Genetics, LLC",,,Project:,Big Valley Rancheria,,
+,"107 Scripps Drive, Ste. 210",,,,Analysis for Toxigenic Cyanobacteria,,
+,"Sacramento, CA 95825",,,Project #:,HABS/317,,
+,Tel: (916) 550-1048,,,Reported:,9/13/2022 15:05,,
+,,,,,,,
+,,,,,,,
+SAMPLE RESULTS,,,,,,,
+Sample ID,Method,Target,Result,Quantitation Limit,Units,Notes,
+1960,ELISA,Anatoxin-a,15.18,0.75,ng/g,,Batch 2
+1960,ELISA,Cylindrospermopsin,ND,0.25,ng/g,U,
+1960,ELISA,Microcystin/Nod.,2.04,0.75,ng/g,,Batch 2
+1960,ELISA,Saxitoxin,ND,0.1,ng/g,U,Batch 2
+,,,,,,,
+1961,ELISA,Anatoxin-a,2.75,0.75,ng/g,,Batch 2
+1961,ELISA,Cylindrospermopsin,ND,0.25,ng/g,U,
+1961,ELISA,Microcystin/Nod.,289.08,15,ng/g,,Batch 3
+1961,ELISA,Saxitoxin,ND,0.1,ng/g,U,Batch 2
+,,,,,,,
+1962,QPCR,Microcystin,"2,973",100,copies/mL,,
+,,,,,,,
+1963,QPCR,Microcystin,195,100,copies/mL,,
+,,,,,,,
+1964,ELISA,Anatoxin-a,ND,0.15,µg/L,U,Batch 1
+1964,ELISA,Microcystin/Nod.,0.97,0.15,µg/L,,Batch 1
+1964,ELISA,Saxitoxin,ND,0.02,µg/L,U,Batch 1
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,
+,,,,,,,Page 3 of 5
+,"Bend Genetics, LLC",,,Project:,Big Valley Rancheria,,
+,"107 Scripps Drive, Ste. 210",,,,Analysis for Toxigenic Cyanobacteria,,
+,"Sacramento, CA 95825",,,Project #:,HABS/317,,
+,Tel: (916) 550-1048,,,Reported:,9/13/2022 15:05,,
+,,,,,,,
+,,,,,,,
+QUALITY CONTROL,,,,,,,
+Method,   Analyte,Result,Qualifiers / Comments,Units,Spike Level,%REC,%REC Limits
+ELISA,ATX - Blank,ND,"U, Batch 1",µg/L,0,,
+ELISA,ATX - Positive,0.68,Batch 1,µg/L,0.75,90.1,70-130
+ELISA,ATX - Matrix Sp,1.38,Batch 1,µg/L,1.25,110.5,70-130
+,,,,,,,
+ELISA,ATX - Blank,ND,"U, Batch 2",µg/L,0,,
+ELISA,ATX - Positive,0.7,Batch 2,µg/L,0.75,93.8,70-130
+ELISA,ATX - Matrix Sp,1.41,Batch 2,µg/L,1.25,112.4,70-130
+,,,,,,,
+ELISA,CYN - Blank,ND,U,µg/L,0,,
+ELISA,CYN - Positive,0.75,,µg/L,0.75,100.1,70-130
+ELISA,CYN - Matrix Sp,1.03,,µg/L,1,103.4,70-130
+,,,,,,,
+ELISA,MC - Blank,ND,"U, Batch 1",µg/L,0,,
+ELISA,MC - Positive,0.72,Batch 1,µg/L,0.75,96.3,70-130
+ELISA,MC - Matrix Sp,0.88,Batch 1,µg/L,1,88.1,70-130
+,,,,,,,
+ELISA,MC - Blank,ND,"U, Batch 2",µg/L,0,,
+ELISA,MC - Positive,0.8,Batch 2,µg/L,0.75,106.8,70-130
+ELISA,MC - Matrix Sp,1.01,Batch 2,µg/L,1,100.6,70-130
+,,,,,,,
+ELISA,MC - Blank,ND,"U, Batch 3",µg/L,0,,
+ELISA,MC - Positive,0.71,Batch 3,µg/L,0.75,95.2,70-130
+ELISA,MC - Matrix Sp,0.94,Batch 3,µg/L,1,94.5,70-130
+,,,,,,,
+ELISA,STX - Blank,ND,"U, Batch 1",µg/L,0,,
+ELISA,STX - Positive,0.074,Batch 1,µg/L,0.075,98.2,70-130
+ELISA,STX - Matrix Sp,0.195,Batch 1,µg/L,0.2,97.3,70-130
+,,,,,,,
+ELISA,STX - Blank,ND,"U, Batch 2",µg/L,0,,
+ELISA,STX - Positive,0.069,Batch 2,µg/L,0.075,92.6,70-130
+ELISA,STX - Matrix Sp,0.187,Batch 2,µg/L,0.2,93.3,70-130
+,,,,,,,
+QPCR,mcyE - Blank,ND,U,copies/mL,0,,
+QPCR,mcyE – Spike,"41,353",,copies/mL,"50,000",82.7,70-130
+,,,,,,,
+,,,,,,,
+QUALIFIERS/COMMENTS/NOTES,,,,,,,
+C1,The reported concentration for this analyte is below the quantification limit.,,,,,,
+C2,The reported concentration for this analyte is above the calibration range of the instrument.,,,,,,
+J,The reported result for this analyte should be considered an estimated value.,,,,,,
+U,Undetected,,,,,,
+,,,,,,,Page 4 of 4
