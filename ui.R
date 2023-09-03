@@ -19,7 +19,7 @@ bslib::page_navbar(
                                             all validations pass, and proceed to next tab when ready.")
                                  ),
                                  tableOutput("hydro_lab_table"), 
-                                 tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again"), 
+                                 tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - ", emo::ji("check"), "- test passed, ", emo::ji("x"), "- test failed", emo::ji("warning"), "-verify manually (usually safe to ignore)"), 
                                  # tags$p(tags$strong("Range Based Checks"), class = "p-3"),
                                  # tableOutput("hydro_lab_qaqc_table")
                                  
@@ -29,15 +29,18 @@ bslib::page_navbar(
                                      card(card_header("Custom rules"), card_body(tableOutput("hydro_lab_custom_qaqc_table")))
                                  )
                                  
-                                 # layout_column_wrap(
-                                 #     width = 1/2,
-                                 #     height = 300,
-                                 #     card(full_screen = TRUE, card_header("Range based rules"), card_body(tableOutput("hydro_lab_qaqc_table"))),
-                                 #     card(full_screen = TRUE, card_header("A filling map"), card_body(class = "p-0"))
-                                 # )
+                                 
                              ), 
                              tabPanel(
                                  "Formatted Data", 
+                                 tags$p(class = "p-3 border rounded", 
+                                        "Data Formatted to WQX, review and when ready select Download and Upload to WQX"), 
+                                 bslib::layout_columns(
+                                     col_widths = c(2, 2),
+                                     downloadButton("hydro_lab_download"),
+                                     actionButton("hydro_lab_upload", label = "Upload to WQX", icon = shiny::icon("rocket")),
+                                 ),
+                                 tableOutput("hydro_lab_wqx_formatted")
                              )
                          )
                      )
@@ -48,19 +51,34 @@ bslib::page_navbar(
                      sidebarPanel(width = 3, 
                                   fileInput("alpha_lab_file", "Select Alpha Lab File")), 
                      mainPanel(
-                         shiny::tabsetPanel(
+                         tabsetPanel(
                              type = "pills", 
                              tabPanel(
                                  "Qa/Qc", 
                                  tagList(
-                                     tags$p("This section ")
-                                 )
-                             ), 
+                                     tags$p(class = "p-3 border rounded", 
+                                            "This section provides view of raw data, as well as results for Qa/Qc checks. Verify that all validations pass, and proceed to next tab when ready."),
+                                     tableOutput("alpha_lab_table"), 
+                                     tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - ", emo::ji("check"), "- test passed, ", emo::ji("x"), "- test failed", emo::ji("warning"), "-verify manually (usually safe to ignore)"), 
+                                     
+                                     layout_column_wrap(
+                                         width = 1/2, 
+                                         card(card_header("Range based rules"), card_body(tableOutput("alpha_lab_qaqc_table"))),
+                                         card(card_header("Custom rules"), card_body(tableOutput("alpha_lab_custom_qaqc_table")))
+                                     )
+                                     
+                                     
+                                 )), 
                              tabPanel(
-                                 "Formatted Data"
+                                 "Formatted Data", 
+                                 tags$p(class = "p-3 border rounded", 
+                                        "Data Formatted to WQX, review and when ready select Download and Upload to WQX"),
+                                 
+                                 tableOutput("alpha_lab_wqx_formatted")
                              )
-                         )
-                     ))),
+                             
+                         )))
+        ),
         tabPanel("Bend Genetics", 
                  tags$h2("Bend Gentics Data"),
                  sidebarLayout(
@@ -84,3 +102,4 @@ bslib::page_navbar(
         
     )
 )
+
