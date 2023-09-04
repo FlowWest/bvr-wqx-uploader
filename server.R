@@ -6,6 +6,17 @@ function(input, output, session) {
 
     })
     
+    hydro_signature <- reactiveVal(NULL)
+    hydro_wqx_status <- reactiveVal(NULL)
+    
+    hydro_lab_data_wqx_formatted <- reactive({
+        hydro_lab_to_wqx(uploaded_hydro_lab_data())
+    })
+    
+    hydro_path_to_most_recent_download <- reactive({
+        
+    })
+    
     output$hydro_lab_table <- renderTable({
         
         validate(need(input$hydro_lab_file, message = "Select a file to view"))
@@ -43,8 +54,87 @@ function(input, output, session) {
     })
     
     output$hydro_lab_wqx_formatted <- renderTable({
-        hydro_lab_to_wqx(uploaded_hydro_lab_data())
+        req(input$hydro_lab_file)
+        hydro_lab_data_wqx_formatted()
     })
+    
+    output$hydro_lab_download <- downloadHandler(
+        filename = function() {
+            hydro_signature(format(lubridate::now(), "%Y%m%d_%H%M%S"))
+            paste('hydro-lab-data-', hydro_signature(), '.csv', sep='')
+        },
+        content = function(file) {
+            write.csv(hydro_lab_data_wqx_formatted(), file)
+        }
+    )
+    
+    observeEvent(input$hydro_lab_upload, {
+        donwloads_path <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
+        path_to_most_recent <- str_replace_all(
+            paste(
+                donwloads_path,
+                "/hydro-lab-data-",
+                hydro_signature(),
+                ".csv",
+                sep = ""
+            ),
+            "\\\\",
+            "/"
+        )
+        
+        API_KEY = input$wqx_api_key
+        USER_ID = input$wqx_username
+        CONFIG_ID = input$wqx_config_id
+        FILE_PATH = path_to_most_recent
+        FILE_NAME =  paste("hydro-lab-data-", hydro_signature(), ".csv", sep = "")
+        
+        cat("ATTEMPTING UPLOAD TO WQX -----------\n")
+        
+        session <- cdx(USER_ID, API_KEY, FILE_PATH, FILE_NAME)
+        file_id <- cdx_upload(session = session)
+        dataset_id <-
+            cdx_import(
+                session = session,
+                file_id = file_id,
+                config_id = CONFIG_ID,
+                params = c("newOrExistingData", "0")
+            )
+        
+        Sys.sleep(25)
+        status <- cdx_get_status(session, dataset_id)
+        
+        hydro_wqx_status(status$StatusName)
+    })
+    
+    output$hydro_upload_status <- renderUI({
+        validate(need(hydro_wqx_status(), "start upload, status of upload will be shown here after completion"))
+        if (hydro_wqx_status() == "Import Failed") {
+            tags$p(tags$b("Import failed."), "Please retry upload.")
+        } else
+        {
+            tags$p(
+                tags$b("Application is importing data onto CDX."),
+                tags$br(),
+                "You may now close this document. Check email or CDX website for the final upload confirmation."
+            )
+        }
+    })
+    
+    # get_path_to_most_recent_hydro_lab <- function() {
+    #     path_to_download <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
+    #     file_path <-
+    #         str_replace_all(
+    #             paste(
+    #                 path_to_download,
+    #                 "/hydro-lab-data-",
+    #                 hydro_signature(),
+    #                 ".csv",
+    #                 sep = ""
+    #             ),
+    #             "\\\\",
+    #             "/"
+    #         )
+    # }
     
     # alpha lab -------------------------------------------------------------------------------
     

@@ -36,15 +36,18 @@ bslib::page_navbar(
                                  tags$p(class = "p-3 border rounded", 
                                         "Data Formatted to WQX, review and when ready select Download and Upload to WQX"), 
                                  bslib::layout_columns(
-                                     col_widths = c(2, 2),
+                                     col_widths = c(2, 2, 2),
                                      downloadButton("hydro_lab_download"),
                                      actionButton("hydro_lab_upload", label = "Upload to WQX", icon = shiny::icon("rocket")),
+                                     uiOutput("hydro_upload_status")
                                  ),
                                  tableOutput("hydro_lab_wqx_formatted")
                              )
                          )
                      )
                  )),
+        
+        # ALPHA LAB -------------------------------------------------------------------------------------------
         tabPanel("Alpha Lab", 
                  tags$h2("Alpha Lab Data"),
                  sidebarLayout(
@@ -79,6 +82,8 @@ bslib::page_navbar(
                              
                          )))
         ),
+        
+        # BEND GENETICS ------------------------------------------------------------------------------
         tabPanel("Bend Genetics", 
                  tags$h2("Bend Gentics Data"),
                  sidebarLayout(
@@ -99,7 +104,19 @@ bslib::page_navbar(
                          )
                      ))
         )
-        
+    ), 
+    
+    # Account ------------------------------------------------------------------------------------
+    tabPanel("User Account", 
+             tags$h2("Manage WQX Credentials"),
+             sidebarLayout(
+                 sidebarPanel(width = 5, 
+                              textInput("wqx_username", "Username", value = cdx_account$USER_ID), 
+                              textInput("wqx_api_key", "API Key", value = cdx_account$WQX_API_KEY),
+                              textInput("wqx_config_id", "Config ID", value = cdx_account$CONFIG_ID)
+                 ), 
+                 mainPanel()
+             )
+             
     )
 )
-

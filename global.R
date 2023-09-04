@@ -2,9 +2,16 @@ library(shiny)
 library(tidyverse)
 library(bslib)
 library(validate)
+library(wqxWeb)
+library(reticulate)
+
+reticulate::use_virtualenv("r-reticulate")
 
 source("hydro-lab.R")
 source("alpha-lab.R")
+
+cdx_account <- read_csv(paste0(getwd(), "/cdx-account-info.csv"))
+
 
 # Hydro Lab Rules -------------------------------------------------------------
 hydro_lab_range_rules <- validator(
