@@ -4,6 +4,7 @@ library(bslib)
 library(validate)
 library(wqxWeb)
 library(reticulate)
+library(spsComps)
 
 reticulate::use_virtualenv("r-reticulate")
 
@@ -29,7 +30,8 @@ hydro_lab_range_rules <- validator(
 )
 
 hydro_lab_custom_rules <- validator(
-    "Location ID is Valid" = location_id %in% c("FC1", "LPTNT")
+    "Location ID is Valid" = location_id %in% c("FC1", "LPTNT"), 
+    "Resistivity decimals values is less then 3" = number_format(as.numeric(Res), "d.dd")
 )
 
 

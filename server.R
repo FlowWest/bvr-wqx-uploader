@@ -88,7 +88,7 @@ function(input, output, session) {
         FILE_PATH = path_to_most_recent
         FILE_NAME =  paste("hydro-lab-data-", hydro_signature(), ".csv", sep = "")
         
-        cat("ATTEMPTING UPLOAD TO WQX -----------\n")
+        spsComps::shinyCatch({message("sending request to CDX Web")}, position = "bottom-full-width")
         
         session <- cdx(USER_ID, API_KEY, FILE_PATH, FILE_NAME)
         file_id <- cdx_upload(session = session)
@@ -109,7 +109,7 @@ function(input, output, session) {
     output$hydro_upload_status <- renderUI({
         validate(need(hydro_wqx_status(), "start upload, status of upload will be shown here after completion"))
         if (hydro_wqx_status() == "Import Failed") {
-            tags$p(tags$b("Import failed."), "Please retry upload.")
+            tags$p(tags$b("Import failed."), "Please retry upload.", style = "{color: red;}")
         } else
         {
             tags$p(
