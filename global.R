@@ -5,6 +5,7 @@ library(validate)
 library(wqxWeb)
 library(reticulate)
 library(spsComps)
+library(shinyWidgets)
 
 reticulate::use_virtualenv("r-reticulate")
 
@@ -47,8 +48,3 @@ alpha_lab_range_rules <- validator(
     "Total Kjeldahl Nitrogen in valid range" = in_range(`Total Kjeldahl Nitrogen`, 0, 10)
     
 )
-
-
-
-raw_data <- parse_alphalab("data-raw/alpha-lab/22G2998 FINAL EXCEL 09 Aug 22 1018.xls")
-alpha_lab_to_wqx(raw_data)

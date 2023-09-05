@@ -1,6 +1,8 @@
 bslib::page_navbar(
     title = "BVR WQX Uploader",
     theme = bslib::bs_theme(preset = "cosmo"),
+    header = shinyWidgets::useSweetAlert(),
+    
     navbarMenu(
         "Upload", 
         tabPanel("Hydro Lab",

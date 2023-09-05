@@ -2,6 +2,14 @@ function(input, output, session) {
 
     # hydro lab -------------------------------------------------------------------------
     uploaded_hydro_lab_data <- reactive({
+        if (!any(endsWith(input$hydro_lab_file$datapath, ".csv"))) {
+            sendSweetAlert(
+                session = session,
+                title = "Error",
+                text = "at least one file is not hydrolab, please try uploading again",
+                type = "error"
+            )
+        }
         purrr::map_df(input$hydro_lab_file$datapath, \(x) parse_hydrolab(x))
 
     })
