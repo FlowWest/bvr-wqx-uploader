@@ -14,7 +14,8 @@ bslib::page_navbar(
                          tabsetPanel(
                              type = "pills", 
                              tabPanel(
-                                 "Qa/Qc", 
+                                 "Qa/
+                                 Qc", 
                                  tagList(
                                      tags$p(class = "p-3 border rounded", 
                                             "This section provides view of raw data, as well as results for Qa/Qc checks. Verify that
@@ -87,27 +88,39 @@ bslib::page_navbar(
         
         # BEND GENETICS ------------------------------------------------------------------------------
         tabPanel("Bend Genetics", 
-                 tags$h2("Bend Gentics Data"),
+                 tags$h2("Bend Genetics Data"),
                  sidebarLayout(
                      sidebarPanel(width = 3, 
-                                  fileInput("bendgenetics_file", "Bend Genetics File")), 
+                                  fileInput("bend_genetics_file", "Select Bend Genetics File")), 
                      mainPanel(
-                         shiny::tabsetPanel(
+                         tabsetPanel(
                              type = "pills", 
                              tabPanel(
                                  "Qa/Qc", 
                                  tagList(
-                                     tags$p("This section ")
-                                 )
-                             ), 
+                                     tags$p(class = "p-3 border rounded", 
+                                            "This section provides view of raw data, as well as results for Qa/Qc checks. Verify that all validations pass, and proceed to next tab when ready."),
+                                     tableOutput("bend_genetics_table"), 
+                                     tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - ", emo::ji("check"), "- test passed, ", emo::ji("x"), "- test failed", emo::ji("warning"), "-verify manually (usually safe to ignore)"), 
+                                     
+                                     layout_column_wrap(
+                                         width = 1/2, 
+                                         card(card_header("Range based rules"), card_body(tableOutput("bend_genetics_qaqc_table"))),
+                                         card(card_header("Custom rules"), card_body(tableOutput("bend_genetics_qaqc_table")))
+                                     )
+                                     
+                                     
+                                 )), 
                              tabPanel(
-                                 "Formatted Data"
+                                 "Formatted Data", 
+                                 tags$p(class = "p-3 border rounded", 
+                                        "Data Formatted to WQX, review and when ready select Download and Upload to WQX"),
+                                 
+                                 tableOutput("bend_genetics_wqx_formatted")
                              )
-                         )
-                     ))
-        )
-    ), 
-    
+                             
+                         )))
+        ),
     # Account ------------------------------------------------------------------------------------
     tabPanel("User Account", 
              tags$h2("Manage WQX Credentials"),
@@ -121,4 +134,5 @@ bslib::page_navbar(
              )
              
     )
+)
 )
