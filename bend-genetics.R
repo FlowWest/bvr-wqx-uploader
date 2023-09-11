@@ -186,7 +186,7 @@ parse_bend_genetics <- function(filepath) {
     bend_full_df <-
         left_join(analytical_report_for_samples, sample_results) |> 
         filter(!is.na(Target))
-    
+    print(bend_full_df)
     return(bend_full_df) 
              }
 

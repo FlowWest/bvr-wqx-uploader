@@ -205,6 +205,7 @@ function(input, output, session) {
                 type = "error"
             )
         }
+        print(input$bend_genetics_file)
         purrr::map_df(input$bend_genetics_file$datapath, \(x) parse_bendgenetics(x))
         
     })
