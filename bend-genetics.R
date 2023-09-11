@@ -188,4 +188,101 @@ parse_bend_genetics <- function(filepath) {
         filter(!is.na(Target))
     
     return(bend_full_df) 
-             })
+             }
+
+bend_genetics_make_activity_id <-
+    function(location_id,
+             date,
+             activity_type,
+             equipment_name,
+             depth = NULL,
+             time = NULL,
+             equipment_comment = NULL) {
+        YYYYMMDD <- gsub('/', '', date)
+        activity <- ifelse(activity_type == "Sample-Routine", "SR", "FM")
+        equipment <- ifelse(equipment_name == "Probe/Sensor", "PS", NA)
+        hhmm <- gsub(':', '', time)
+        equipment_comment <- case_when(
+            equipment_comment == "Hydrolab Surveyor DS5 Multiprobe" ~ "Hydro",
+            equipment_comment == "AlgaeChek Ultra Fluorometer" ~ "Algae",
+            TRUE ~ NA_character_
+        )
+        paste(location_id,
+              YYYYMMDD,
+              hhmm,
+              activity,
+              equipment,
+              depth,
+              equipment_comment,
+              sep = ":")
+    }
+
+bend_genetics_to_wqx <- function(data) {
+    data |>        
+        mutate("Project ID" = project_id_lookup[Location],
+               "Monitoring Location ID" = Location,
+               "Activity ID User Supplied (PARENTs)" = NA,
+               "Activity Type" = "Sample-Routine",
+               "Activity Media Name" = Matrix,
+               # use the lubridate package function mdy_hm()to format date in m/d/y
+               "Activity Start Date" = format(mdy_hm(`Date Collected`), "%m/%d/%Y"),
+               # use the lubridate package function mdy_hm() to formate time in HH:MM
+               "Activity Start Time" = format(mdy_hm(`Date Collected`), "%H:%M"),
+               "Activity Start Time Zone" = "PST",
+               # Need activity depth/height, unit
+               "Activity Depth/Height Measure" = NA,
+               "Activity Depth/Height Unit" = NA,
+               # Confirm Sample Collection method id is BVR SWQAPP
+               "Sample Collection Method ID" = "BVR SWQAPP",
+               "Sample Collection Method Context" = "CA_BVR",
+               # Confirm Equipment for bend is Water Bottle
+               "Sample Collection Equipment Name" = "Water Bottle",
+               "Sample Collection Equipment Comment" = NA,
+               "Characteristic Name" = ifelse(Target == "Microcystin/Nod.", "Microcystin/nodularin genes mcyE/ndaF", Target),
+               "Characteristic Name User Supplied" = NA,
+               "Method Speciation" = NA,
+               "Result Detection Condition" = ifelse(Result == "ND", "Not Detected", NA),
+               "Result Value" = ifelse(Result == "ND", NA, gsub(",", "", Result)),
+               "Result Unit" = ifelse(Result == "ND", NA, Units),
+               "Result Measure Qualifier" = NA,
+               "Result Sample Fraction" = "Total",
+               "Result Status ID" = "Final",
+               "ResultTemperatureBasis" = NA,
+               "Statistical Base Code" = NA,
+               "ResultTimeBasis" = NA,
+               "Result Value Type" = "Actual",
+               # method_lookup is in the lookup table. It points the methods to their IDs.
+               "Result Analytical Method ID" = method_id_lookup[Method],
+               # method_context_lookup is in the lookup table. It points the method to their method context.
+               "Result Analytical Method Context" = method_context_lookup[Method],
+               "Analysis Start Date" = format(mdy_hm(`Date Received`), "%m/%d/%Y"),
+               "Result Detection/Quantitation Limit Type" = "Practical Quantitation Limit",
+               "Result Detection/Quantitation Limit Measure" = `Quantitation Limit`,
+               "Result Detection/Quantitation Limit Unit" = Units,
+               "Result Comment" = Notes,
+               "Activity ID (CHILD-subset)" = make_activity_id(location_id = Location,
+                                                               date = `Activity Start Date`,
+                                                               time = `Activity Start Time`,
+                                                               activity_type = `Activity Type`,
+                                                               equipment_name = `Sample Collection Equipment Name`,
+                                                               depth = `Activity Depth/Height Measure`)
+        ) |>
+        relocate("Activity ID (CHILD-subset)", .before = "Activity ID User Supplied (PARENTs)") |>
+        select(-c(0:13))
+}
+
+clean_bend_wqx <- function(data) {
+    data |> 
+        mutate(
+            "Result Unit" = ifelse(
+                data$`Result Unit` == "µg/L",
+                "ug/L",
+                data$`Result Unit`
+            ),
+            "Result Detection/Quantitation Limit Unit" = ifelse(
+                data$`Result Detection/Quantitation Limit Unit` == "µg/L",
+                "ug/L",
+                data$`Result Detection/Quantitation Limit Unit`
+            )
+        )
+}

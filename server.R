@@ -201,7 +201,7 @@ function(input, output, session) {
             sendSweetAlert(
                 session = session,
                 title = "Error",
-                text = "at least one file is not bendlab, please try uploading again",
+                text = "at least one file is not bend genetics, please try uploading again",
                 type = "error"
             )
         }
@@ -212,10 +212,13 @@ function(input, output, session) {
     bend_signature <- reactiveVal(NULL)
     bend_wqx_status <- reactiveVal(NULL)
     
-    bend_genetics_data_wqx_formatted <- reactive({
+    bend_genetics_data_wqx <- reactive({
         bend_genetics_to_wqx(uploaded_bend_genetics_data())
     })
     
+    bend_genetics_data_wqx_formatted <- reactive({
+        clean_bend_wqx(bend_genetics_data_wqx())
+    })
     bend_path_to_most_recent_download <- reactive({
         
     })
