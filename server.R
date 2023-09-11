@@ -1,39 +1,39 @@
 function(input, output, session) {
 
     # hydro lab -------------------------------------------------------------------------
-    uploaded_bend_genetics_data <- reactive({
-        if (!any(endsWith(input$bend_genetics_file$datapath, ".csv"))) {
+    uploaded_hydro_lab_data <- reactive({
+        if (!any(endsWith(input$hydro_lab_file$datapath, ".csv"))) {
             sendSweetAlert(
                 session = session,
                 title = "Error",
-                text = "at least one file is not bendlab, please try uploading again",
+                text = "at least one file is not hydrolab, please try uploading again",
                 type = "error"
             )
         }
-        purrr::map_df(input$bend_genetics_file$datapath, \(x) parse_bendgenetics(x))
+        purrr::map_df(input$hydro_lab_file$datapath, \(x) parse_hydrolab(x))
         
     })
     
-    bend_signature <- reactiveVal(NULL)
-    bend_wqx_status <- reactiveVal(NULL)
+    hydro_signature <- reactiveVal(NULL)
+    hydr_wqx_status <- reactiveVal(NULL)
     
-    bend_genetics_data_wqx_formatted <- reactive({
-        bend_genetics_to_wqx(uploaded_bend_genetics_data())
+    hydro_lab_data_wqx_formatted <- reactive({
+        hydro_lab_to_wqx(uploaded_hydro_lab_data())
     })
     
-    bend_path_to_most_recent_download <- reactive({
+    hydro_path_to_most_recent_download <- reactive({
         
     })
     
-    output$bend_genetics_table <- renderTable({
+    output$hydro_lab_table <- renderTable({
         
-        validate(need(input$bend_genetics_file, message = "Select a file to view"))
-        uploaded_bend_genetics_data()
+        validate(need(input$hydro_lab_file, message = "Select a file to view"))
+        uploaded_hydro_lab_data()
     })
     
-    output$bend_genetics_qaqc_table <- renderTable({
-        validate(need(input$bend_genetics_file, message = "Select a file to view qa/qc results."))
-        validation_results <- validate::confront(uploaded_bend_genetics_data(), bend_genetics_range_rules)
+    output$hydro_lab_qaqc_table <- renderTable({
+        validate(need(input$hydro_lab_file, message = "Select a file to view qa/qc results."))
+        validation_results <- validate::confront(uploaded_hydro_lab_data(), hydro_lab_range_rules)
         as_tibble(summary(validation_results)) |>
             mutate(pass = case_when(
                 error == TRUE ~ emo::ji("warning"), 
@@ -47,9 +47,9 @@ function(input, output, session) {
         #     select(`Test Name` = name, `Test Expression` = expression, `Test Passed` = pass)
     })
     
-    output$bend_genetics_custom_qaqc_table <- renderTable({
-        validate(need(input$bend_genetics_file, message = "Select a file to view custom qa/qc results."))
-        validation_results <- validate::confront(uploaded_bend_genetics_data(), bend_genetics_custom_rules)
+    output$hydro_lab_custom_qaqc_table <- renderTable({
+        validate(need(input$hydro_lab_file, message = "Select a file to view custom qa/qc results."))
+        validation_results <- validate::confront(uploaded_hydro_lab_data(), hydro_lab_custom_rules)
         as_tibble(summary(validation_results)) |>
             mutate(pass = case_when(
                 error == TRUE ~ emo::ji("warning"), 
@@ -61,28 +61,28 @@ function(input, output, session) {
             name = stringr::str_replace_all(name, "\\.", " ")) 
     })
     
-    output$bend_genetics_wqx_formatted <- renderTable({
-        req(input$bend_genetics_file)
-        bend_genetics_data_wqx_formatted()
+    output$hydro_lab_wqx_formatted <- renderTable({
+        req(input$hydro_lab_file)
+        hydro_lab_data_wqx_formatted()
     })
     
-    output$bend_genetics_download <- downloadHandler(
+    output$hydro_lab_download <- downloadHandler(
         filename = function() {
-            bend_signature(format(lubridate::now(), "%Y%m%d_%H%M%S"))
-            paste('bend-lab-data-', bend_signature(), '.csv', sep='')
+            hydro_signature(format(lubridate::now(), "%Y%m%d_%H%M%S"))
+            paste('hydro-lab-data-', hydro_signature(), '.csv', sep='')
         },
         content = function(file) {
-            write.csv(bend_genetics_data_wqx_formatted(), file)
+            write.csv(hydro_lab_data_wqx_formatted(), file)
         }
     )
     
-    observeEvent(input$bend_genetics_upload, {
+    observeEvent(input$hydro_lab_upload, {
         donwloads_path <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
         path_to_most_recent <- str_replace_all(
             paste(
                 donwloads_path,
-                "/bend-lab-data-",
-                bend_signature(),
+                "/hydro-lab-data-",
+                hydro_signature(),
                 ".csv",
                 sep = ""
             ),
@@ -94,7 +94,7 @@ function(input, output, session) {
         USER_ID = input$wqx_username
         CONFIG_ID = input$wqx_config_id
         FILE_PATH = path_to_most_recent
-        FILE_NAME =  paste("bend-lab-data-", bend_signature(), ".csv", sep = "")
+        FILE_NAME =  paste("hydro-lab-data-", hydro_signature(), ".csv", sep = "")
         
         spsComps::shinyCatch({message("sending request to CDX Web")}, position = "bottom-full-width")
         
@@ -114,9 +114,9 @@ function(input, output, session) {
         bend_wqx_status(status$StatusName)
     })
     
-    output$bend_upload_status <- renderUI({
-        validate(need(bend_wqx_status(), "start upload, status of upload will be shown here after completion"))
-        if (bend_wqx_status() == "Import Failed") {
+    output$hydro_upload_status <- renderUI({
+        validate(need(hydro_wqx_status(), "start upload, status of upload will be shown here after completion"))
+        if (hydro_wqx_status() == "Import Failed") {
             tags$p(tags$b("Import failed."), "Please retry upload.", style = "{color: red;}")
         } else
         {
