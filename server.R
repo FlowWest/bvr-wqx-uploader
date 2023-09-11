@@ -72,7 +72,7 @@ function(input, output, session) {
             paste('hydro-lab-data-', hydro_signature(), '.csv', sep='')
         },
         content = function(file) {
-            write.csv(hydro_lab_data_wqx_formatted(), file)
+            write.csv(hydro_lab_data_wqx_formatted(), file, row.names = FALSE)
         }
     )
     
@@ -194,6 +194,19 @@ function(input, output, session) {
     output$alpha_lab_wqx_formatted <- renderTable({
         alpha_lab_to_wqx(uploaded_alpha_lab_data())
     })
+    
+    
+    output$alpha_lab_download <- downloadHandler(
+        filename = function() {
+            alpha_signature(format(lubridate::now(), "%Y%m%d_%H%M%S"))
+            paste('alpha-lab-data-', alpha_signature(), '.csv', sep='')
+        },
+        content = function(file) {
+            write.csv(alpha_lab_data_wqx_formatted(), file, row.names = FALSE)
+        }
+    )
+    
+    
     #bend-genetics -------------------------------------------------------
 
     uploaded_bend_genetics_data <- reactive({
@@ -209,9 +222,10 @@ function(input, output, session) {
         
     })
     
-    comparison_table <- reactive({
+    bend_genetics_comparison_table <- reactive({
         uploaded_bend_genetics_data() |> 
-            tidyverse::pivot_wider(names_from = "Target", values_from = "Result")
+            tidyr::pivot_wider(names_from = "Target", values_from = "Result", values_fn = as.numeric) |> 
+            rename("Microcycstin Nod" = "Microcystin/Nod.")
     })
     
     bend_signature <- reactiveVal(NULL)
@@ -236,7 +250,7 @@ function(input, output, session) {
     
     output$bend_genetics_qaqc_table <- renderTable({
         validate(need(input$bend_genetics_file, message = "Select a file to view qa/qc results."))
-        validation_results <- validate::confront(comparison_table(), bend_genetics_range_rules)
+        validation_results <- validate::confront(bend_genetics_comparison_table(), bend_genetics_range_rules)
         as_tibble(summary(validation_results)) |>
             mutate(pass = case_when(
                 error == TRUE ~ emo::ji("warning"), 
@@ -245,9 +259,8 @@ function(input, output, session) {
                 fails > 0 ~ emo::ji("x"), 
                 TRUE ~ emo::ji("question")
             ), 
-            name = stringr::str_replace_all(name, "\\.", " ")) 
-        # |> 
-        #     select(`Test Name` = name, `Test Expression` = expression, `Test Passed` = pass)
+            name = stringr::str_replace_all(name, "\\.", " "))|>
+            select(-expression)
     })
     
     # output$bend_genetics_custom_qaqc_table <- renderTable({
@@ -275,7 +288,7 @@ function(input, output, session) {
             paste('bend-lab-data-', bend_signature(), '.csv', sep='')
         },
         content = function(file) {
-            write.csv(bend_genetics_data_wqx_formatted(), file)
+            write.csv(bend_genetics_data_wqx_formatted(), file, row.names = FALSE)
         }
     )
     

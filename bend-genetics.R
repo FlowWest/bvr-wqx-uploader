@@ -180,7 +180,8 @@ parse_bend_genetics <- function(filepath) {
         ) |> 
         mutate_if(is.character, utf8::utf8_encode) |> 
         mutate(
-            Units = ifelse(Units== "\\xb5g/L", "ug/L", Units)
+            Units = ifelse(Units== "\\xb5g/L", "ug/L", Units),
+            Result = readr::parse_number(Result) 
         )
     
     bend_full_df <-

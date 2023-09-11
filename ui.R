@@ -79,6 +79,12 @@ bslib::page_navbar(
                                  "Formatted Data", 
                                  tags$p(class = "p-3 border rounded", 
                                         "Data Formatted to WQX, review and when ready select Download and Upload to WQX"),
+                                 bslib::layout_columns(
+                                     col_widths = c(2, 2, 2),
+                                     downloadButton("alpha_lab_download"),
+                                     actionButton("alpha_lab_upload", label = "Upload to WQX", icon = shiny::icon("rocket")),
+                                     uiOutput("alpha_lab_status")
+                                 ),
                                  
                                  tableOutput("alpha_lab_wqx_formatted")
                              )
@@ -116,6 +122,12 @@ bslib::page_navbar(
                                  "Formatted Data",
                                  tags$p(class = "p-3 border rounded", 
                                         "Data Formatted to WQX, review and when ready select Download and Upload to WQX"),
+                                 bslib::layout_columns(
+                                     col_widths = c(2, 2, 2),
+                                     downloadButton("bend_genetics_download"),
+                                     actionButton("bend_genetics_upload", label = "Upload to WQX", icon = shiny::icon("rocket")),
+                                     uiOutput("bend_genetics_status")
+                                 ),
                                  
                                  tableOutput("bend_genetics_wqx_formatted")
                              )
