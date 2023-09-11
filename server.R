@@ -111,7 +111,7 @@ function(input, output, session) {
         Sys.sleep(25)
         status <- cdx_get_status(session, dataset_id)
         
-        bend_wqx_status(status$StatusName)
+        hydro_wqx_status(status$StatusName)
     })
     
     output$hydro_upload_status <- renderUI({
@@ -205,9 +205,13 @@ function(input, output, session) {
                 type = "error"
             )
         }
-        print(input$bend_genetics_file)
-        purrr::map_df(input$bend_genetics_file$datapath, \(x) parse_bendgenetics(x))
+        purrr::map_df(input$bend_genetics_file$datapath, \(x) parse_bend_genetics(x))
         
+    })
+    
+    comparison_table <- reactive({
+        uploaded_bend_genetics_data() |> 
+            tidyverse::pivot_wider(names_from = "Target", values_from = "Result")
     })
     
     bend_signature <- reactiveVal(NULL)
@@ -232,7 +236,7 @@ function(input, output, session) {
     
     output$bend_genetics_qaqc_table <- renderTable({
         validate(need(input$bend_genetics_file, message = "Select a file to view qa/qc results."))
-        validation_results <- validate::confront(uploaded_bend_genetics_data(), bend_genetics_range_rules)
+        validation_results <- validate::confront(comparison_table(), bend_genetics_range_rules)
         as_tibble(summary(validation_results)) |>
             mutate(pass = case_when(
                 error == TRUE ~ emo::ji("warning"), 
@@ -246,19 +250,19 @@ function(input, output, session) {
         #     select(`Test Name` = name, `Test Expression` = expression, `Test Passed` = pass)
     })
     
-    output$bend_genetics_custom_qaqc_table <- renderTable({
-        validate(need(input$bend_genetics_file, message = "Select a file to view custom qa/qc results."))
-        validation_results <- validate::confront(uploaded_bend_genetics_data(), bend_genetics_custom_rules)
-        as_tibble(summary(validation_results)) |>
-            mutate(pass = case_when(
-                error == TRUE ~ emo::ji("warning"), 
-                warning == TRUE ~ emo::ji("warning"),
-                items == passes ~ emo::ji("check"),
-                fails > 0 ~ emo::ji("x"), 
-                TRUE ~ emo::ji("question")
-            ), 
-            name = stringr::str_replace_all(name, "\\.", " ")) 
-    })
+    # output$bend_genetics_custom_qaqc_table <- renderTable({
+    #     validate(need(input$bend_genetics_file, message = "Select a file to view custom qa/qc results."))
+    #     validation_results <- validate::confront(uploaded_bend_genetics_data(), bend_genetics_custom_rules)
+    #     as_tibble(summary(validation_results)) |>
+    #         mutate(pass = case_when(
+    #             error == TRUE ~ emo::ji("warning"), 
+    #             warning == TRUE ~ emo::ji("warning"),
+    #             items == passes ~ emo::ji("check"),
+    #             fails > 0 ~ emo::ji("x"), 
+    #             TRUE ~ emo::ji("question")
+    #         ), 
+    #         name = stringr::str_replace_all(name, "\\.", " ")) 
+    # })
     
     output$bend_genetics_wqx_formatted <- renderTable({
         req(input$bend_genetics_file)

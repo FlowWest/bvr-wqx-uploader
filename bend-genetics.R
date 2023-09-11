@@ -186,8 +186,7 @@ parse_bend_genetics <- function(filepath) {
     bend_full_df <-
         left_join(analytical_report_for_samples, sample_results) |> 
         filter(!is.na(Target))
-    print(bend_full_df)
-    return(bend_full_df) 
+
              }
 
 bend_genetics_make_activity_id <-
@@ -260,7 +259,7 @@ bend_genetics_to_wqx <- function(data) {
                "Result Detection/Quantitation Limit Measure" = `Quantitation Limit`,
                "Result Detection/Quantitation Limit Unit" = Units,
                "Result Comment" = Notes,
-               "Activity ID (CHILD-subset)" = make_activity_id(location_id = Location,
+               "Activity ID (CHILD-subset)" = bend_genetics_make_activity_id(location_id = Location,
                                                                date = `Activity Start Date`,
                                                                time = `Activity Start Time`,
                                                                activity_type = `Activity Type`,
