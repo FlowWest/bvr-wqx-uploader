@@ -20,10 +20,8 @@ bslib::page_navbar(
                                             "This section provides view of raw data, as well as results for Qa/Qc checks. Verify that
                                             all validations pass, and proceed to next tab when ready.")
                                  ),
-                                 tableOutput("hydro_lab_table"), 
+                                 card(card_header("Raw Data"), card_body(tableOutput("hydro_lab_table"))), 
                                  tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - ", emo::ji("check"), "- test passed, ", emo::ji("x"), "- test failed", emo::ji("warning"), "-verify manually (usually safe to ignore)"), 
-                                 # tags$p(tags$strong("Range Based Checks"), class = "p-3"),
-                                 # tableOutput("hydro_lab_qaqc_table")
                                  
                                  layout_column_wrap(
                                      width = 1/2, 

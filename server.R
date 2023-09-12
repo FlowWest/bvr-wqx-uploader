@@ -128,22 +128,6 @@ function(input, output, session) {
         }
     })
     
-    # get_path_to_most_recent_hydro_lab <- function() {
-    #     path_to_download <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
-    #     file_path <-
-    #         str_replace_all(
-    #             paste(
-    #                 path_to_download,
-    #                 "/hydro-lab-data-",
-    #                 hydro_signature(),
-    #                 ".csv",
-    #                 sep = ""
-    #             ),
-    #             "\\\\",
-    #             "/"
-    #         )
-    # }
-    
     # alpha lab -------------------------------------------------------------------------------
     
     uploaded_alpha_lab_data <- reactive({
@@ -175,21 +159,6 @@ function(input, output, session) {
         #     select(`Test Name` = name, `Test Expression` = expression, `Test Passed` = pass)
     })
     
-    # output$alpha_lab_custom_qaqc_table <- renderTable({
-    #     validate(need(input$alpha_lab_file, message = "Select a file to view custom qa/qc results."))
-    #     validation_results <- validate::confront(uploaded_alpha_lab_data(), alpha_lab_custom_rules)
-    #     as_tibble(summary(validation_results)) |>
-    #         mutate(pass = case_when(
-    #             error == TRUE ~ emo::ji("warning"), 
-    #             warning == TRUE ~ emo::ji("warning"),
-    #             items == passes ~ emo::ji("check"),
-    #             fails > 0 ~ emo::ji("x"), 
-    #             TRUE ~ emo::ji("question")
-    #         ), 
-    #         name = stringr::str_replace_all(name, "\\.", " ")) 
-    #     # |> 
-    #     #     select(`Test Name` = name, `Test Expression` = expression, `Test Passed` = pass)
-    # })
     
     output$alpha_lab_wqx_formatted <- renderTable({
         alpha_lab_to_wqx(uploaded_alpha_lab_data())

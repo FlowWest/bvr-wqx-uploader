@@ -48,3 +48,4 @@ alpha_lab_range_rules <- validator(
     "Total Kjeldahl Nitrogen in valid range" = in_range(`Total Kjeldahl Nitrogen`, 0, 10)
     
 )
+
