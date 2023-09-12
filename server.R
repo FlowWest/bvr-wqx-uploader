@@ -15,7 +15,7 @@ function(input, output, session) {
     })
     
     hydro_signature <- reactiveVal(NULL)
-    hydr_wqx_status <- reactiveVal(NULL)
+    hydro_wqx_status <- reactiveVal(NULL)
     
     hydro_lab_data_wqx_formatted <- reactive({
         hydro_lab_to_wqx(uploaded_hydro_lab_data())
@@ -76,11 +76,11 @@ function(input, output, session) {
         }
     )
     
-    observeEvent(input$hydro_lab_upload, {
-        donwloads_path <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
+    hydro_wqx_status <- eventReactive(input$hydro_lab_upload, {
+        downloads_path <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
         path_to_most_recent <- str_replace_all(
             paste(
-                donwloads_path,
+                downloads_path,
                 "/hydro-lab-data-",
                 hydro_signature(),
                 ".csv",
@@ -111,12 +111,12 @@ function(input, output, session) {
         Sys.sleep(25)
         status <- cdx_get_status(session, dataset_id)
         
-        hydro_wqx_status(status$StatusName)
+        # hydro_wqx_status(status$StatusName)
     })
     
     output$hydro_upload_status <- renderUI({
         validate(need(hydro_wqx_status(), "start upload, status of upload will be shown here after completion"))
-        if (hydro_wqx_status() == "Import Failed") {
+        if (hydro_wqx_status()$StatusName == "Import Failed") {
             tags$p(tags$b("Import failed."), "Please retry upload.", style = "{color: red;}")
         } else
         {
@@ -150,6 +150,8 @@ function(input, output, session) {
         purrr::map_df(input$alpha_lab_file$datapath, \(x) parse_alphalab(x))
         
     })
+    alpha_signature <- reactiveVal(NULL)
+    alpha_wqx_status <- reactiveVal(NULL)
     
     output$alpha_lab_table <- renderTable({
         
@@ -191,8 +193,13 @@ function(input, output, session) {
     #     #     select(`Test Name` = name, `Test Expression` = expression, `Test Passed` = pass)
     # })
     
-    output$alpha_lab_wqx_formatted <- renderTable({
+    alpha_lab_data_wqx_formatted <- reactive({
         alpha_lab_to_wqx(uploaded_alpha_lab_data())
+    })
+    
+    output$alpha_lab_wqx_formatted <- renderTable({
+        req(input$alpha_lab_file)
+        alpha_lab_data_wqx_formatted()
     })
     
     
@@ -205,6 +212,58 @@ function(input, output, session) {
             write.csv(alpha_lab_data_wqx_formatted(), file, row.names = FALSE)
         }
     )
+    
+    alpha_wqx_status <- eventReactive(input$alpha_lab_upload, {
+        downloads_path <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
+        path_to_most_recent <- str_replace_all(
+            paste(
+                downloads_path,
+                "/alpha-lab-data-",
+                alpha_signature(),
+                ".csv",
+                sep = ""
+            ),
+            "\\\\",
+            "/"
+        )
+        
+        API_KEY = input$wqx_api_key
+        USER_ID = input$wqx_username
+        CONFIG_ID = input$wqx_config_id
+        FILE_PATH = path_to_most_recent
+        FILE_NAME =  paste("alpha-lab-data-", hydro_signature(), ".csv", sep = "")
+        
+        spsComps::shinyCatch({message("sending request to CDX Web")}, position = "bottom-full-width")
+        
+        session <- cdx(USER_ID, API_KEY, FILE_PATH, FILE_NAME)
+        file_id <- cdx_upload(session = session)
+        dataset_id <-
+            cdx_import(
+                session = session,
+                file_id = file_id,
+                config_id = CONFIG_ID,
+                params = c("newOrExistingData", "0")
+            )
+        
+        Sys.sleep(25)
+        status <- cdx_get_status(session, dataset_id)
+        
+        # hydro_wqx_status(status$StatusName)
+    })
+    
+    output$alpha_upload_status <- renderUI({
+        validate(need(alpha_wqx_status(), "start upload, status of upload will be shown here after completion"))
+        if (alpha_wqx_status()$StatusName == "Import Failed") {
+            tags$p(tags$b("Import failed."), "Please retry upload.", style = "{color: red;}")
+        } else
+        {
+            tags$p(
+                tags$b("Application is importing data onto CDX."),
+                tags$br(),
+                "You may now close this document. Check email or CDX website for the final upload confirmation."
+            )
+        }
+    })
     
     
     #bend-genetics -------------------------------------------------------
@@ -292,7 +351,7 @@ function(input, output, session) {
         }
     )
     
-    observeEvent(input$bend_genetics_upload, {
+    bend_wqx_status <- eventReactive(input$bend_genetics_upload, {
         donwloads_path <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
         path_to_most_recent <- str_replace_all(
             paste(
@@ -327,7 +386,8 @@ function(input, output, session) {
         Sys.sleep(25)
         status <- cdx_get_status(session, dataset_id)
         
-        bend_wqx_status(status$StatusName)
+        print(status$StatusName)
+        # bend_wqx_status(status$StatusName)
     })
     
     output$bend_upload_status <- renderUI({

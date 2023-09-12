@@ -126,7 +126,7 @@ bslib::page_navbar(
                                      col_widths = c(2, 2, 2),
                                      downloadButton("bend_genetics_download"),
                                      actionButton("bend_genetics_upload", label = "Upload to WQX", icon = shiny::icon("rocket")),
-                                     uiOutput("bend_genetics_status")
+                                     uiOutput("bend_genetics_status") |> withSpinner(color="#0dc5c1")
                                  ),
                                  
                                  tableOutput("bend_genetics_wqx_formatted")

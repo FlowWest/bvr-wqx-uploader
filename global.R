@@ -6,6 +6,7 @@ library(wqxWeb)
 library(reticulate)
 library(spsComps)
 library(shinyWidgets)
+library(shinycssloaders)
 
 reticulate::use_condaenv("r-reticulate") 
 
