@@ -109,7 +109,7 @@ function(input, output, session) {
             )
         
         Sys.sleep(25)
-        status <- cdx_get_status(session, dataset_id)
+        return(cdx_get_status(session, dataset_id))
         
         # hydro_wqx_status(status$StatusName)
     })
@@ -246,9 +246,8 @@ function(input, output, session) {
             )
         
         Sys.sleep(25)
-        status <- cdx_get_status(session, dataset_id)
+        return(cdx_get_status(session, dataset_id))
         
-        # hydro_wqx_status(status$StatusName)
     })
     
     output$alpha_upload_status <- renderUI({
@@ -384,10 +383,7 @@ function(input, output, session) {
             )
         
         Sys.sleep(25)
-        status <- cdx_get_status(session, dataset_id)
-        
-        print(status$StatusName)
-        # bend_wqx_status(status$StatusName)
+        return(cdx_get_status(session, dataset_id))
     })
     
     output$bend_upload_status <- renderUI({
