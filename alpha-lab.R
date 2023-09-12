@@ -192,7 +192,7 @@ alpha_lab_make_activity_id <- function(location_id,
 }
 
 alpha_lab_format_for_range_validation <- function(data) {
-    raw_data |> 
+    data |> 
         select(PROJECT, ANALYTE, Result) |> 
         pivot_wider(names_from = "ANALYTE", values_from = "Result")
 }
