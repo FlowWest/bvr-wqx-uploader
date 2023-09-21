@@ -1,6 +1,8 @@
+hydro_lab_locations <- c("ELEM01", "FC1", "LPTNT")
+
 parse_hydrolab <- function(filepath) {
     raw_name <- readLines(filepath, 1)
-    location_for_selected_hydrolab <- trimws(str_replace(str_extract(str_replace_all(raw_name, '"', ""), ": .+"), ":", ""))
+    location_for_selected_hydrolab <- str_extract(raw_name, paste0(hydro_lab_locations, collapse = "|"))
     read_csv(filepath,
              skip = 5,
              col_types = "c",

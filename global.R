@@ -8,7 +8,8 @@ library(spsComps)
 library(shinyWidgets)
 library(shinycssloaders)
 
-reticulate::use_condaenv("r-reticulate") 
+# change this based on who is using the app
+reticulate::use_virtualenv("r-reticulate") 
 
 source("hydro-lab.R")
 source("alpha-lab.R")
@@ -33,7 +34,7 @@ hydro_lab_range_rules <- validator(
 )
 
 hydro_lab_custom_rules <- validator(
-    "Location ID is Valid" = location_id %in% c("FC1", "LPTNT"), 
+    "Location ID is Valid" = location_id %in% c("FC1", "LPTNT", "ELEM01"), 
     "Resistivity decimals values is less then 3" = number_format(as.numeric(Res), "d.dd")
 )
 
