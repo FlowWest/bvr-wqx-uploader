@@ -1,8 +1,7 @@
-hydro_lab_locations <- c("ELEM01", "FC1", "LPTNT")
-
 parse_hydrolab <- function(filepath) {
+    regex_pattern <- "\\w+"
     raw_name <- readLines(filepath, 1)
-    location_for_selected_hydrolab <- str_extract(raw_name, paste0(hydro_lab_locations, collapse = "|"))
+    location_for_selected_hydrolab <- unlist(str_extract_all(raw_name, regex_pattern))[4]
     read_csv(filepath,
              skip = 5,
              col_types = "c",
@@ -42,7 +41,7 @@ hydro_lab_make_activity_id <-
 
 hydro_lab_to_wqx <- function(data) {
     data |> 
-        select(-c("IBVSvr4", "CHL", "PCY")) |>
+        select(-c("IBVSvr4")) |>
         rename("Temperature, water" = "Temp",
                "Specific conductance" = "SpCond",
                "Resistivity" = "Res",
@@ -52,12 +51,14 @@ hydro_lab_to_wqx <- function(data) {
                "Dissolved oxygen (DO)" = "DO",
                "pH" = "pH",
                "Turbidity" = "Turb",
+               "Chlorophyll a" = "CHL",
+               "Phycocyanin" = "PCY",
                "Monitoring Location ID" = location_id)|> 
         pivot_longer(
             !c(Date, Time, Depth10, `Monitoring Location ID`),
             names_to = "Characteristic Name",
             "values_to" = "Result Value"
-        ) |> 
+        ) |>
         mutate("Project ID" = project_id_lookup[`Monitoring Location ID`],
                "Activity ID User Supplied(PARENTs)" = "",
                "Activity Type" = "Field Msr/Obs",
@@ -72,11 +73,11 @@ hydro_lab_to_wqx <- function(data) {
                "Sample Collection Equipment Name" = "Probe/Sensor",
                "Sample Collection Equipment Comment" = "Hydrolab Surveyor DS5 Multiprobe",
                "Characteristic Name" = `Characteristic Name`,
-               "Result Unit" = unit_lookup[`Characteristic Name`],
+               "Result Unit" = hydro_unit_lookup[`Characteristic Name`],
                "Characteristic Name User Supplied" = "",
                "Method Speciation" = "",
                "Result Detection Condition" = "",
-               "Result Value" = `Result Value`,
+               "Result Value" = if_else(`Result Value`== 999999, NA, `Result Value`),
                "Result Unit" = `Result Unit`,
                "Result Measure Qualifier" = "",
                "Result Sample Fraction" = "",
@@ -99,8 +100,8 @@ hydro_lab_to_wqx <- function(data) {
                "Result Detection/Quantitation Limit Measure" = "",
                "Result Detection/Quantitation Limit Unit" = "",
                "Result Comment" = ""
-               
-        ) |>
+
+        ) |> 
         select(-c(Date, Depth10, Time)) |>
         relocate("Project ID",
                  "Monitoring Location ID",
@@ -236,7 +237,7 @@ project_id_lookup <- c(
     "LAKEPILS01" = "HAB" #not in cdx
 )
 
-unit_lookup <- c(
+hydro_unit_lookup <- c(
     "Temperature, water" = "deg C", 
     "Specific conductance" = "mS/cm", 
     "Resistivity" = "KOhm-cm", 
@@ -249,7 +250,9 @@ unit_lookup <- c(
     "Oil & Grease (HEM)" = "mg/L",
     "Nitrate + Nitrite as N" = "mg/L",
     "Phosphorus, total" = "mg/L",
-    "Total Organic Carbon" = "mg/L")
+    "Total Organic Carbon" = "mg/L",
+    "Chlorophyll a" = "ug/L",
+    "Phycocyanin" = "#/mL")
 
 method_id_lookup <- c(
     "SM9223B" = "9223-B",
@@ -291,3 +294,4 @@ method_speciation_lookup <- c(
     "Total Kjeldahl Nitrogen" = "as N",
     "Orthophosphate" = "as P"
 )
+
