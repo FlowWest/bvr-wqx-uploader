@@ -9,7 +9,7 @@ library(shinyWidgets)
 library(shinycssloaders)
 
 # change this based on who is using the app
-reticulate::use_condaenv("r-reticulate") 
+reticulate::use_miniconda("r-reticulate") 
 
 source("hydro-lab.R")
 source("alpha-lab.R")
