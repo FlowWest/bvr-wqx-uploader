@@ -9,7 +9,7 @@ library(shinyWidgets)
 library(shinycssloaders)
 
 # change this based on who is using the app
-reticulate::use_virtualenv("r-reticulate") 
+reticulate::use_miniconda("r-reticulate") 
 
 source("hydro-lab.R")
 source("alpha-lab.R")
@@ -30,11 +30,12 @@ hydro_lab_range_rules <- validator(
     "Dissolved Oxygen in valid range" = in_range(as.numeric(DO), 0, 20), 
     "pH in valid range" = in_range(as.numeric(pH), 5, 10), 
     "Turbidity in valid range" = in_range(as.numeric(Turb), 0, 1000),
-    "Chlorophyl in valid range" = in_range(as.numeric(CHL), 0, 10000)
+    "Chlorophyl in valid range" = in_range(as.numeric(CHL), 0, 10000),
+    "Phycocyanin in valid range" = in_range(as.numeric(PCY), 0, 10000)
 )
 
 hydro_lab_custom_rules <- validator(
-    "Location ID is Valid" = location_id %in% c("FC1", "LPTNT", "ELEM01"), 
+    "Location ID is Valid" = location_id %in% names(project_id_lookup),
     "Resistivity decimals values is less then 3" = number_format(as.numeric(Res), "d.dd")
 )
 
