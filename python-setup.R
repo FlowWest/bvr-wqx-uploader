@@ -1,11 +1,10 @@
-library(reticulate)
-env_list <- reticulate::conda_list()
-if ("r-reticulate" %in% env_list$name){
-    reticulate::use_condaenv("r-reticulate")
+env_list <- reticulate::virtualenv_list()
+if ("wqxUpload" %in% env_list){
+    reticulate::use_virtualenv("r-reticulate")
     # reticulate::conda_install("r-reticulate", "requests")
 }else{
-    reticulate::conda_create("r-reticulate")
-    reticulate::use_condaenv("r-reticulate")
-    reticulate::conda_install("r-reticulate", "requests")
+    reticulate::virtualenv_create("r-reticulate")
+    reticulate::use_virtualenv("r-reticulate")
+    reticulate::virtualenv_install(envname = "r-reticulate", packages = "requests")
 }
     
