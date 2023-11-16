@@ -22,11 +22,12 @@ hydro_lab_make_activity_id <-
              equipment_comment = NULL) {
         YYYYMMDD <- gsub('/', '', date)
         activity <- ifelse(activity_type == "Sample-Routine", "SR", "FM")
-        equipment <- ifelse(equipment_name == "Probe/Sensor", "PS", NA)
+        equipment <- ifelse(equipment_name == "Probe/Sensor", "PS", "")
         hhmm <- gsub(':', '', time)
         equipment_comment <- case_when(
             equipment_comment == "Hydrolab Surveyor DS5 Multiprobe" ~ "Hydro",
             equipment_comment == "AlgaeChek Ultra Fluorometer" ~ "Algae",
+            equipment_comment == "AccuWeather" ~ "AccuW",
             TRUE ~ NA_character_
         )
         paste(location_id,
@@ -93,8 +94,8 @@ hydro_lab_to_wqx <- function(data) {
                                                                equipment_name = `Sample Collection Equipment Name`,
                                                                depth = `Activity Depth/Height Measure`,
                                                                equipment_comment = `Sample Collection Equipment Comment`),
-               "Result Analytical Method ID" = "",
-               "Result Analytical Method Context" = "",
+               "Result Analytical Method ID" = if_else(`Characteristic Name`== "Chlorophyll a", "Probe_C", ""),
+               "Result Analytical Method Context" = if_else(`Characteristic Name`== "Chlorophyll a", "CA_BVR", ""),
                "Analysis Start Date" = "",
                "Result Detection/Quantitation Limit Type" = "",
                "Result Detection/Quantitation Limit Measure" = "",
@@ -134,12 +135,72 @@ hydro_lab_to_wqx <- function(data) {
                  "Result Analytical Method ID",
                  "Result Analytical Method Context",
                  "Analysis Start Date",
+                 "Result Detection/Quantitation Limit Type",
                  "Result Detection/Quantitation Limit Measure",
                  "Result Detection/Quantitation Limit Unit",
                  "Result Comment"
         )
 }
 
+append_input_data <- function(data, temperature_air, result_comment){
+   last_row_source <- tail(data, 1)
+    last_row_source$`Activity Depth/Height Measure` <- ""
+    last_row_source$`Activity Depth/Height Unit` <- ""
+    last_row_source$`Sample Collection Equipment Name` <- "Miscellaneous(Other)"
+    last_row_source$`Sample Collection Equipment Comment` <- "AccuWeather"
+    last_row_source$`Characteristic Name` <- "Temperature, Air"
+    last_row_source$`Result Value` <- temperature_air
+    last_row_source$`Result Unit` <- "deg F"
+    last_row_source$`Result Analytical Method ID` <- ""
+    last_row_source$`Result Analytical Method Context` <- ""
+    wqx_df <- rbind(data, last_row_source)
+    wqx_df <- wqx_df |> 
+        mutate(
+            "Activity ID (CHILD-subset)" = hydro_lab_make_activity_id(location_id = `Monitoring Location ID`,
+                                                                      date = `Activity Start Date`,
+                                                                      time = `Activity Start Time`,
+                                                                      activity_type = `Activity Type`,
+                                                                      equipment_name = `Sample Collection Equipment Name`,
+                                                                      depth = `Activity Depth/Height Measure`,
+                                                                      equipment_comment = `Sample Collection Equipment Comment`),
+            "Result Comment" = result_comment) |> 
+        relocate("Project ID",
+                 "Monitoring Location ID",
+                 "Activity ID (CHILD-subset)",
+                 "Activity ID User Supplied(PARENTs)",
+                 "Activity Type",
+                 "Activity Media Name",
+                 "Activity Start Date",
+                 "Activity Start Time",
+                 "Activity Start Time Zone",
+                 "Activity Depth/Height Measure",
+                 "Activity Depth/Height Unit",
+                 "Sample Collection Method ID",
+                 "Sample Collection Method Context",
+                 "Sample Collection Equipment Name",
+                 "Sample Collection Equipment Comment",
+                 "Characteristic Name",
+                 "Characteristic Name User Supplied",
+                 "Method Speciation",
+                 "Result Detection Condition",
+                 "Result Value",
+                 "Result Unit",
+                 "Result Measure Qualifier",
+                 "Result Sample Fraction",
+                 "Result Status ID",
+                 "ResultTemperatureBasis",
+                 "Statistical Base Code",
+                 "ResultTimeBasis",
+                 "Result Value Type",
+                 "Result Analytical Method ID",
+                 "Result Analytical Method Context",
+                 "Analysis Start Date",
+                 "Result Detection/Quantitation Limit Type",
+                 "Result Detection/Quantitation Limit Measure",
+                 "Result Detection/Quantitation Limit Unit",
+                 "Result Comment"
+        )
+}
 
 
 project_id_lookup <- c(

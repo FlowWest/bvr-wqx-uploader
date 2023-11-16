@@ -31,7 +31,14 @@ bslib::page_navbar(
                                  )
                                  
                                  
-                             ), 
+                             ),
+                             tabPanel(
+                                 "Enter Additional Data",
+                                 tags$p(class = "p-3 border rounded", 
+                                        "Enter additional AccuWeather 'Temperature, Air' measurement and 'Result Comment' Below"),
+                                 numericInput("temperature_air", "Enter Air Temperature Measurement", value = 0),
+                                 textAreaInput("result_comment", "Enter Result Comment", rows = 3)
+                             ),
                              tabPanel(
                                  "Formatted Data", 
                                  tags$p(class = "p-3 border rounded", 

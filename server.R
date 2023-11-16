@@ -17,10 +17,12 @@ function(input, output, session) {
     hydro_signature <- reactiveVal(NULL)
     hydro_wqx_status <- reactiveVal(NULL)
     
-    hydro_lab_data_wqx_formatted <- reactive({
+    hydro_lab_data_wqx <- reactive({
         hydro_lab_to_wqx(uploaded_hydro_lab_data())
     })
-    
+    hydro_lab_data_wqx_formatted <- reactive({
+        append_input_data(hydro_lab_data_wqx(), input$temperature_air, input$result_comment)
+    })
     hydro_path_to_most_recent_download <- reactive({
         
     })
