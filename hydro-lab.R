@@ -343,6 +343,8 @@ project_id_lookup <- c(
     "PUT01" = "CS", #not in cdx
     "MID01"= "CS", #not in cdx
     "KC5"= "CS", #not in cdx
+    "JC1" = "CS",
+    "KC3-E" = "CS",
     "AP01" = "HAB",
     "BP" = "HAB",
     "CLOAKS01" = "HAB",
