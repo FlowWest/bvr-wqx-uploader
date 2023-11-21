@@ -91,7 +91,7 @@ function(input, output, session) {
             paste('hydro-lab-data-', hydro_signature(), '.csv', sep='')
         },
         content = function(file) {
-            write.csv(hydro_lab_data_wqx_formatted(), file, row.names = FALSE)
+            write.csv(common_hydro_lab_wqx_data(), file, row.names = FALSE)
         }
     )
     
@@ -200,6 +200,7 @@ function(input, output, session) {
             write.csv(alpha_lab_data_wqx_formatted(), file, row.names = FALSE)
         }
     )
+    
     
     alpha_wqx_status <- eventReactive(input$alpha_lab_upload, {
         downloads_path <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
