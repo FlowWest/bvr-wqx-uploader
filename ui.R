@@ -31,7 +31,20 @@ bslib::page_navbar(
                                  )
                                  
                                  
-                             ), 
+                             ),
+                             tabPanel(
+                                 "Enter Additional Data",
+                                 tags$p(class = "p-3 border rounded", 
+                                        "Enter additional AccuWeather 'Temperature, Air' measurement and 'Result Comment' Below"),
+                                 numericInput("temperature_air", "Enter Air Temperature Measurement", value = 0),
+                                 textAreaInput("result_comment", "Enter Result Comment", rows = 3),
+                                 actionButton("generate_formatted_df", "Generate WQX Formatted Data"),
+                                 tags$p(class = "p-3 border rounded", 
+                                        "If water body is too shallow, click on button below to generate empty dataframe"),
+                                 actionButton("generate_df", "Generate Empty WQX Data Frame"),
+                                 textOutput("check_df_message")
+                                 
+                             ),
                              tabPanel(
                                  "Formatted Data", 
                                  tags$p(class = "p-3 border rounded", 
@@ -42,7 +55,8 @@ bslib::page_navbar(
                                      actionButton("hydro_lab_upload", label = "Upload to WQX", icon = shiny::icon("rocket")),
                                      uiOutput("hydro_upload_status")
                                  ),
-                                 tableOutput("hydro_lab_wqx_formatted")
+                                 tableOutput("hydro_lab_wqx_formatted"),
+                                 # tableOutput("hydro_lab_wqx_empty")
                              )
                          )
                      )

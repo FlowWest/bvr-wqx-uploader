@@ -9,7 +9,8 @@ library(shinyWidgets)
 library(shinycssloaders)
 
 # change this based on who is using the app
-reticulate::use_miniconda("r-reticulate") 
+reticulate::use_miniconda("wqxUpload")
+# reticulate::use_virtualenv("wqxUpload")
 
 source("hydro-lab.R")
 source("alpha-lab.R")
@@ -20,15 +21,15 @@ cdx_account <- read_csv(paste0(getwd(), "/cdx-account-info.csv"))
 
 # Hydro Lab Rules -------------------------------------------------------------
 hydro_lab_range_rules <- validator(
-    "Temperature in valid range" = in_range(as.numeric(Temp), -10, 50), 
-    "Depth in valid range" = in_range(as.numeric(Depth10), 0, 10), 
-    "Specific Conductivity in valid range" = in_range(as.numeric(SpCond), 0, 500), 
-    "Resistivity in valid range" = in_range(as.numeric(Res), 0, 50),
-    "Salinity is positive" = in_range(as.numeric(Sal), 0, 5), 
-    "Total Dissolved Solids in valid range" = in_range(as.numeric(TDS), 0, 3),
-    "Dissolved Oxygen saturation in valid range" = in_range(as.numeric(`DO%`), 0, 200), 
+    "Temperature in valid range" = in_range(as.numeric(Temp), 0, 30), 
+    "Depth in valid range" = in_range(as.numeric(Depth10), 0.01, 10), 
+    "Specific Conductivity in valid range" = in_range(as.numeric(SpCond), 0.01, 1), 
+    "Resistivity in valid range" = in_range(as.numeric(Res), 0.1, 5),
+    "Salinity in valid range" = in_range(as.numeric(Sal), 0.01, 1), 
+    "Total Dissolved Solids in valid range" = in_range(as.numeric(TDS), 0.01, 1),
+    "Dissolved Oxygen saturation in valid range" = in_range(as.numeric(`DO%`), 0.01, 150), 
     "Dissolved Oxygen in valid range" = in_range(as.numeric(DO), 0, 20), 
-    "pH in valid range" = in_range(as.numeric(pH), 5, 10), 
+    "pH in valid range" = in_range(as.numeric(pH), 5, 11), 
     "Turbidity in valid range" = in_range(as.numeric(Turb), 0, 1000),
     "Chlorophyl in valid range" = in_range(as.numeric(CHL), 0, 10000),
     "Phycocyanin in valid range" = in_range(as.numeric(PCY), 0, 10000)

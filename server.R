@@ -16,11 +16,29 @@ function(input, output, session) {
     
     hydro_signature <- reactiveVal(NULL)
     hydro_wqx_status <- reactiveVal(NULL)
+    common_hydro_lab_wqx_data <- reactiveVal(NULL)
     
-    hydro_lab_data_wqx_formatted <- reactive({
+    hydro_lab_data_wqx <- reactive({
         hydro_lab_to_wqx(uploaded_hydro_lab_data())
     })
-    
+    hydro_lab_data_wqx_formatted <-  eventReactive(input$generate_formatted_df, {
+        append_input_data(hydro_lab_data_wqx(), input$temperature_air, input$result_comment)
+    })
+    hydro_lab_data_wqx_empty <- eventReactive(input$generate_df, {
+        generate_empty_data(input$temperature_air)
+    })
+    observeEvent(input$generate_formatted_df, {
+        common_hydro_lab_wqx_data(hydro_lab_data_wqx_formatted())
+        output$check_df_message <- renderText({
+            "Check Formatted Data tab for generated formatted data frame." 
+        })
+    })
+    observeEvent(input$generate_df, {
+        common_hydro_lab_wqx_data(hydro_lab_data_wqx_empty())
+       output$check_df_message <- renderText({
+           "Check Formatted Data tab for generated empty data frame." 
+       })
+    })
     hydro_path_to_most_recent_download <- reactive({
         
     })
@@ -62,9 +80,10 @@ function(input, output, session) {
     })
     
     output$hydro_lab_wqx_formatted <- renderTable({
-        req(input$hydro_lab_file)
-        hydro_lab_data_wqx_formatted()
+        req(common_hydro_lab_wqx_data())
+        common_hydro_lab_wqx_data()
     })
+
     
     output$hydro_lab_download <- downloadHandler(
         filename = function() {
@@ -367,6 +386,9 @@ function(input, output, session) {
                 "You may now close this document. Check email or CDX website for the final upload confirmation."
             )
         }
+    })
+    session$onSessionEnded(function() {
+        stopApp()
     })
 }
     
