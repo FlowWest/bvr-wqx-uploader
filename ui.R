@@ -53,9 +53,11 @@ bslib::page_navbar(
                                      col_widths = c(2, 2, 2),
                                      downloadButton("hydro_lab_download"),
                                      actionButton("hydro_lab_upload", label = "Upload to WQX", icon = shiny::icon("rocket")),
+                                     conditionalPanel(condition="$('html').hasClass('shiny-busy')",
+                                                      tags$div(HTML("<b> Starting WQX upload. Please wait 25 seconds for the upload status from CDX...</b>"),id="loadmessage")),
                                      uiOutput("hydro_upload_status")
                                  ),
-                                 tableOutput("hydro_lab_wqx_formatted"),
+                                 tableOutput("hydro_lab_wqx_formatted")
                                  # tableOutput("hydro_lab_wqx_empty")
                              )
                          )
