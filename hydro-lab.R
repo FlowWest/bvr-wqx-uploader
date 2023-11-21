@@ -150,7 +150,7 @@ append_input_data <- function(data, temperature_air, result_comment){
     last_row_source$`Sample Collection Equipment Comment` <- "AccuWeather"
     last_row_source$`Characteristic Name` <- "Temperature, Air"
     last_row_source$`Result Value` <- temperature_air
-    last_row_source$`Result Unit` <- "deg F"
+    last_row_source$`Result Unit`<- "deg F"
     last_row_source$`Result Analytical Method ID` <- ""
     last_row_source$`Result Analytical Method Context` <- ""
     wqx_df <- rbind(data, last_row_source)
@@ -200,8 +200,90 @@ append_input_data <- function(data, temperature_air, result_comment){
                  "Result Detection/Quantitation Limit Unit",
                  "Result Comment"
         )
+    return(wqx_df)
 }
 
+generate_empty_data <- function(temperature_air){
+    empty_df <- data.frame(
+        "Project ID" =  c(""),
+        "Monitoring Location ID" = c(""),
+        "Activity ID (CHILD-subset)" = c(""),
+        "Activity ID User Supplied(PARENTs)" = c(""),
+        "Activity Type" = c("Field Msr/Obs"),
+        "Activity Media Name" = c("Water"),
+        "Activity Start Date" = c(""),
+        "Activity Start Time" = c(""),
+        "Activity Start Time Zone" = c("PDT"),
+        "Activity Depth/Height Measure" = c(""),
+        "Activity Depth/Height Unit" = c(""),
+        "Sample Collection Method ID" = c("BVR SWQAPP"),
+        "Sample Collection Method Context" = c("CA_BVR"),
+        "Sample Collection Equipment Name" = c("Probe/Sensor"),
+        "Sample Collection Equipment Comment" = c(""),
+        "Characteristic Name" = c("Temperature, Water", "Specific Conductance", "Resistivity", "Salinity", "Total dissolved solids", "Dissolved oxygen saturation", "Dissolved oxygen (DO)", "pH", "Turbidity", "Chlorophyll a", "Phycocyanin"),
+        "Characteristic Name User Supplied" = c(""),
+        "Method Speciation" = c(""),
+        "Result Detection Condition" = c(""),
+        "Result Value" = c(""),
+        "Result Unit" = c(""),
+        "Result Measure Qualifier" = c(""),
+        "Result Sample Fraction" = c(""),
+        "Result Status ID" = c("Final"),
+        "ResultTemperatureBasis" = c(""),
+        "Statistical Base Code" = c(""),
+        "ResultTimeBasis" = c(""),
+        "Result Value Type" = c(""),
+        "Result Analytical Method ID" = c(""),
+        "Result Analytical Method Context" = c(""),
+        "Analysis Start Date" = c(""),
+        "Result Detection/Quantitation Limit Type" = c(""),
+        "Result Detection/Quantitation Limit Measure" = c(""), 
+        "Result Detection/Quantitation Limit Unit" = c(""),
+        "Result Comment" = c("Too Shallow. No Access.")
+    )
+    air_df <- data.frame(
+        "Project ID" =  c(""),
+        "Monitoring Location ID" = c(""),
+        "Activity ID (CHILD-subset)" = c(""),
+        "Activity ID User Supplied(PARENTs)" = c(""),
+        "Activity Type" = c("Field Msr/Obs"),
+        "Activity Media Name" = c("Water"),
+        "Activity Start Date" = c(""),
+        "Activity Start Time" = c(""),
+        "Activity Start Time Zone" = c("PDT"),
+        "Activity Depth/Height Measure" = c(""),
+        "Activity Depth/Height Unit" = c(""),
+        "Sample Collection Method ID" = c("BVR SWQAPP"),
+        "Sample Collection Method Context" = c("CA_BVR"),
+        "Sample Collection Equipment Name" = "Miscellaneous(Other)",
+        "Sample Collection Equipment Comment" = "AccuWeather",
+        "Characteristic Name" = "Temperature, Air",
+        "Characteristic Name User Supplied" = c(""),
+        "Method Speciation" = c(""),
+        "Result Detection Condition" = c(""),
+        "Result Value" = temperature_air,
+        "Result Unit" = "deg F",
+        "Result Measure Qualifier" = c(""),
+        "Result Sample Fraction" = c(""),
+        "Result Status ID" = c("Final"),
+        "ResultTemperatureBasis" = c(""),
+        "Statistical Base Code" = c(""),
+        "ResultTimeBasis" = c(""),
+        "Result Value Type" = c(""),
+        "Result Analytical Method ID" = c(""),
+        "Result Analytical Method Context" = c(""),
+        "Analysis Start Date" = c(""),
+        "Result Detection/Quantitation Limit Type" = c(""),
+        "Result Detection/Quantitation Limit Measure" = c(""), 
+        "Result Detection/Quantitation Limit Unit" = c(""),
+        "Result Comment" = c("")
+        )
+
+    wqx_df <- rbind(empty_df, air_df)
+    colnames(wqx_df) <- gsub("\\.", " ", colnames(wqx_df)) 
+    return(wqx_df)
+    
+}
 
 project_id_lookup <- c(
     "M1" = "MS",

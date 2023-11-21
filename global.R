@@ -9,8 +9,8 @@ library(shinyWidgets)
 library(shinycssloaders)
 
 # change this based on who is using the app
-# reticulate::use_miniconda("r-reticulate") 
-reticulate::use_virtualenv("r-reticulate")
+reticulate::use_miniconda("wqxUpload")
+# reticulate::use_virtualenv("wqxUpload")
 
 source("hydro-lab.R")
 source("alpha-lab.R")
