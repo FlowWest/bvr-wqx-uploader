@@ -9,14 +9,14 @@ library(shinyWidgets)
 library(shinycssloaders)
 
 # change this based on who is using the app
-reticulate::use_miniconda("wqxUpload")
-# reticulate::use_virtualenv("wqxUpload")
+# reticulate::use_miniconda("wqxUpload")
+reticulate::use_virtualenv("r-reticulate")
 
 source("hydro-lab.R")
 source("alpha-lab.R")
 source("bend-genetics.R")
 
-cdx_account <- read_csv(paste0(getwd(), "/cdx-account-info.csv"))
+cdx_account <- read_csv(paste0(getwd(), "/../cdx-account-info.csv"))
 
 
 # Hydro Lab Rules -------------------------------------------------------------
