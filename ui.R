@@ -11,8 +11,8 @@ bslib::page_navbar(
                      sidebarPanel(width = 3, 
                                   fileInput("hydro_lab_file", "Select Hydro Lab File", multiple = TRUE),
                                   
-                                  selectInput("selected_day", "Select Monitoring Day:", choices = NULL),
                                   selectInput("selected_location", "Select Monitoring Location:", choices = NULL),
+                                  selectInput("selected_day", "Select Monitoring Day:", choices = NULL),
                                   numericInput("temperature_air", "Enter Air Temperature Measurement", value = 0),
                                   textAreaInput("result_comment", "Enter Result Comment", rows = 2),
                                   actionButton("add_result", "Add Result")), 
