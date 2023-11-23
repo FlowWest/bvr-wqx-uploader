@@ -43,11 +43,11 @@ function(input, output, session) {
         
     })
     
-    output$hydro_lab_table <- renderTable({
+    output$hydro_lab_table <- DT::renderDT({
         
         validate(need(input$hydro_lab_file, message = "Select a file to view"))
-        uploaded_hydro_lab_data()
-    })
+        DT::datatable(uploaded_hydro_lab_data(), editable = TRUE) 
+    }, options = list(dom = "t", ordering = FALSE))
     
     output$hydro_lab_qaqc_table <- renderTable({
         validate(need(input$hydro_lab_file, message = "Select a file to view qa/qc results."))
