@@ -61,7 +61,12 @@ function(input, output, session) {
     output$hydro_lab_table <- DT::renderDT({
         
         validate(need(input$hydro_lab_file, message = "Select a file to view"))
-        DT::datatable(rvals$data, editable = TRUE) 
+        DT::datatable(rvals$data, editable = TRUE) |> 
+            DT::formatStyle(
+                c("CHL"), 
+                target = "cel", 
+                backgroundColor = DT::styleInterval(1000, c("white", "#f29f99"))
+            )
     }, options = list(dom = "t", ordering = FALSE))
 
     
