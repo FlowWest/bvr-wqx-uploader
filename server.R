@@ -59,9 +59,11 @@ function(input, output, session) {
     })
     
     output$hydro_lab_table <- DT::renderDT({
-        
+        editable_cols <- rep(TRUE, 16)
+        editable_cols[1:2] <- FALSE
+        editable_cols[16] <- FALSE
         validate(need(input$hydro_lab_file, message = "Select a file to view"))
-        DT::datatable(rvals$data, editable = TRUE) |> 
+        DT::datatable(rvals$data, editable = list(target = "cell", disable = list(columns = c(1,2, 16)))) |> 
             DT::formatStyle(
                 c("CHL"), 
                 target = "cel", 
