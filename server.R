@@ -17,48 +17,74 @@ function(input, output, session) {
     hydro_signature <- reactiveVal(NULL)
     hydro_wqx_status <- reactiveVal(NULL)
     common_hydro_lab_wqx_data <- reactiveVal(NULL)
-
-    # 
-
-    observe({
-        updateSelectInput(
-            session, 
-            "selected_day", 
-            "Select Monitoring Day:", 
-            choices = unique(as.character(uploaded_hydro_lab_data()$"Date"))
-        )
-    })
-    
-    filtered_hydro_lab_data <- reactive({
-        req(input$selected_day)  # Ensure the selected_day is not NULL
-        
-        # Filter uploaded_hydro_lab_data based on the selected day
-        uploaded_data <- uploaded_hydro_lab_data()
-        filtered_data <- uploaded_data |> 
-            filter(Date == input$selected_day) 
-        choices <- colnames(filtered_data)
-        return(choices)
-    })
-    
-    hydro_lab_locations <- reactive({
-        uploaded_hydro_lab_data_filtered <- uploaded_hydro_lab_data() |>
-            filter(Date == input$selected_day) |> 
-            select(location_id)
-        })
-
-    observe({
-        updateSelectInput(session, "selected_location", "Select Monitoring Location:",
-        choices = unique(as.character(hydro_lab_locations())))
-    })
-        
     
     hydro_lab_data_wqx <- reactive({
         hydro_lab_to_wqx(uploaded_hydro_lab_data())
     })
     
+    observe({
+        updateSelectInput(
+            session, 
+            "selected_day", 
+            "Select Monitoring Day:", 
+            choices = unique(as.character(hydro_lab_data_wqx()$"Activity Start Date"))
+        )
+    })
+    
+    hydro_lab_locations <- reactive({
+        req(input$selected_day)
+        hydro_lab_locations <- hydro_lab_data_wqx()  |> 
+            filter(`Activity Start Date` == input$selected_day) |> 
+            select(`Monitoring Location ID`)
+        })
+
+    observe({
+        updateSelectInput(session, "selected_location", "Select Monitoring Location:",
+        choices = unique(hydro_lab_locations()$`Monitoring Location ID`))
+    })
+        
+    
 
     
+    temp_data <- eventReactive(input$add_result,{
+        req(input$selected_location)
+        hydro_lab_data_wqx_filtered <- hydro_lab_data_wqx() |> 
+            filter(`Activity Start Date` == input$selected_day & `Monitoring Location ID` == input$selected_location)
+        # filter(`Monitoring Location ID` == input$selected_location)
+        with_temp_data <- append_input_data(hydro_lab_data_wqx_filtered, input$temperature_air, input$result_comment)
+        temp_data <- with_temp_data |> 
+            filter(`Characteristic Name` == "Temperature, Air")
+    })
     
+    less_data <- eventReactive(input$add_result,{
+        filtered_out_data <- hydro_lab_data_wqx() |>
+            filter(`Activity Start Date` != input$selected_day)
+        })
+    
+    # observeEvent(input$add_result,{
+    #     updateSelectInput(
+    #         session, 
+    #         "selected_day", 
+    #         "Select Monitoring Day:", 
+    #         choices = unique(as.character(less_data()$"Activity Start Date"))
+    #     )
+    # })
+    # 
+    # less_hydro_lab_locations <- reactive({
+    #     req(input$selected_day)
+    #     less_hydro_lab_locations <- less_data()  |> 
+    #         filter(`Activity Start Date` == input$selected_day) |> 
+    #         select(`Monitoring Location ID`)
+    # })
+    # observeEvent(input$selected_day,{
+    #     updateSelectInput(session, "selected_location", "Select Monitoring Location:",
+    #                       choices = unique(less_hydro_lab_locations()$`Monitoring Location ID`))
+    # })
+    output$temperature_data <- renderTable({
+        temp_data()
+        # less_data()
+        # print(less_data())
+    })
 
     hydro_lab_data_wqx_formatted <-  eventReactive(input$generate_formatted_df, {
         append_input_data(hydro_lab_data_wqx(), input$temperature_air, input$result_comment)

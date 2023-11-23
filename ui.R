@@ -9,7 +9,13 @@ bslib::page_navbar(
                  tags$h2("Hydro Lab Data"),
                  sidebarLayout(
                      sidebarPanel(width = 3, 
-                                  fileInput("hydro_lab_file", "Select Hydro Lab File", multiple = TRUE)), 
+                                  fileInput("hydro_lab_file", "Select Hydro Lab File", multiple = TRUE),
+                                  
+                                  selectInput("selected_day", "Select Monitoring Day:", choices = NULL),
+                                  selectInput("selected_location", "Select Monitoring Location:", choices = NULL),
+                                  numericInput("temperature_air", "Enter Air Temperature Measurement", value = 0),
+                                  textAreaInput("result_comment", "Enter Result Comment", rows = 2),
+                                  actionButton("add_result", "Add Result")), 
                      mainPanel(
                          tabsetPanel(
                              type = "pills", 
@@ -34,14 +40,16 @@ bslib::page_navbar(
                              ),
                              tabPanel(
                                  "Enter Additional Data",
+                                 value = "tab_additional",
                                  tags$p(class = "p-3 border rounded", 
                                         "Enter additional AccuWeather 'Temperature, Air' measurement and 'Result Comment' Below"),
                                  # numericInput("temperature_air", "Enter Air Temperature Measurement", value = 0),
                                  # textAreaInput("result_comment", "Enter Result Comment", rows = 3),
-                                 selectInput("selected_day", "Select Monitoring Day:", choices = NULL),
-                                 selectInput("selected_location", "Select Monitoring Location:", choices = NULL),
-                                 numericInput("temperature_air", "Enter Air Temperature Measurement", value = 0),
-                                 textAreaInput("result_comment", "Enter Result Comment", rows = 2),
+                                 # selectInput("selected_day", "Select Monitoring Day:", choices = NULL),
+                                 # selectInput("selected_location", "Select Monitoring Location:", choices = NULL),
+                                 # numericInput("temperature_air", "Enter Air Temperature Measurement", value = 0),
+                                 # textAreaInput("result_comment", "Enter Result Comment", rows = 2),
+                                 tableOutput("temperature_data"),
                                  actionButton("generate_formatted_df", "Generate WQX Formatted Data"),
                                  tags$p(class = "p-3 border rounded", 
                                         "If water body is too shallow, click on button below to generate empty dataframe"),
