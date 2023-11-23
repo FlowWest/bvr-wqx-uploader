@@ -1,7 +1,7 @@
 function(input, output, session) {
-
     # hydro lab -------------------------------------------------------------------------
     uploaded_hydro_lab_data <- reactive({
+        req(input$hydro_lab_file$datapath)
         if (!any(endsWith(input$hydro_lab_file$datapath, ".csv"))) {
             sendSweetAlert(
                 session = session,
@@ -9,18 +9,57 @@ function(input, output, session) {
                 text = "at least one file is not hydrolab, please try uploading again",
                 type = "error"
             )
+            return(NULL)
         }
         purrr::map_df(input$hydro_lab_file$datapath, \(x) parse_hydrolab(x))
-        
     })
     
     hydro_signature <- reactiveVal(NULL)
     hydro_wqx_status <- reactiveVal(NULL)
     common_hydro_lab_wqx_data <- reactiveVal(NULL)
+
+    # 
+
+    observe({
+        updateSelectInput(
+            session, 
+            "selected_day", 
+            "Select Monitoring Day:", 
+            choices = unique(as.character(uploaded_hydro_lab_data()$"Date"))
+        )
+    })
+    
+    filtered_hydro_lab_data <- reactive({
+        req(input$selected_day)  # Ensure the selected_day is not NULL
+        
+        # Filter uploaded_hydro_lab_data based on the selected day
+        uploaded_data <- uploaded_hydro_lab_data()
+        filtered_data <- uploaded_data |> 
+            filter(Date == input$selected_day) 
+        choices <- colnames(filtered_data)
+        return(choices)
+    })
+    
+    hydro_lab_locations <- reactive({
+        uploaded_hydro_lab_data_filtered <- uploaded_hydro_lab_data() |>
+            filter(Date == input$selected_day) |> 
+            select(location_id)
+        })
+
+    observe({
+        updateSelectInput(session, "selected_location", "Select Monitoring Location:",
+        choices = unique(as.character(hydro_lab_locations())))
+    })
+        
     
     hydro_lab_data_wqx <- reactive({
         hydro_lab_to_wqx(uploaded_hydro_lab_data())
     })
+    
+
+    
+    
+
     hydro_lab_data_wqx_formatted <-  eventReactive(input$generate_formatted_df, {
         append_input_data(hydro_lab_data_wqx(), input$temperature_air, input$result_comment)
     })
@@ -388,8 +427,8 @@ function(input, output, session) {
             )
         }
     })
-    session$onSessionEnded(function() {
-        stopApp()
-    })
+    # session$onSessionEnded(function() {
+    #     stopApp()
+    # })
 }
     
