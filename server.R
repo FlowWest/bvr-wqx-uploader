@@ -179,7 +179,6 @@ function(input, output, session) {
         Sys.sleep(25)
         return(cdx_get_status(session, dataset_id))
         
-        # hydro_wqx_status(status$StatusName)
     })
     
     output$hydro_upload_status <- renderUI({
@@ -195,6 +194,10 @@ function(input, output, session) {
             )
         }
     })
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
     
     # alpha lab -------------------------------------------------------------------------------
     
