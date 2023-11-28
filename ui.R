@@ -13,9 +13,10 @@ bslib::page_navbar(
                                   conditionalPanel(condition="input.tabs == 'additional'",
                                       selectInput("selected_location", "Select Monitoring Location:", choices = NULL),
                                       selectInput("selected_day", "Select Monitoring Day:", choices = NULL),
-                                      numericInput("temperature_air", "Enter Air Temperature Measurement", value = 0),
+                                      numericInput("temperature_air", "Enter Air Temperature Measurement", value = ""),
                                       textAreaInput("result_comment", "Enter Result Comment", rows = 2),
-                                      actionButton("add_result", "Add Result")
+                                      actionButton("add_result", "Add Result"),
+                                      actionButton("delete_result", "Delete Last Added Result")
                                       )
                                     ),
                      mainPanel(
@@ -49,10 +50,11 @@ bslib::page_navbar(
                                         "Enter additional AccuWeather 'Temperature, Air' measurement and 'Result Comment' for each date and location in the sidebar panel. The table below will show"),
                                  tableOutput("temperature_data"),
                                  actionButton("generate_formatted_df", "Generate WQX Ready Data"),
+                                 textOutput("check_df_message"),
                                  tags$p(class = "p-3 border rounded", 
                                         "If water body is too shallow, click on button below to generate empty dataframe after inputing air temperature and result comment"),
                                  actionButton("generate_df", "Generate Empty WQX Data Sheet"),
-                                 textOutput("check_df_message"),
+                                 textOutput("check_empty_df_message"),
                                  
                              ),
                              tabPanel(
@@ -67,8 +69,8 @@ bslib::page_navbar(
                                                       tags$div(HTML("<b> Starting WQX upload. Please wait 25 seconds for the upload status from CDX...</b>"),id="loadmessage")),
                                      uiOutput("hydro_upload_status")
                                  ),
+                                 # DT::dataTableOutput("hydro_lab_wqx_formatted")
                                  tableOutput("hydro_lab_wqx_formatted")
-                                 # tableOutput("hydro_lab_wqx_empty")
                              )
                          )
                      )

@@ -59,7 +59,6 @@ function(input, output, session) {
     })
     
     temp_data <- reactiveValues(filtered_data = NULL)
-    wqx_data <- reactiveValues(empty_data = NULL)
     observeEvent(input$add_result,{
         if (!is.null(hydro_lab_data$formatted_data)){
             hydro_lab_data_wqx_filtered <- hydro_lab_data$formatted_data |>
@@ -76,30 +75,44 @@ function(input, output, session) {
             temp_data$filtered_data <- rbind(temp_data$filtered_data, with_temp_data)
         }
     })
+    
+    observeEvent(input$delete_result, {
+        temp_data$filtered_data <- temp_data$filtered_data %>%
+            slice(-n())
+        if (!is.null(hydro_lab_data$formatted_data)){
+            hydro_lab_data$formatted_data <- hydro_lab_data$formatted_data |> 
+                slice(-n())
+        }
+    })
 
     output$temperature_data <- renderTable({
         temp_data$filtered_data
     }, caption = "Additional Data", caption.placement = "top")
     
     hydro_lab_data_wqx_formatted <-  eventReactive(input$generate_formatted_df, {
+        req(input$hydro_lab_file$datapath)
         hydro_lab_data$formatted_data
     })
     
+    wqx_data <- reactiveValues(empty_data = NULL)
     hydro_lab_data_wqx_empty <- eventReactive(input$generate_df, {
-        generate_empty_data(input$temperature_air, input$result_comment)
+        new_sheet <- generate_empty_data(input$temperature_air, input$result_comment)
+        wqx_data$empty_data <- rbind(wqx_data$empty_data, new_sheet)
     })
     
     observeEvent(input$generate_formatted_df, {
         common_hydro_lab_wqx_data(hydro_lab_data_wqx_formatted())
         output$check_df_message <- renderText({
-            "Check Formatted Data tab for generated formatted data sheet." 
+            Sys.sleep(0.5)
+            "Check Formatted Data tab for generated WQX data sheet." 
         })
     })
     
     observeEvent(input$generate_df, {
         common_hydro_lab_wqx_data(hydro_lab_data_wqx_empty())
-        output$check_df_message <- renderText({
-           "Check Formatted Data tab for generated empty data sheet." 
+        output$check_empty_df_message <- renderText({
+            Sys.sleep(0.5)
+           "Check Formatted Data tab for generated empty data sheet."
        })
     })
     
@@ -149,6 +162,10 @@ function(input, output, session) {
         req(common_hydro_lab_wqx_data())
         common_hydro_lab_wqx_data()
     })
+    
+    # observeEvent(input$wqx_table_cell_edit, {
+    #     common_hydro_lab_wqx_data <<- DT::editData(common_hydro_lab_wqx_data(), input$hydro_lab_table_cell_edit)
+    # })
 
     
     output$hydro_lab_download <- downloadHandler(
