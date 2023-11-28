@@ -203,7 +203,7 @@ append_input_data <- function(data, temperature_air, result_comment){
     return(wqx_df)
 }
 
-generate_empty_data <- function(temperature_air){
+generate_empty_data <- function(temperature_air, result_comment){
     empty_df <- data.frame(
         "Project ID" =  c(""),
         "Monitoring Location ID" = c(""),
@@ -239,7 +239,7 @@ generate_empty_data <- function(temperature_air){
         "Result Detection/Quantitation Limit Type" = c(""),
         "Result Detection/Quantitation Limit Measure" = c(""), 
         "Result Detection/Quantitation Limit Unit" = c(""),
-        "Result Comment" = c("Too Shallow. No Access.")
+        "Result Comment" = result_comment
     )
     air_df <- data.frame(
         "Project ID" =  c(""),
@@ -276,7 +276,7 @@ generate_empty_data <- function(temperature_air){
         "Result Detection/Quantitation Limit Type" = c(""),
         "Result Detection/Quantitation Limit Measure" = c(""), 
         "Result Detection/Quantitation Limit Unit" = c(""),
-        "Result Comment" = c("")
+        "Result Comment" = result_comment
         )
 
     wqx_df <- rbind(empty_df, air_df)

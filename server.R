@@ -1,6 +1,5 @@
 function(input, output, session) {
     # hydro lab -------------------------------------------------------------------------
-
     uploaded_hydro_lab_data <- reactive({
         req(input$hydro_lab_file$datapath)
         if (!any(endsWith(input$hydro_lab_file$datapath, ".csv"))) {
@@ -31,113 +30,76 @@ function(input, output, session) {
     hydro_signature <- reactiveVal(NULL)
     hydro_wqx_status <- reactiveVal(NULL)
     common_hydro_lab_wqx_data <- reactiveVal(NULL)
+    hydro_lab_data <- reactiveValues(formatted_data = NULL)
     
     hydro_lab_data_wqx <- reactive({
-        hydro_lab_to_wqx(rvals$data)
+        req(input$hydro_lab_file$datapath)
+        hydro_lab_data$formatted_data <- hydro_lab_to_wqx(rvals$data)
     })
-    
+
     observe({
         updateSelectInput(session, "selected_location", "Select Monitoring Location:",
         choices = unique(hydro_lab_data_wqx()$`Monitoring Location ID`))
     })
-    
+    # 
     hydro_lab_dates <- reactive({
         req(input$selected_location)
-        hydro_lab_locations <- hydro_lab_data_wqx()  |> 
-            filter(`Monitoring Location ID` == input$selected_location) |> 
-            select(`Activity Start Date`) 
+        hydro_lab_locations <- hydro_lab_data_wqx()  |>
+            filter(`Monitoring Location ID` == input$selected_location) |>
+            select(`Activity Start Date`)
         })
-    
-    observe({
-        updateSelectInput(
-            session, 
-            "selected_day", 
-            "Select Monitoring Day:", 
-            choices = unique(as.character(hydro_lab_dates()$"Activity Start Date"))
-        )
-    })
-    
-    
-    temp_data <- eventReactive(input$add_result,{
-        req(input$selected_day)
-        hydro_lab_data_wqx_filtered <- hydro_lab_data_wqx() |> 
-            filter(`Activity Start Date` == input$selected_day & `Monitoring Location ID` == input$selected_location)
-        # filter(`Monitoring Location ID` == input$selected_location)
-        with_temp_data <- append_input_data(hydro_lab_data_wqx_filtered, input$temperature_air, input$result_comment)
-        temp_data <- with_temp_data |> 
-            filter(`Characteristic Name` == "Temperature, Air")
-    })
-    
-    less_data <- eventReactive(input$add_result,{
-        filtered_data <- hydro_lab_data_wqx() %>%
-            filter(`Monitoring Location ID` == input$selected_location)
-        
-        # Further filtering based on selected_day
-        if (!is.null(input$selected_day)) {
-            filtered_data <- filtered_data %>%
-                filter(`Activity Start Date` != input$selected_day)
-        }
-        
-        return(filtered_data)
-    
-        
-        # filtered_out_data <- hydro_lab_data_wqx() |>
-        #     filter(`Monitoring Location ID` == input$selected_location) |> 
-        #     filter(`Activity Start Date` != input$selected_day)
-        })
-    less_data <- reactive({
-        # Get the previously filtered data
-        previously_filtered_data <- less_data()
-        if (!is.null(input$selected_day)) {
-            previously_filtered_data <- previously_filtered_data %>%
-                filter(`Activity Start Date` != input$selected_day)
-        }
 
-    })
-    observeEvent(input$add_result,{
+    observe({
         updateSelectInput(
             session,
             "selected_day",
             "Select Monitoring Day:",
-            choices = unique(as.character(less_data()$"Activity Start Date"))
+            choices = unique(as.character(hydro_lab_dates()$"Activity Start Date"))
         )
     })
-
-    # less_hydro_lab_locations <- reactive({
-    #     req(input$selected_day)
-    #     less_hydro_lab_locations <- less_data()  |> 
-    #         filter(`Activity Start Date` == input$selected_day) |> 
-    #         select(`Monitoring Location ID`)
-    # })
-    # observeEvent(input$selected_day,{
-    #     updateSelectInput(session, "selected_location", "Select Monitoring Location:",
-    #                       choices = unique(less_hydro_lab_locations()$`Monitoring Location ID`))
-    # })
-    output$temperature_data <- renderTable({
-        temp_data()
-        # less_data()
-        # print(less_data())
+    
+    temp_data <- reactiveValues(filtered_data = NULL)
+    wqx_data <- reactiveValues(empty_data = NULL)
+    observeEvent(input$add_result,{
+        if (!is.null(hydro_lab_data$formatted_data)){
+            hydro_lab_data_wqx_filtered <- hydro_lab_data$formatted_data |>
+                filter(`Activity Start Date` == input$selected_day & `Monitoring Location ID` == input$selected_location)
+            with_temp_data <- append_input_data(hydro_lab_data_wqx_filtered, input$temperature_air, input$result_comment)
+            with_temp_data <- with_temp_data |>
+                filter(`Characteristic Name` == "Temperature, Air") |> 
+                tail(1)
+            hydro_lab_data$formatted_data <- rbind(hydro_lab_data$formatted_data, with_temp_data)
+            temp_data$filtered_data <- rbind(temp_data$filtered_data, with_temp_data)
+        }else{
+            with_temp_data <- generate_empty_data(input$temperature_air, input$result_comment) |> 
+                filter(`Characteristic Name` == "Temperature, Air")
+            temp_data$filtered_data <- rbind(temp_data$filtered_data, with_temp_data)
+        }
     })
 
+    output$temperature_data <- renderTable({
+        temp_data$filtered_data
+    }, caption = "Additional Data", caption.placement = "top")
+    
     hydro_lab_data_wqx_formatted <-  eventReactive(input$generate_formatted_df, {
-        append_input_data(hydro_lab_data_wqx(), input$temperature_air, input$result_comment)
+        hydro_lab_data$formatted_data
     })
     
     hydro_lab_data_wqx_empty <- eventReactive(input$generate_df, {
-        generate_empty_data(input$temperature_air)
+        generate_empty_data(input$temperature_air, input$result_comment)
     })
     
     observeEvent(input$generate_formatted_df, {
         common_hydro_lab_wqx_data(hydro_lab_data_wqx_formatted())
         output$check_df_message <- renderText({
-            "Check Formatted Data tab for generated formatted data frame." 
+            "Check Formatted Data tab for generated formatted data sheet." 
         })
     })
     
     observeEvent(input$generate_df, {
         common_hydro_lab_wqx_data(hydro_lab_data_wqx_empty())
-       output$check_df_message <- renderText({
-           "Check Formatted Data tab for generated empty data frame." 
+        output$check_df_message <- renderText({
+           "Check Formatted Data tab for generated empty data sheet." 
        })
     })
     
@@ -249,11 +211,7 @@ function(input, output, session) {
             )
         }
     })
-<<<<<<< Updated upstream
-=======
 
->>>>>>> Stashed changes
-    
     # alpha lab -------------------------------------------------------------------------------
     
     uploaded_alpha_lab_data <- reactive({

@@ -10,18 +10,22 @@ bslib::page_navbar(
                  sidebarLayout(
                      sidebarPanel(width = 3, 
                                   fileInput("hydro_lab_file", "Select Hydro Lab File", multiple = TRUE),
-                                  
-                                  selectInput("selected_location", "Select Monitoring Location:", choices = NULL),
-                                  selectInput("selected_day", "Select Monitoring Day:", choices = NULL),
-                                  numericInput("temperature_air", "Enter Air Temperature Measurement", value = 0),
-                                  textAreaInput("result_comment", "Enter Result Comment", rows = 2),
-                                  actionButton("add_result", "Add Result")), 
+                                  conditionalPanel(condition="input.tabs == 'additional'",
+                                      selectInput("selected_location", "Select Monitoring Location:", choices = NULL),
+                                      selectInput("selected_day", "Select Monitoring Day:", choices = NULL),
+                                      numericInput("temperature_air", "Enter Air Temperature Measurement", value = 0),
+                                      textAreaInput("result_comment", "Enter Result Comment", rows = 2),
+                                      actionButton("add_result", "Add Result")
+                                      )
+                                    ),
                      mainPanel(
                          tabsetPanel(
+                             id = "tabs",
                              type = "pills", 
                              tabPanel(
                                  "Qa/
-                                 Qc", 
+                                 Qc",
+                                 value = "qa_qc",
                                  tagList(
                                      tags$p(class = "p-3 border rounded", 
                                             "This section provides view of raw data, as well as results for Qa/Qc checks. Verify that
@@ -40,21 +44,15 @@ bslib::page_navbar(
                              ),
                              tabPanel(
                                  "Enter Additional Data",
-                                 value = "tab_additional",
+                                 value = "additional",
                                  tags$p(class = "p-3 border rounded", 
-                                        "Enter additional AccuWeather 'Temperature, Air' measurement and 'Result Comment' Below"),
-                                 # numericInput("temperature_air", "Enter Air Temperature Measurement", value = 0),
-                                 # textAreaInput("result_comment", "Enter Result Comment", rows = 3),
-                                 # selectInput("selected_day", "Select Monitoring Day:", choices = NULL),
-                                 # selectInput("selected_location", "Select Monitoring Location:", choices = NULL),
-                                 # numericInput("temperature_air", "Enter Air Temperature Measurement", value = 0),
-                                 # textAreaInput("result_comment", "Enter Result Comment", rows = 2),
+                                        "Enter additional AccuWeather 'Temperature, Air' measurement and 'Result Comment' for each date and location in the sidebar panel. The table below will show"),
                                  tableOutput("temperature_data"),
-                                 actionButton("generate_formatted_df", "Generate WQX Formatted Data"),
+                                 actionButton("generate_formatted_df", "Generate WQX Ready Data"),
                                  tags$p(class = "p-3 border rounded", 
-                                        "If water body is too shallow, click on button below to generate empty dataframe"),
-                                 actionButton("generate_df", "Generate Empty WQX Data Frame"),
-                                 textOutput("check_df_message")
+                                        "If water body is too shallow, click on button below to generate empty dataframe after inputing air temperature and result comment"),
+                                 actionButton("generate_df", "Generate Empty WQX Data Sheet"),
+                                 textOutput("check_df_message"),
                                  
                              ),
                              tabPanel(
