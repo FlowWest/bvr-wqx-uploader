@@ -1,7 +1,9 @@
 function(input, output, session) {
 
     # hydro lab -------------------------------------------------------------------------
+
     uploaded_hydro_lab_data <- reactive({
+        req(input$hydro_lab_file$datapath)
         if (!any(endsWith(input$hydro_lab_file$datapath, ".csv"))) {
             sendSweetAlert(
                 session = session,
@@ -14,44 +16,65 @@ function(input, output, session) {
         
     })
     
+    # handle data editing by the user
+    rvals <- reactiveValues(data = NULL)
+    
+    observe({
+        rvals$data <- uploaded_hydro_lab_data()
+    })
+    
+    observeEvent(input$hydro_lab_table_cell_edit, {
+        rvals$data <<- DT::editData(rvals$data, input$hydro_lab_table_cell_edit)
+    })
+    
+    
+    # handle data uploads 
     hydro_signature <- reactiveVal(NULL)
     hydro_wqx_status <- reactiveVal(NULL)
     common_hydro_lab_wqx_data <- reactiveVal(NULL)
     
     hydro_lab_data_wqx <- reactive({
-        hydro_lab_to_wqx(uploaded_hydro_lab_data())
+        hydro_lab_to_wqx(rvals$data)
     })
     hydro_lab_data_wqx_formatted <-  eventReactive(input$generate_formatted_df, {
         append_input_data(hydro_lab_data_wqx(), input$temperature_air, input$result_comment)
     })
+    
     hydro_lab_data_wqx_empty <- eventReactive(input$generate_df, {
         generate_empty_data(input$temperature_air)
     })
+    
     observeEvent(input$generate_formatted_df, {
         common_hydro_lab_wqx_data(hydro_lab_data_wqx_formatted())
         output$check_df_message <- renderText({
             "Check Formatted Data tab for generated formatted data frame." 
         })
     })
+    
     observeEvent(input$generate_df, {
         common_hydro_lab_wqx_data(hydro_lab_data_wqx_empty())
        output$check_df_message <- renderText({
            "Check Formatted Data tab for generated empty data frame." 
        })
     })
-    hydro_path_to_most_recent_download <- reactive({
-        
-    })
     
-    output$hydro_lab_table <- renderTable({
-        
+    output$hydro_lab_table <- DT::renderDT({
+        editable_cols <- rep(TRUE, 16)
+        editable_cols[1:2] <- FALSE
+        editable_cols[16] <- FALSE
         validate(need(input$hydro_lab_file, message = "Select a file to view"))
-        uploaded_hydro_lab_data()
-    })
+        DT::datatable(rvals$data, editable = list(target = "cell", disable = list(columns = c(1,2, 16)))) |> 
+            DT::formatStyle(
+                c("CHL"), 
+                target = "cel", 
+                backgroundColor = DT::styleInterval(1000, c("white", "#f29f99"))
+            )
+    }, options = list(dom = "t", ordering = FALSE))
+
     
     output$hydro_lab_qaqc_table <- renderTable({
         validate(need(input$hydro_lab_file, message = "Select a file to view qa/qc results."))
-        validation_results <- validate::confront(uploaded_hydro_lab_data(), hydro_lab_range_rules)
+        validation_results <- validate::confront(rvals$data, hydro_lab_range_rules)
         as_tibble(summary(validation_results)) |>
             mutate(pass = case_when(
                 error == TRUE ~ emo::ji("warning"), 
@@ -61,13 +84,11 @@ function(input, output, session) {
                 TRUE ~ emo::ji("question")
             ), 
             name = stringr::str_replace_all(name, "\\.", " ")) 
-        # |> 
-        #     select(`Test Name` = name, `Test Expression` = expression, `Test Passed` = pass)
     })
     
     output$hydro_lab_custom_qaqc_table <- renderTable({
         validate(need(input$hydro_lab_file, message = "Select a file to view custom qa/qc results."))
-        validation_results <- validate::confront(uploaded_hydro_lab_data(), hydro_lab_custom_rules)
+        validation_results <- validate::confront(rvals$data, hydro_lab_custom_rules)
         as_tibble(summary(validation_results)) |>
             mutate(pass = case_when(
                 error == TRUE ~ emo::ji("warning"), 
