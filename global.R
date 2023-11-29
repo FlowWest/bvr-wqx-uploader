@@ -31,8 +31,8 @@ hydro_lab_range_rules <- validator(
     "Dissolved Oxygen in valid range" = in_range(as.numeric(DO), 0, 20), 
     "pH in valid range" = in_range(as.numeric(pH), 5, 11), 
     "Turbidity in valid range" = in_range(as.numeric(Turb), 1.5, 1000),
-    "Chlorophyl in valid range" = in_range(as.numeric(CHL), 0, 5000),
-    "Phycocyanin in valid range" = in_range(as.numeric(PCY), 0, 5000)
+    "Chlorophyl in valid range" = in_range(as.numeric(CHL), 0.03, 50),
+    "Phycocyanin in valid range" = in_range(as.numeric(PCY), 100, 200000)
 )
 
 hydro_lab_custom_rules <- validator(
