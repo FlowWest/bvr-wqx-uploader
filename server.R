@@ -59,6 +59,8 @@ function(input, output, session) {
     })
     
     temp_data <- reactiveValues(filtered_data = NULL)
+    wqx_data <- reactiveValues(empty_data = NULL)
+    
     observeEvent(input$add_result,{
         if (!is.null(hydro_lab_data$formatted_data)){
             hydro_lab_data_wqx_filtered <- hydro_lab_data$formatted_data |>
@@ -67,21 +69,37 @@ function(input, output, session) {
             with_temp_data <- with_temp_data |>
                 filter(`Characteristic Name` == "Temperature, Air") |> 
                 tail(1)
+            hydro_lab_data$formatted_data <- hydro_lab_data$formatted_data |> 
+                mutate(`Result Comment` = ifelse(`Activity Start Date` == input$selected_day & `Monitoring Location ID` == input$selected_location, input$result_comment, `Result Comment`))
             hydro_lab_data$formatted_data <- rbind(hydro_lab_data$formatted_data, with_temp_data)
             temp_data$filtered_data <- rbind(temp_data$filtered_data, with_temp_data)
         }else{
             with_temp_data <- generate_empty_data(input$temperature_air, input$result_comment) |> 
                 filter(`Characteristic Name` == "Temperature, Air")
             temp_data$filtered_data <- rbind(temp_data$filtered_data, with_temp_data)
+            new_sheet <- generate_empty_data(input$temperature_air, input$result_comment)
+            wqx_data$empty_data <- rbind(wqx_data$empty_data, new_sheet)
+            
         }
     })
     
     observeEvent(input$delete_result, {
+        print(wqx_data$empty_data)
         temp_data$filtered_data <- temp_data$filtered_data %>%
             slice(-n())
         if (!is.null(hydro_lab_data$formatted_data)){
-            hydro_lab_data$formatted_data <- hydro_lab_data$formatted_data |> 
+            last_row <- tail(hydro_lab_data$formatted_data, 1)
+            last_location <- last_row$`Monitoring Location ID`
+            last_date <- last_row$`Activity Start Date`
+            
+            hydro_lab_data$formatted_data <- hydro_lab_data$formatted_data %>%
+                mutate(`Result Comment` = ifelse(`Activity Start Date` == last_date & `Monitoring Location ID` == last_location, "", `Result Comment`)) |> 
                 slice(-n())
+                
+            }
+        else if(!is.null(wqx_data$empty_data)){
+            wqx_data$empty_data <- wqx_data$empty_data |> 
+                slice_head(n = -12)
         }
     })
 
@@ -94,17 +112,15 @@ function(input, output, session) {
         hydro_lab_data$formatted_data
     })
     
-    wqx_data <- reactiveValues(empty_data = NULL)
     hydro_lab_data_wqx_empty <- eventReactive(input$generate_df, {
-        new_sheet <- generate_empty_data(input$temperature_air, input$result_comment)
-        wqx_data$empty_data <- rbind(wqx_data$empty_data, new_sheet)
+        wqx_data$empty_data
     })
     
     observeEvent(input$generate_formatted_df, {
         common_hydro_lab_wqx_data(hydro_lab_data_wqx_formatted())
         output$check_df_message <- renderText({
             Sys.sleep(0.5)
-            "Check Formatted Data tab for generated WQX data sheet." 
+            "Check Formatted Data tab for generated WQX data sheet. To delete the added data, click on 'Delete Last Added Result'." 
         })
     })
     
@@ -112,7 +128,7 @@ function(input, output, session) {
         common_hydro_lab_wqx_data(hydro_lab_data_wqx_empty())
         output$check_empty_df_message <- renderText({
             Sys.sleep(0.5)
-           "Check Formatted Data tab for generated empty data sheet."
+           "Check Formatted Data tab for generated empty data sheet. To delete the added data, click on 'Delete Last Added Result' button."
        })
     })
     
