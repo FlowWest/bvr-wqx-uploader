@@ -84,7 +84,7 @@ function(input, output, session) {
     })
     
     observeEvent(input$delete_result, {
-        print(wqx_data$empty_data)
+        req(input$add_result)
         temp_data$filtered_data <- temp_data$filtered_data %>%
             slice(-n())
         if (!is.null(hydro_lab_data$formatted_data)){
