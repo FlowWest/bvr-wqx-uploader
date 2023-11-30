@@ -18,6 +18,7 @@ deps <- c("shinycssloaders",
           "tidyverse",
           "shiny",
           "remotes",
+          "DT",
           "emo",
           "wqxWeb"
           )

@@ -78,7 +78,7 @@ hydro_lab_to_wqx <- function(data) {
                "Characteristic Name User Supplied" = "",
                "Method Speciation" = "",
                "Result Detection Condition" = "",
-               "Result Value" = if_else(`Result Value`== 999999, NA, `Result Value`),
+               "Result Value" = if_else(`Result Value`== 999999, "", `Result Value`),
                "Result Unit" = `Result Unit`,
                "Result Measure Qualifier" = "",
                "Result Sample Fraction" = "",
@@ -203,7 +203,7 @@ append_input_data <- function(data, temperature_air, result_comment){
     return(wqx_df)
 }
 
-generate_empty_data <- function(temperature_air){
+generate_empty_data <- function(temperature_air = NULL, result_comment = NULL){
     empty_df <- data.frame(
         "Project ID" =  c(""),
         "Monitoring Location ID" = c(""),
@@ -239,7 +239,7 @@ generate_empty_data <- function(temperature_air){
         "Result Detection/Quantitation Limit Type" = c(""),
         "Result Detection/Quantitation Limit Measure" = c(""), 
         "Result Detection/Quantitation Limit Unit" = c(""),
-        "Result Comment" = c("Too Shallow. No Access.")
+        "Result Comment" = ifelse(!is.null(result_comment), result_comment, c(""))
     )
     air_df <- data.frame(
         "Project ID" =  c(""),
@@ -261,7 +261,7 @@ generate_empty_data <- function(temperature_air){
         "Characteristic Name User Supplied" = c(""),
         "Method Speciation" = c(""),
         "Result Detection Condition" = c(""),
-        "Result Value" = temperature_air,
+        "Result Value" = ifelse(!is.null(temperature_air), temperature_air, c("")),
         "Result Unit" = "deg F",
         "Result Measure Qualifier" = c(""),
         "Result Sample Fraction" = c(""),
@@ -276,7 +276,7 @@ generate_empty_data <- function(temperature_air){
         "Result Detection/Quantitation Limit Type" = c(""),
         "Result Detection/Quantitation Limit Measure" = c(""), 
         "Result Detection/Quantitation Limit Unit" = c(""),
-        "Result Comment" = c("")
+        "Result Comment" = ifelse(!is.null(result_comment), result_comment, c(""))
         )
 
     wqx_df <- rbind(empty_df, air_df)

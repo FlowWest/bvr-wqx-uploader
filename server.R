@@ -1,7 +1,5 @@
 function(input, output, session) {
-
     # hydro lab -------------------------------------------------------------------------
-
     uploaded_hydro_lab_data <- reactive({
         req(input$hydro_lab_file$datapath)
         if (!any(endsWith(input$hydro_lab_file$datapath, ".csv"))) {
@@ -11,9 +9,9 @@ function(input, output, session) {
                 text = "at least one file is not hydrolab, please try uploading again",
                 type = "error"
             )
+            return(NULL)
         }
         purrr::map_df(input$hydro_lab_file$datapath, \(x) parse_hydrolab(x))
-        
     })
     
     # handle data editing by the user
@@ -32,29 +30,105 @@ function(input, output, session) {
     hydro_signature <- reactiveVal(NULL)
     hydro_wqx_status <- reactiveVal(NULL)
     common_hydro_lab_wqx_data <- reactiveVal(NULL)
+    hydro_lab_data <- reactiveValues(formatted_data = NULL)
     
     hydro_lab_data_wqx <- reactive({
-        hydro_lab_to_wqx(rvals$data)
+        req(input$hydro_lab_file$datapath)
+        hydro_lab_data$formatted_data <- hydro_lab_to_wqx(rvals$data)
     })
+
+    observe({
+        updateSelectInput(session, "selected_location", "Select Monitoring Location:",
+        choices = unique(hydro_lab_data_wqx()$`Monitoring Location ID`))
+    })
+    # 
+    hydro_lab_dates <- reactive({
+        req(input$selected_location)
+        hydro_lab_locations <- hydro_lab_data_wqx()  |>
+            filter(`Monitoring Location ID` == input$selected_location) |>
+            select(`Activity Start Date`)
+        })
+
+    observe({
+        updateSelectInput(
+            session,
+            "selected_day",
+            "Select Monitoring Day:",
+            choices = unique(as.character(hydro_lab_dates()$"Activity Start Date"))
+        )
+    })
+    
+    temp_data <- reactiveValues(filtered_data = NULL)
+    wqx_data <- reactiveValues(empty_data = NULL)
+    
+    observeEvent(input$add_result,{
+        if (!is.null(hydro_lab_data$formatted_data)){
+            hydro_lab_data_wqx_filtered <- hydro_lab_data$formatted_data |>
+                filter(`Activity Start Date` == input$selected_day & `Monitoring Location ID` == input$selected_location)
+            with_temp_data <- append_input_data(hydro_lab_data_wqx_filtered, input$temperature_air, input$result_comment)
+            with_temp_data <- with_temp_data |>
+                filter(`Characteristic Name` == "Temperature, Air") |> 
+                tail(1)
+            hydro_lab_data$formatted_data <- hydro_lab_data$formatted_data |> 
+                mutate(`Result Comment` = ifelse(`Activity Start Date` == input$selected_day & `Monitoring Location ID` == input$selected_location, input$result_comment, `Result Comment`))
+            hydro_lab_data$formatted_data <- rbind(hydro_lab_data$formatted_data, with_temp_data)
+            temp_data$filtered_data <- rbind(temp_data$filtered_data, with_temp_data)
+        }else{
+            with_temp_data <- generate_empty_data(input$temperature_air, input$result_comment) |> 
+                filter(`Characteristic Name` == "Temperature, Air")
+            temp_data$filtered_data <- rbind(temp_data$filtered_data, with_temp_data)
+            new_sheet <- generate_empty_data(input$temperature_air, input$result_comment)
+            wqx_data$empty_data <- rbind(wqx_data$empty_data, new_sheet)
+            
+        }
+    })
+    
+    observeEvent(input$delete_result, {
+        req(input$add_result)
+        temp_data$filtered_data <- temp_data$filtered_data %>%
+            slice(-n())
+        if (!is.null(hydro_lab_data$formatted_data)){
+            last_row <- tail(hydro_lab_data$formatted_data, 1)
+            last_location <- last_row$`Monitoring Location ID`
+            last_date <- last_row$`Activity Start Date`
+            
+            hydro_lab_data$formatted_data <- hydro_lab_data$formatted_data %>%
+                mutate(`Result Comment` = ifelse(`Activity Start Date` == last_date & `Monitoring Location ID` == last_location, "", `Result Comment`)) |> 
+                slice(-n())
+                
+            }
+        else if(!is.null(wqx_data$empty_data)){
+            wqx_data$empty_data <- wqx_data$empty_data |> 
+                slice_head(n = -12)
+        }
+    })
+
+    output$temperature_data <- renderTable({
+        temp_data$filtered_data
+    }, caption = "Additional Data", caption.placement = "top")
+    
     hydro_lab_data_wqx_formatted <-  eventReactive(input$generate_formatted_df, {
-        append_input_data(hydro_lab_data_wqx(), input$temperature_air, input$result_comment)
+        req(input$hydro_lab_file$datapath)
+        hydro_lab_data$formatted_data
     })
     
     hydro_lab_data_wqx_empty <- eventReactive(input$generate_df, {
-        generate_empty_data(input$temperature_air)
+        wqx_data$empty_data
     })
     
     observeEvent(input$generate_formatted_df, {
         common_hydro_lab_wqx_data(hydro_lab_data_wqx_formatted())
         output$check_df_message <- renderText({
-            "Check Formatted Data tab for generated formatted data frame." 
+            Sys.sleep(0.5)
+            "Check Formatted Data tab for generated WQX data sheet. To delete the added data, click on 'Delete Last Added Result'." 
         })
     })
     
     observeEvent(input$generate_df, {
         common_hydro_lab_wqx_data(hydro_lab_data_wqx_empty())
-       output$check_df_message <- renderText({
-           "Check Formatted Data tab for generated empty data frame." 
+        output$check_empty_df_message <- renderText({
+            Sys.sleep(0.5)
+           "Check Formatted Data tab for generated empty data sheet. To delete the added data, click on 'Delete Last Added Result' button."
        })
     })
     
@@ -104,6 +178,10 @@ function(input, output, session) {
         req(common_hydro_lab_wqx_data())
         common_hydro_lab_wqx_data()
     })
+    
+    # observeEvent(input$wqx_table_cell_edit, {
+    #     common_hydro_lab_wqx_data <<- DT::editData(common_hydro_lab_wqx_data(), input$hydro_lab_table_cell_edit)
+    # })
 
     
     output$hydro_lab_download <- downloadHandler(
@@ -151,7 +229,6 @@ function(input, output, session) {
         Sys.sleep(25)
         return(cdx_get_status(session, dataset_id))
         
-        # hydro_wqx_status(status$StatusName)
     })
     
     output$hydro_upload_status <- renderUI({
@@ -167,7 +244,7 @@ function(input, output, session) {
             )
         }
     })
-    
+
     # alpha lab -------------------------------------------------------------------------------
     
     uploaded_alpha_lab_data <- reactive({
@@ -409,8 +486,8 @@ function(input, output, session) {
             )
         }
     })
-    session$onSessionEnded(function() {
-        stopApp()
-    })
+    # session$onSessionEnded(function() {
+    #     stopApp()
+    # })
 }
     
