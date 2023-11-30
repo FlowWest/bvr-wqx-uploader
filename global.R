@@ -9,8 +9,8 @@ library(shinyWidgets)
 library(shinycssloaders)
 
 # change this based on who is using the app
-# reticulate::use_miniconda("wqxUpload")
-reticulate::use_virtualenv("wqxUpload")
+reticulate::use_miniconda("wqxUpload")
+# reticulate::use_virtualenv("wqxUpload")
 
 source("hydro-lab.R")
 source("alpha-lab.R")
@@ -32,7 +32,7 @@ hydro_lab_range_rules <- validator(
     "pH in valid range" = in_range(as.numeric(pH), 5, 11), 
     "Turbidity in valid range" = in_range(as.numeric(Turb), 1.5, 1000),
     "Chlorophyl in valid range" = in_range(as.numeric(CHL), 0.03, 50),
-    "Phycocyanin in valid range" = in_range(as.numeric(PCY), 100, 200000)
+    "Phycocyanin in valid range" = in_range(as.numeric(PCY), 97, 200600)
 )
 
 hydro_lab_custom_rules <- validator(
