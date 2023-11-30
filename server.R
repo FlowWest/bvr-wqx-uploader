@@ -192,7 +192,7 @@ function(input, output, session) {
             DT::formatStyle(
                 c("PCY"), 
                 target = "cel",
-                backgroundColor = DT::styleInterval(c(97, 200600), c("#f29f99", "white", "#f29f99"))
+                backgroundColor = DT::styleInterval(c(100, 200000), c("#f29f99", "white", "#f29f99"))
             ) 
     })
 
