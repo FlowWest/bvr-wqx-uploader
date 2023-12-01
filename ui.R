@@ -33,7 +33,7 @@ bslib::page_navbar(
                                             all validations pass, and proceed to next tab when ready.")
                                  ),
                                  card(card_header("Raw Data"), card_body(DT::dataTableOutput("hydro_lab_table"))), 
-                                 tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - ", emo::ji("check"), "- test passed, ", emo::ji("x"), "- test failed", emo::ji("warning"), "-verify manually (usually safe to ignore)"), 
+                                 tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - 'O', - test passed, ', 'X' - test failed, '!' - verify manually (usually safe to ignore)"), 
                                  
                                  layout_column_wrap(
                                      width = 1/2, 
