@@ -21,8 +21,124 @@ function(input, output, session) {
         rvals$data <- uploaded_hydro_lab_data()
     })
     
+    observeEvent(input$reset, {
+
+        rvals$data <- NULL
+        hydro_signature <- NULL
+        hydro_wqx_status <- NULL
+        common_hydro_lab_wqx_data <- NULL
+        hydro_lab_data$formatted_data <- NULL
+        temp_data$filtered_data <- NULL
+        wqx_data$empty_data <- NULL
+    })
+    
     observeEvent(input$hydro_lab_table_cell_edit, {
         rvals$data <<- DT::editData(rvals$data, input$hydro_lab_table_cell_edit)
+    })
+    
+    output$hydro_lab_table <- DT::renderDataTable({
+        if (is.null(rvals$data)) {
+            return(NULL)
+        }
+        
+        editable_cols <- rep(TRUE, 16)
+        editable_cols[1:2] <- FALSE
+        editable_cols[16] <- FALSE
+        validate(need(input$hydro_lab_file, message = "Select a file to view"))
+        DT::datatable(rvals$data, editable = list(target = "cell", disable = list(columns = c(1,2, 16))),
+                      options = list(scrollX = TRUE, dom = "t", ordering = FALSE)) |> 
+            DT::formatStyle(
+                c("CHL"), 
+                target = "cel",
+                backgroundColor = DT::styleInterval(c(0.03, 1000), c("#f29f99", "white", "#f29f99"))
+            ) |> 
+            DT::formatStyle(
+                c("Temp"), 
+                target = "cel",
+                backgroundColor = DT::styleInterval(c(0, 30), c("#f29f99", "white", "#f29f99"))
+            ) |> 
+            DT::formatStyle(
+                c("Depth10"), 
+                target = "cel",
+                backgroundColor = DT::styleInterval(c(0.01,10), c("#f29f99", "white", "#f29f99"))
+            ) |> 
+            DT::formatStyle(
+                c("SpCond"), 
+                target = "cel",
+                backgroundColor = DT::styleInterval(c(0.01, 1), c("#f29f99", "white", "#f29f99"))
+            ) |> 
+            DT::formatStyle(
+                c("Sal"), 
+                target = "cel",
+                backgroundColor = DT::styleInterval(c(0.01, 1), c("#f29f99", "white", "#f29f99"))
+            ) |> 
+            DT::formatStyle(
+                c("TDS"), 
+                target = "cel",
+                backgroundColor = DT::styleInterval(c(0.01, 1), c("#f29f99", "white", "#f29f99"))
+            ) |> 
+            DT::formatStyle(
+                c("DO%"), 
+                target = "cel",
+                backgroundColor = DT::styleInterval(c(0.01, 150), c("#f29f99", "white", "#f29f99"))
+            ) |> 
+            DT::formatStyle(
+                c("DO"), 
+                target = "cel",
+                backgroundColor = DT::styleInterval(c(0, 20), c("#f29f99", "white", "#f29f99"))
+            ) |> 
+            DT::formatStyle(
+                c("pH"), 
+                target = "cel",
+                backgroundColor = DT::styleInterval(c(5, 11), c("#f29f99", "white", "#f29f99"))
+            ) |> 
+            DT::formatStyle(
+                c("Turb"), 
+                target = "cel",
+                backgroundColor = DT::styleInterval(c(1.5, 1000), c("#f29f99", "white", "#f29f99"))
+            ) |> 
+            DT::formatStyle(
+                c("PCY"), 
+                target = "cel",
+                backgroundColor = DT::styleInterval(c(100, 200000), c("#f29f99", "white", "#f29f99"))
+            ) 
+    })
+    
+    
+    output$hydro_lab_qaqc_table <- renderTable({
+        if (is.null(rvals$data)) {
+            return(NULL)
+        }
+        validate(need(rvals$data, message = "Select a file to view qa/qc results."))
+        validation_results <- validate::confront(rvals$data, hydro_lab_range_rules)
+        as_tibble(summary(validation_results)) |>
+            mutate(pass = case_when(
+                error == TRUE ~ "!", 
+                warning == TRUE ~ "!",
+                items == passes ~ "O",
+                fails > 0 ~ "X", 
+                TRUE ~ "?"
+            ), 
+            name = stringr::str_replace_all(name, "\\.", " ")) |> 
+            select(-c("nNA","items","warning","expression"))
+    })
+    
+    output$hydro_lab_custom_qaqc_table <- renderTable({
+        if (is.null(rvals$data)) {
+            return(NULL)
+        }
+        validate(need(rvals$data, message = "Select a file to view custom qa/qc results."))
+        validation_results <- validate::confront(rvals$data, hydro_lab_custom_rules)
+        as_tibble(summary(validation_results)) |>
+            mutate(pass = case_when(
+                error == TRUE ~ "!", 
+                warning == TRUE ~ "!",
+                items == passes ~ "O",
+                fails > 0 ~ "X", 
+                TRUE ~ "?"
+            ), 
+            name = stringr::str_replace_all(name, "\\.", " "))  |> 
+            select(-c("nNA","items","warning","expression"))
     })
     
     
@@ -33,16 +149,21 @@ function(input, output, session) {
     hydro_lab_data <- reactiveValues(formatted_data = NULL)
     
     hydro_lab_data_wqx <- reactive({
-        req(input$hydro_lab_file$datapath)
         hydro_lab_data$formatted_data <- hydro_lab_to_wqx(rvals$data)
     })
 
     observe({
+        if (is.null(rvals$data)) {
+            return(NULL)
+        }
         updateSelectInput(session, "selected_location", "Select Monitoring Location:",
         choices = unique(hydro_lab_data_wqx()$`Monitoring Location ID`))
     })
     # 
     hydro_lab_dates <- reactive({
+        if (is.null(rvals$data)) {
+            return(NULL)
+        }
         req(input$selected_location)
         hydro_lab_locations <- hydro_lab_data_wqx()  |>
             filter(`Monitoring Location ID` == input$selected_location) |>
@@ -103,10 +224,24 @@ function(input, output, session) {
         }
     })
 
-    output$temperature_data <- renderTable({
-        temp_data$filtered_data
-    }, caption = "Additional Data", caption.placement = "top")
     
+    output$temperature_data_table <- DT::renderDataTable({
+
+        DT::datatable(temp_data$filtered_data, 
+                      editable = list(target = "cell", disable = list(columns = c(3:35))),
+                      options = list(scrollX = TRUE, dom = "t", ordering = FALSE),
+                      caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
+    })
+    
+    observeEvent(input$temperature_data_table_cell_edit, {
+        if (!is.null(hydro_lab_data$formatted_data)){
+            temp_data$filtered_data <<- DT::editData(temp_data$filtered_data, input$temperature_data_table_cell_edit)
+            hydro_lab_data$formatted_data <<- DT::editData(temp_data$filtered_data, input$temperature_data_table_cell_edit)}
+        else{
+            temp_data$filtered_data <<- DT::editData(temp_data$filtered_data, input$temperature_data_table_cell_edit)
+            wqx_data$empty_data <<- DT::editData(temp_data$empty_data, input$temperature_data_table_cell_edit)
+        }
+    })
     hydro_lab_data_wqx_formatted <-  eventReactive(input$generate_formatted_df, {
         req(input$hydro_lab_file$datapath)
         hydro_lab_data$formatted_data
@@ -128,104 +263,10 @@ function(input, output, session) {
         common_hydro_lab_wqx_data(hydro_lab_data_wqx_empty())
         output$check_empty_df_message <- renderText({
             Sys.sleep(0.5)
-           "Check Formatted Data tab for generated empty data sheet. To delete the added data, click on 'Delete Last Added Result' button."
+           "Check 'Formatted Data' tab for generated empty data sheet. To delete the added data, click on 'Delete Last Added Result' button."
        })
     })
 
-    output$hydro_lab_table <- DT::renderDataTable({
-        editable_cols <- rep(TRUE, 16)
-        editable_cols[1:2] <- FALSE
-        editable_cols[16] <- FALSE
-        validate(need(input$hydro_lab_file, message = "Select a file to view"))
-        DT::datatable(rvals$data, editable = list(target = "cell", disable = list(columns = c(1,2, 16))),
-                      options = list(scrollX = TRUE, dom = "t", ordering = FALSE)) |> 
-            DT::formatStyle(
-                c("CHL"), 
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0.03, 1000), c("#f29f99", "white", "#f29f99"))
-                ) |> 
-            DT::formatStyle(
-                c("Temp"), 
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0, 30), c("#f29f99", "white", "#f29f99"))
-            ) |> 
-            DT::formatStyle(
-                c("Depth10"), 
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0.01,10), c("#f29f99", "white", "#f29f99"))
-            ) |> 
-            DT::formatStyle(
-                c("SpCond"), 
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0.01, 1), c("#f29f99", "white", "#f29f99"))
-            ) |> 
-            DT::formatStyle(
-                c("Sal"), 
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0.01, 1), c("#f29f99", "white", "#f29f99"))
-            ) |> 
-            DT::formatStyle(
-                c("TDS"), 
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0.01, 1), c("#f29f99", "white", "#f29f99"))
-            ) |> 
-            DT::formatStyle(
-                c("DO%"), 
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0.01, 150), c("#f29f99", "white", "#f29f99"))
-            ) |> 
-            DT::formatStyle(
-                c("DO"), 
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0, 20), c("#f29f99", "white", "#f29f99"))
-            ) |> 
-            DT::formatStyle(
-                c("pH"), 
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(5, 11), c("#f29f99", "white", "#f29f99"))
-            ) |> 
-            DT::formatStyle(
-                c("Turb"), 
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(1.5, 1000), c("#f29f99", "white", "#f29f99"))
-            ) |> 
-            DT::formatStyle(
-                c("PCY"), 
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(100, 200000), c("#f29f99", "white", "#f29f99"))
-            ) 
-    })
-
-    
-    output$hydro_lab_qaqc_table <- renderTable({
-        validate(need(input$hydro_lab_file, message = "Select a file to view qa/qc results."))
-        validation_results <- validate::confront(rvals$data, hydro_lab_range_rules)
-        as_tibble(summary(validation_results)) |>
-            mutate(pass = case_when(
-                error == TRUE ~ "!", 
-                warning == TRUE ~ "!",
-                items == passes ~ "O",
-                fails > 0 ~ "X", 
-                TRUE ~ "?"
-            ), 
-            name = stringr::str_replace_all(name, "\\.", " ")) |> 
-            select(-c("nNA","items","warning","expression"))
-    })
-    
-    output$hydro_lab_custom_qaqc_table <- renderTable({
-        validate(need(input$hydro_lab_file, message = "Select a file to view custom qa/qc results."))
-        validation_results <- validate::confront(rvals$data, hydro_lab_custom_rules)
-        as_tibble(summary(validation_results)) |>
-            mutate(pass = case_when(
-                error == TRUE ~ "!", 
-                warning == TRUE ~ "!",
-                items == passes ~ "O",
-                fails > 0 ~ "X", 
-                TRUE ~ "?"
-            ), 
-            name = stringr::str_replace_all(name, "\\.", " "))  |> 
-            select(-c("nNA","items","warning","expression"))
-    })
     
     output$hydro_lab_wqx_formatted <- renderTable({
         req(common_hydro_lab_wqx_data())
