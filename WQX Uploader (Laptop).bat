@@ -1,4 +1,4 @@
-set RPath=%USERPROFILE%\Documents\R\R-4.1.2\bin
+set RPath=C:\Program Files\R\R-4.2.1\bin
 
 "%RPath%\RScript.exe" install-deps.R
 "%RPath%\RScript.exe" python-setup.R

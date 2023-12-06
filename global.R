@@ -9,14 +9,33 @@ library(shinyWidgets)
 library(shinycssloaders)
 
 # change this based on who is using the app
-reticulate::use_miniconda("wqxUpload")
-# reticulate::use_virtualenv("wqxUpload")
+# reticulate::use_miniconda("wqxUpload")
+reticulate::use_virtualenv("wqxUpload")
 
 source("hydro-lab.R")
 source("alpha-lab.R")
 source("bend-genetics.R")
 
-cdx_account <- read_csv(paste0(getwd(), "/cdx-account-info.csv"))
+file_info <- reactiveValues(file_exists = TRUE)
+
+# Function to check if the file exists
+check_file <- function(path) {
+    if (!file.exists(path)) {
+        file_info$file_exists <- FALSE
+        return(invisible())
+    }
+    file_info$file_exists <- TRUE
+    cdx_account <- read_csv(cdx_account_file)
+    return(cdx_account)
+    
+}
+
+# Load the account information
+cdx_account_path <- file.path(Sys.getenv("USERPROFILE"), "Documents/CDX_Account")
+cdx_account_file <- paste0(cdx_account_path, "/cdx-account-info.csv")
+cdx_account <- check_file(cdx_account_file)
+# cdx_account <- read_csv(cdx_account_file)
+
 
 
 # Hydro Lab Rules -------------------------------------------------------------

@@ -166,10 +166,11 @@ bslib::page_navbar(
     tabPanel("User Account", 
              tags$h2("Manage WQX Credentials"),
              sidebarLayout(
-                 sidebarPanel(width = 5, 
-                              textInput("wqx_username", "Username", value = cdx_account$USER_ID), 
-                              textInput("wqx_api_key", "API Key", value = cdx_account$WQX_API_KEY),
-                              textInput("wqx_config_id", "Config ID", value = cdx_account$CONFIG_ID)
+                 sidebarPanel(width = 5,
+                              selectInput("wqx_username", "Username", choices = cdx_account$USER_ID), 
+                              selectInput("wqx_api_key", "API Key", choices = cdx_account$WQX_API_KEY),
+                              selectInput("wqx_config_id", "Config ID", choices = cdx_account$CONFIG_ID),
+                              uiOutput("error_message")
                  ), 
                  mainPanel()
              )

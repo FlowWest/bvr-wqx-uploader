@@ -243,6 +243,52 @@ function(input, output, session) {
             write.csv(common_hydro_lab_wqx_data(), file, row.names = FALSE)
         }
     )
+
+    # observe({
+    #     check_file(cdx_account_file)
+    # })
+    #
+    output$error_message <- renderUI({
+        if (!file_info$file_exists) {
+            tagList(
+                HTML("<p style='color: red;'>Click on button below to generatea CSV file called 'cdx-account-info' in a new folder 'CDX_Account' located in Documents. Please input the appropriate information for each column after!</p>"),
+                actionButton("check_button", "Generate File")
+            )
+        } else {
+            tagList(
+                HTML("<p style='color: green;'>File loaded successfully!</p>")
+            )
+        }
+    })
+    
+    observeEvent(input$check_button, {
+        # Add logic to generate the CSV file
+        # For example, you can create a template CSV file
+        template <- data.frame(WQX_API_KEY = character(0), USER_ID = character(0), CONFIG_ID = character(0))
+        dir.create(cdx_accounts_path, recursive = TRUE)
+        write_csv(template, cdx_account_file)
+        
+        # Reload the account information
+        cdx_account <- check_file(cdx_account_file)
+        
+        # Update the error message
+        output$error_message <- renderUI({
+            tagList(
+                HTML("<p style='color: green;'>File generated successfully!</p>")
+            )
+        })
+    })
+    # Render an error message if the file doesn't exist
+    # output$error_message <- renderUI({
+    #     if (!file_info$file_exists) {
+    #         tagList(
+    #             HTML("<p style='color: red;'>Please create a CSV file called 'cdx-account-info' in your 'Documents/CDX_Account' folder with columns named 'WQX_API_KEY', 'USER_ID', and 'CONFIG_ID'!</p>"),
+    #             actionButton("check_button", "Check File")
+    #         )
+    #     } else {
+    #         tags$div()  # An empty div to render nothing when the file exists
+    #     }
+    # })
     
     hydro_wqx_status <- eventReactive(input$hydro_lab_upload, {
         downloads_path <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
