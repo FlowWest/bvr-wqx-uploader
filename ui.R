@@ -10,6 +10,7 @@ bslib::page_navbar(
                  sidebarLayout(
                      sidebarPanel(width = 3, 
                                   fileInput("hydro_lab_file", "Select Hydro Lab File", multiple = TRUE),
+                                  actionButton("reset", "Reset"),
                                   conditionalPanel(condition="input.tabs == 'additional'",
                                       selectInput("selected_location", "Select Monitoring Location:", choices = NULL),
                                       selectInput("selected_day", "Select Monitoring Day:", choices = NULL),
@@ -30,7 +31,7 @@ bslib::page_navbar(
                                  tagList(
                                      tags$p(class = "p-3 border rounded", 
                                             "This section provides view of raw data, as well as results for Qa/Qc checks. Verify that
-                                            all validations pass, and proceed to next tab when ready.")
+                                            all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application.")
                                  ),
                                  card(card_header("Raw Data"), card_body(DT::dataTableOutput("hydro_lab_table"))), 
                                  tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - 'O', - test passed, ', 'X' - test failed, '!' - verify manually (usually safe to ignore)"), 
@@ -48,7 +49,7 @@ bslib::page_navbar(
                                  value = "additional",
                                  tags$p(class = "p-3 border rounded", 
                                         "Enter additional AccuWeather 'Temperature, Air' measurement and 'Result Comment' for each date and location in the sidebar panel."),
-                                 tableOutput("temperature_data"),
+                                 DT::dataTableOutput("temperature_data_table"),
                                  actionButton("generate_formatted_df", "Generate WQX Ready Data"),
                                  textOutput("check_df_message"),
                                  tags$p(class = "p-3 border rounded", 
