@@ -9,8 +9,8 @@ library(shinyWidgets)
 library(shinycssloaders)
 
 # change this based on who is using the app
-# reticulate::use_miniconda("wqxUpload")
-reticulate::use_virtualenv("wqxUpload")
+reticulate::use_miniconda("wqxUpload")
+# reticulate::use_virtualenv("wqxUpload")
 
 source("hydro-lab.R")
 source("alpha-lab.R")
@@ -31,7 +31,7 @@ check_file <- function(path) {
 }
 
 # Load the account information
-cdx_account_path <- file.path(Sys.getenv("USERPROFILE"), "Documents/CDX_Account")
+cdx_accountg_path <- file.path(Sys.getenv("USERPROFILE"), "Documents/CDX_Account")
 cdx_account_file <- paste0(cdx_account_path, "/cdx-account-info.csv")
 cdx_account <- check_file(cdx_account_file)
 # cdx_account <- read_csv(cdx_account_file)
