@@ -167,14 +167,29 @@ bslib::page_navbar(
     tabPanel("User Account", 
              tags$h2("Manage WQX Credentials"),
              sidebarLayout(
-                 sidebarPanel(width = 5,
+                 sidebarPanel(width = 4,
                               selectInput("wqx_username", "Username", choices = cdx_account$USER_ID), 
                               selectInput("wqx_api_key", "API Key", choices = cdx_account$WQX_API_KEY),
                               selectInput("wqx_config_id", "Config ID", choices = cdx_account$CONFIG_ID),
-                              uiOutput("error_message")
-                 ), 
-                 mainPanel()
-             )
+                              ),
+            mainPanel( 
+                uiOutput("error_message"),
+                # br(),
+                # uiOutput('text_input'),
+                # br(),
+                # br(),
+                textInput("update_user_name", "Add Username", value = ""),
+                # uiOutput("submit_user_button"),
+                br(),
+                textInput("update_api_key", "Add API Key", value = ""),
+                # uiOutput("submit_api_button"),
+                br(),
+                textInput("update_config_id", "Add Config ID", value = ""),
+                # uiOutput("submit_config_button"),
+                br(),
+                actionButton("add_credential", "Add Credential")
+            ) 
+        )
              
     )
 )

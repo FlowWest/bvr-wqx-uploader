@@ -285,51 +285,57 @@ function(input, output, session) {
         }
     )
 
-    # observe({
-    #     check_file(cdx_account_file)
-    # })
-    #
     output$error_message <- renderUI({
         if (!file_info$file_exists) {
             tagList(
-                HTML("<p style='color: red;'>Click on button below to generatea CSV file called 'cdx-account-info' in a new folder 'CDX_Account' located in Documents. Please input the appropriate information for each column after!</p>"),
-                actionButton("check_button", "Generate File")
+                HTML("<p style='color: red;'> 1. Click on button below to generatea CSV file called 'cdx-account-info' in a new folder 'CDX_Account' located in Documents.<br>
+                     2. Open a new browser and go to https://cdx.epa.gov.<br>
+                     3. Log into WQX Web. Select 'Setup' and click on 'My User Account'.<br>
+                     4. Find your 'Username', 'Private Encryption Key' values. If there is no 'Private Encryption Key', click 'Create New Key'.<br>
+                     5. Open the newly created 'cdx-account-info.csv' located in the CDX_Account folder in your Documents.<br> 
+                     6. Paste the 'Username' and 'Private Encryption Key' values into the 'USER_ID' and 'WQX_API_KEY' columns respectively.<br>
+                     7. Click on 'Load Credential' button to load in CDX account details. </p>"),
+                actionButton("generate_button", "Generate File")
             )
-        } else {
-            tagList(
-                HTML("<p style='color: green;'>File loaded successfully!</p>")
-            )
-        }
+        } 
     })
     
-    observeEvent(input$check_button, {
-        # Add logic to generate the CSV file
-        # For example, you can create a template CSV file
+    observeEvent(input$generate_button, {
         template <- data.frame(WQX_API_KEY = character(0), USER_ID = character(0), CONFIG_ID = character(0))
-        dir.create(cdx_accounts_path, recursive = TRUE)
+        dir.create(cdx_account_path, recursive = TRUE)
         write_csv(template, cdx_account_file)
         
-        # Reload the account information
-        cdx_account <- check_file(cdx_account_file)
-        
+
         # Update the error message
         output$error_message <- renderUI({
             tagList(
-                HTML("<p style='color: green;'>File generated successfully!</p>")
+                HTML("<p style='color: green;'>Credential file successfully generated!</p>")
             )
         })
+        
     })
-    # Render an error message if the file doesn't exist
-    # output$error_message <- renderUI({
-    #     if (!file_info$file_exists) {
-    #         tagList(
-    #             HTML("<p style='color: red;'>Please create a CSV file called 'cdx-account-info' in your 'Documents/CDX_Account' folder with columns named 'WQX_API_KEY', 'USER_ID', and 'CONFIG_ID'!</p>"),
-    #             actionButton("check_button", "Check File")
-    #         )
-    #     } else {
-    #         tags$div()  # An empty div to render nothing when the file exists
-    #     }
-    # })
+    
+    observeEvent(input$add_credential, {
+        req(input$update_api_key)
+        req(input$update_user_name)
+        req(input$update_config_id)
+        
+        
+        new_row <- data.frame(WQX_API_KEY = input$update_api_key,
+                              USER_ID = input$update_user_name,
+                              CONFIG_ID = input$update_config_id)
+        
+        cdx_account <- rbind(cdx_account, new_row)
+        write_csv(cdx_account, cdx_account_file)
+        updateSelectInput(session, "wqx_username", "Username", 
+                                            choices = cdx_account$USER_ID)
+        updateSelectInput(session, "wqx_api_key", "API Key", 
+                                            choices = cdx_account$WQX_API_KEY)
+        updateSelectInput(session, "wqx_config_id", "Config ID",
+                                            choices = cdx_account$CONFIG_ID)
+    })
+    
+    
     
     hydro_wqx_status <- eventReactive(input$hydro_lab_upload, {
         downloads_path <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
@@ -411,8 +417,6 @@ function(input, output, session) {
                 TRUE ~ emo::ji("question")
             ), 
             name = stringr::str_replace_all(name, "\\.", " "))  
-        # |> 
-        #     select(`Test Name` = name, `Test Expression` = expression, `Test Passed` = pass)
     })
     
     
