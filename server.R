@@ -212,7 +212,7 @@ function(input, output, session) {
             last_row <- tail(hydro_lab_data$formatted_data, 1)
             last_location <- last_row$`Monitoring Location ID`
             last_date <- last_row$`Activity Start Date`
-            
+
             hydro_lab_data$formatted_data <- hydro_lab_data$formatted_data %>%
                 mutate(`Result Comment` = ifelse(`Activity Start Date` == last_date & `Monitoring Location ID` == last_location, "", `Result Comment`)) |> 
                 slice(-n())
