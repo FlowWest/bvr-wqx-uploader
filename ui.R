@@ -61,7 +61,7 @@ bslib::page_navbar(
                              tabPanel(
                                  "Formatted Data", 
                                  tags$p(class = "p-3 border rounded", 
-                                        "Data Formatted to WQX, review and when ready select Download and Upload to WQX"), 
+                                        "Review WQX formatted data. Click 'Download' and then 'Upload to WQX' when ready."), 
                                  bslib::layout_columns(
                                      col_widths = c(2, 2, 2),
                                      downloadButton("hydro_lab_download"),
@@ -167,13 +167,31 @@ bslib::page_navbar(
     tabPanel("User Account", 
              tags$h2("Manage WQX Credentials"),
              sidebarLayout(
-                 sidebarPanel(width = 5, 
-                              textInput("wqx_username", "Username", value = cdx_account$USER_ID), 
-                              textInput("wqx_api_key", "API Key", value = cdx_account$WQX_API_KEY),
-                              textInput("wqx_config_id", "Config ID", value = cdx_account$CONFIG_ID)
-                 ), 
-                 mainPanel()
-             )
+                 sidebarPanel(width = 4,
+                              selectInput("wqx_username", "Username", choices = cdx_account$USER_ID), 
+                              selectInput("wqx_api_key", "API Key", choices = cdx_account$WQX_API_KEY),
+                              selectInput("wqx_config_id", "Config ID", choices = cdx_account$CONFIG_ID),
+                              ),
+            mainPanel( 
+                uiOutput("error_message"),
+                br(),
+                actionButton("load_credential", "Load Credential")
+                # br(),
+                # uiOutput('text_input'),
+                # br(),
+                # br(),
+                # textInput("update_user_name", "Add Username", value = ""),
+                # uiOutput("submit_user_button"),
+                # br(),
+                # textInput("update_api_key", "Add API Key", value = ""),
+                # uiOutput("submit_api_button"),
+                # br(),
+                # textInput("update_config_id", "Add Config ID", value = ""),
+                # uiOutput("submit_config_button"),
+                # br(),
+                # actionButton("add_credential", "Add Credential")
+            ) 
+        )
              
     )
 )
