@@ -228,18 +228,24 @@ function(input, output, session) {
     output$temperature_data_table <- DT::renderDataTable({
 
         DT::datatable(temp_data$filtered_data, 
-                      editable = list(target = "cell", disable = list(columns = c(3:35))),
+                      editable = list(target = "cell", disable = list(columns = c(2:35))),
                       options = list(scrollX = TRUE, dom = "t", ordering = FALSE),
                       caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
     })
-    
+    #disable edit ML
     observeEvent(input$temperature_data_table_cell_edit, {
         if (!is.null(hydro_lab_data$formatted_data)){
             temp_data$filtered_data <<- DT::editData(temp_data$filtered_data, input$temperature_data_table_cell_edit)
-            hydro_lab_data$formatted_data <<- DT::editData(temp_data$filtered_data, input$temperature_data_table_cell_edit)}
+            str(input$temperature_data_table_cell_edit)
+            date_to_update <- temp_data$filtered_data[input$temperature_data_table_cell_edit$row, ]$`Activity Start Date`
+            location_to_update <- temp_data$filtered_data[input$temperature_data_table_cell_edit$row, ]$`Monitoring Location ID`
+            hydro_lab_data$formatted_data <<- hydro_lab_data$formatted_data |> 
+                mutate(`Project ID` = case_when(`Activity Start Date` == date_to_update & `Monitoring Location ID` == location_to_update ~
+                                                    input$temperature_data_table_cell_edit$value, TRUE ~ `Project ID`))}
+             
         else{
             temp_data$filtered_data <<- DT::editData(temp_data$filtered_data, input$temperature_data_table_cell_edit)
-            wqx_data$empty_data <<- DT::editData(temp_data$empty_data, input$temperature_data_table_cell_edit)
+            # wqx_data$empty_data <<- DT::editData(temp_data$empty_data, input$temperature_data_table_cell_edit)
         }
     })
     hydro_lab_data_wqx_formatted <-  eventReactive(input$generate_formatted_df, {
@@ -288,13 +294,7 @@ function(input, output, session) {
     output$error_message <- renderUI({
         if (!file_info$file_exists) {
             tagList(
-                HTML("<p style='color: red;'> 1. Click on button below to generatea CSV file called 'cdx-account-info' in a new folder 'CDX_Account' located in Documents.<br>
-                     2. Open a new browser and go to https://cdx.epa.gov.<br>
-                     3. Log into WQX Web. Select 'Setup' and click on 'My User Account'.<br>
-                     4. Find your 'Username', 'Private Encryption Key' values. If there is no 'Private Encryption Key', click 'Create New Key'.<br>
-                     5. Open the newly created 'cdx-account-info.csv' located in the CDX_Account folder in your Documents.<br> 
-                     6. Paste the 'Username' and 'Private Encryption Key' values into the 'USER_ID' and 'WQX_API_KEY' columns respectively.<br>
-                     7. Click on 'Load Credential' button to load in CDX account details. </p>"),
+                HTML("<p style='color: red;'> Click 'Generate File' to create cdx-account-info.csv' in 'Documents/CDX_Account'. Fill in credentials, then click 'Load Credential'. Check manual for instructions to obtain credentials.</p>"),
                 actionButton("generate_button", "Generate File")
             )
         } 
@@ -308,32 +308,40 @@ function(input, output, session) {
 
         # Update the error message
         output$error_message <- renderUI({
+            u_name <- Sys.getenv("USERNAME")
             tagList(
-                HTML("<p style='color: green;'>Credential file successfully generated!</p>")
+                    tags$p("Credential file successfully generated! Please enter information in CSV located at", style='color: green;'), 
+                    tags$p(paste0("C:\\Users\\", u_name, "\\Documents\\CDX_Account\\cdx-account-info.csv"), style='color: green;')
             )
         })
         
     })
     
-    observeEvent(input$add_credential, {
-        req(input$update_api_key)
-        req(input$update_user_name)
-        req(input$update_config_id)
-        
-        
-        new_row <- data.frame(WQX_API_KEY = input$update_api_key,
-                              USER_ID = input$update_user_name,
-                              CONFIG_ID = input$update_config_id)
-        
-        cdx_account <- rbind(cdx_account, new_row)
-        write_csv(cdx_account, cdx_account_file)
-        updateSelectInput(session, "wqx_username", "Username", 
-                                            choices = cdx_account$USER_ID)
-        updateSelectInput(session, "wqx_api_key", "API Key", 
-                                            choices = cdx_account$WQX_API_KEY)
-        updateSelectInput(session, "wqx_config_id", "Config ID",
-                                            choices = cdx_account$CONFIG_ID)
+    observeEvent(input$load_credential,{
+        cdx_account <- check_file(cdx_account_file)
+        updateSelectInput(session, "wqx_username", "Username", choices = cdx_account$USER_ID)
+        updateSelectInput(session, "wqx_api_key", "API Key", choices = cdx_account$WQX_API_KEY)
+        updateSelectInput(session, "wqx_config_id", "Config ID", choices = cdx_account$CONFIG_ID)
     })
+    # observeEvent(input$add_credential, {
+    #     req(input$update_api_key)
+    #     req(input$update_user_name)
+    #     req(input$update_config_id)
+    #     
+    #     
+    #     new_row <- data.frame(WQX_API_KEY = input$update_api_key,
+    #                           USER_ID = input$update_user_name,
+    #                           CONFIG_ID = input$update_config_id)
+    #     
+    #     cdx_account <- rbind(cdx_account, new_row)
+    #     write_csv(cdx_account, cdx_account_file)
+    #     updateSelectInput(session, "wqx_username", "Username", 
+    #                                         choices = cdx_account$USER_ID)
+    #     updateSelectInput(session, "wqx_api_key", "API Key", 
+    #                                         choices = cdx_account$WQX_API_KEY)
+    #     updateSelectInput(session, "wqx_config_id", "Config ID",
+    #                                         choices = cdx_account$CONFIG_ID)
+    # })
     
     
     

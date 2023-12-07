@@ -61,7 +61,7 @@ bslib::page_navbar(
                              tabPanel(
                                  "Formatted Data", 
                                  tags$p(class = "p-3 border rounded", 
-                                        "Data Formatted to WQX, review and when ready select Download and Upload to WQX"), 
+                                        "Review WQX formatted data. Click 'Download' and then 'Upload to WQX' when ready."), 
                                  bslib::layout_columns(
                                      col_widths = c(2, 2, 2),
                                      downloadButton("hydro_lab_download"),
@@ -174,20 +174,22 @@ bslib::page_navbar(
                               ),
             mainPanel( 
                 uiOutput("error_message"),
+                br(),
+                actionButton("load_credential", "Load Credential")
                 # br(),
                 # uiOutput('text_input'),
                 # br(),
                 # br(),
-                textInput("update_user_name", "Add Username", value = ""),
+                # textInput("update_user_name", "Add Username", value = ""),
                 # uiOutput("submit_user_button"),
-                br(),
-                textInput("update_api_key", "Add API Key", value = ""),
+                # br(),
+                # textInput("update_api_key", "Add API Key", value = ""),
                 # uiOutput("submit_api_button"),
-                br(),
-                textInput("update_config_id", "Add Config ID", value = ""),
+                # br(),
+                # textInput("update_config_id", "Add Config ID", value = ""),
                 # uiOutput("submit_config_button"),
-                br(),
-                actionButton("add_credential", "Add Credential")
+                # br(),
+                # actionButton("add_credential", "Add Credential")
             ) 
         )
              
