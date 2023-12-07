@@ -9,6 +9,7 @@ FOR %%G IN (
     "C:\Users\%USERNAME%\AppData\Local\Programs\R\R-4.3.2\bin\x64",
     "C:\Users\%USERNAME%\Documents\R\R-4.1.2\bin\x64",
     "C:\Program Files\R\R-4.3.0\bin\x64",
+    "C:\Program Files\R\R-4.3.2\bin\x64",
     "C:\Program Files\R\R-4.2.1\bin\x64"
 ) DO (
     IF EXIST %%G (
