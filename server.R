@@ -2,11 +2,11 @@ function(input, output, session) {
     # hydro lab -------------------------------------------------------------------------
     uploaded_hydro_lab_data <- reactive({
         req(input$hydro_lab_file$datapath)
-        if (!any(endsWith(input$hydro_lab_file$datapath, ".csv"))) {
+        if (!any(endsWith(input$hydro_lab_file$datapath, c(".csv", ".CSV")))) {
             sendSweetAlert(
                 session = session,
                 title = "Error",
-                text = "at least one file is not hydrolab, please try uploading again",
+                text = "Please upload valid HydroLab data files with a '.csv' extension.",
                 type = "error"
             )
             return(NULL)
