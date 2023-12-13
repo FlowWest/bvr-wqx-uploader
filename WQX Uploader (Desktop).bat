@@ -73,7 +73,7 @@ IF NOT "%LOCAL%"=="%REMOTE%" (
     echo No updates available.
 )
 
-
+cd app
 
 %Rpath%\RScript.exe install-deps.R
 %Rpath%\RScript.exe python-setup.R
