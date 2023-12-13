@@ -1,3 +1,33 @@
+@echo off
+SETLOCAL
+
+REM Function to find the Git executable
+FOR %%I IN (
+    "C:\Program Files\Git\cmd\git.exe"
+    "C:\Program Files\Git\bin\git.exe"
+    "C:\Program Files\Git\mingw64\bin\git.exe"
+    "C:\Program Files\Git\mingw32\bin\git.exe"
+    "C:\Program Files (x86)\Git\cmd\git.exe"
+    "C:\Program Files (x86)\Git\bin\git.exe"
+    "C:\Program Files (x86)\Git\mingw64\bin\git.exe"
+    "C:\Program Files (x86)\Git\mingw32\bin\git.exe"
+) DO (
+    IF EXIST %%I (
+        SET "GIT_EXECUTABLE=%%I"
+        GOTO GitFound
+    )
+)
+
+:GitFound
+IF NOT DEFINED GIT_EXECUTABLE (
+    echo Git not found. Please install Git or update the script with the correct path.
+    exit /b 1
+) ELSE (
+    echo Found Git executable: %GIT_EXECUTABLE%
+)
+
+
+
 @REM set RPath=%USERPROFILE%\Documents\R\R-4.1.2\bin
 
 @echo off
@@ -24,6 +54,26 @@ IF NOT DEFINED RPath (
 ) ELSE (
     echo Found R directory: %RPath%
 )
+
+cd C:\Users\Inigo\Projects\bvr-wqx-uploader
+
+%GIT_EXECUTABLE% fetch origin
+FOR /F %%A IN ('%GIT_EXECUTABLE% rev-parse HEAD') DO SET "LOCAL=%%A"
+FOR /F %%B IN ('%GIT_EXECUTABLE% rev-parse origin/main') DO SET "REMOTE=%%B"
+
+IF NOT "%LOCAL%"=="%REMOTE%" (
+    echo Updating the application...
+
+    REM Pull the latest changes
+    %GIT_EXECUTABLE% pull origin main
+    
+    REM Additional update steps (if needed)
+    REM e.g., apply database migrations, install new dependencies, etc.
+) ELSE (
+    echo No updates available.
+)
+
+cd app
 
 %Rpath%\RScript.exe install-deps.R
 %Rpath%\RScript.exe python-setup.R

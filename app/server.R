@@ -2,11 +2,11 @@ function(input, output, session) {
     # hydro lab -------------------------------------------------------------------------
     uploaded_hydro_lab_data <- reactive({
         req(input$hydro_lab_file$datapath)
-        if (!any(endsWith(input$hydro_lab_file$datapath, ".csv"))) {
+        if (!any(endsWith(input$hydro_lab_file$datapath, c(".csv", ".CSV")))) {
             sendSweetAlert(
                 session = session,
                 title = "Error",
-                text = "at least one file is not hydrolab, please try uploading again",
+                text = "Please upload valid HydroLab data files with a '.csv' extension.",
                 type = "error"
             )
             return(NULL)
@@ -323,27 +323,6 @@ function(input, output, session) {
         updateSelectInput(session, "wqx_api_key", "API Key", choices = cdx_account$WQX_API_KEY)
         updateSelectInput(session, "wqx_config_id", "Config ID", choices = cdx_account$CONFIG_ID)
     })
-    # observeEvent(input$add_credential, {
-    #     req(input$update_api_key)
-    #     req(input$update_user_name)
-    #     req(input$update_config_id)
-    #     
-    #     
-    #     new_row <- data.frame(WQX_API_KEY = input$update_api_key,
-    #                           USER_ID = input$update_user_name,
-    #                           CONFIG_ID = input$update_config_id)
-    #     
-    #     cdx_account <- rbind(cdx_account, new_row)
-    #     write_csv(cdx_account, cdx_account_file)
-    #     updateSelectInput(session, "wqx_username", "Username", 
-    #                                         choices = cdx_account$USER_ID)
-    #     updateSelectInput(session, "wqx_api_key", "API Key", 
-    #                                         choices = cdx_account$WQX_API_KEY)
-    #     updateSelectInput(session, "wqx_config_id", "Config ID",
-    #                                         choices = cdx_account$CONFIG_ID)
-    # })
-    
-    
     
     hydro_wqx_status <- eventReactive(input$hydro_lab_upload, {
         downloads_path <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
