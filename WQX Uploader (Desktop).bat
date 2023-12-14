@@ -55,7 +55,7 @@ IF NOT DEFINED RPath (
     echo Found R directory: %RPath%
 )
 
-cd C:\Users\Inigo\Projects\bvr-wqx-uploader
+cd %USERPROFILE%\Projects\bvr-wqx-uploader
 
 %GIT_EXECUTABLE% fetch origin
 FOR /F %%A IN ('%GIT_EXECUTABLE% rev-parse HEAD') DO SET "LOCAL=%%A"

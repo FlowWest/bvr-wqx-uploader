@@ -361,28 +361,7 @@ hydro_lab_server <- function(input, output, session){
                         write.csv(common_hydro_lab_wqx_data(), file, row.names = FALSE)
                     }
                 )
-
                 
-
-                observeEvent(input$generate_button, {
-                    template <- data.frame(WQX_API_KEY = character(0), USER_ID = character(0), CONFIG_ID = character(0))
-                    dir.create(cdx_account_path, recursive = TRUE)
-                    write_csv(template, cdx_account_file)
-
-
-                    # Update the error message
-                    output$error_message <- renderUI({
-                        u_name <- Sys.getenv("USERNAME")
-                        tagList(
-                                tags$p("Credential file successfully generated! Please enter information in CSV located at", style='color: green;'),
-                                tags$p(paste0("C:\\Users\\", u_name, "\\Documents\\CDX_Account\\cdx-account-info.csv"), style='color: green;')
-                        )
-                    })
-
-                })
-
-                
-
                 hydro_wqx_status <- eventReactive(input$hydro_lab_upload, {
                     downloads_path <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
                     path_to_most_recent <- str_replace_all(

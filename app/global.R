@@ -87,3 +87,7 @@ bend_genetics_range_rules <- validator(
     "Saxitoxin in valid range" = in_range(as.numeric(na.omit(`Saxitoxin`)), 0, 1000)
     
 )
+
+bend_genetics_custom_rules <- validator(
+    "Location ID is Valid" = location_id %in% names(project_id_lookup)
+)

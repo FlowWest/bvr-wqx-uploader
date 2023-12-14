@@ -149,27 +149,16 @@ method_speciation_lookup <- c(
     "Orthophosphate" = "as P"
 )
 
-parse_bend_genetics <- function(filepath) {
-    raw_bend_data <- read_csv(filepath, skip = 7)  
-    raw_bend_data <- raw_bend_data |> select(-starts_with("..."))
-    raw_bend_data <- raw_bend_data[!is.na(raw_bend_data$Location), ]
+parse_bend_genetics <- function(file_path) {
+    bend_raw <- read_csv(file_path, skip = 7) |>
+        select(-starts_with("..."))
     
-    # Find the index of the first occurrence of "Bend Genetics, LLC" in the "Location" column
-    df_cutoff_1 <- min(which(raw_bend_data$Location == "Bend Genetics, LLC")) - 1
+    analytical_report_for_samples <- bend_raw[1:which(is.na(bend_raw$`Sample ID`))[1] - 1,]
     
-    # Find the index of the second occurrence of "Bend Genetics, LLC" in the "Location" column
-    df_cutoff_2 <- max(which(raw_bend_data$Location == "Bend Genetics, LLC")) - 1
+    bend_raw_na <- bend_raw |>
+        filter(!if_all(everything(), is.na))
     
-    # Create the analytical_report_for_samples dataframe
-    analytical_report_for_samples <- raw_bend_data[1:df_cutoff_1, ]
-    
-    # Find the index of the row where "Sample ID" appears in the "Sample ID" column
-    sample_id_row_index <- min(which(raw_bend_data$`Sample ID` == "Sample ID"))
-    
-    # Create the sample_results dataframe
-    sample_results <- raw_bend_data[(sample_id_row_index + 1):df_cutoff_2, ]  
-    
-    sample_results <- sample_results|>
+    sample_results <- bend_raw_na[(which(is.na(bend_raw_na$`Sample ID`))[1:4][4] + 3):(which(is.na(bend_raw_na$`Sample ID`))[5] - 1),] |>
         rename(
             Method = Location,
             Target = `Date Collected`,
@@ -180,15 +169,54 @@ parse_bend_genetics <- function(filepath) {
         ) |> 
         mutate_if(is.character, utf8::utf8_encode) |> 
         mutate(
-            Units = ifelse(Units== "\\xb5g/L", "ug/L", Units),
-            Result = readr::parse_number(Result) 
+            Units = ifelse(Units == "\\xb5g/L", "ug/L", Units)
         )
     
-    bend_full_df <-
-        left_join(analytical_report_for_samples, sample_results) |> 
+    bend_full_df <- left_join(analytical_report_for_samples, sample_results) |> 
         filter(!is.na(Target))
-
-             }
+    
+    return(bend_full_df)
+}
+# parse_bend_genetics <- function(filepath) {
+#     raw_bend_data <- read_csv(filepath, skip = 7)  
+#     raw_bend_data <- raw_bend_data |> select(-starts_with("..."))
+#     raw_bend_data <- raw_bend_data[!is.na(raw_bend_data$Location), ]
+#     
+#     # Find the index of the first occurrence of "Bend Genetics, LLC" in the "Location" column
+#     df_cutoff_1 <- min(which(raw_bend_data$Location == "Bend Genetics, LLC")) - 1
+#     
+#     # Find the index of the second occurrence of "Bend Genetics, LLC" in the "Location" column
+#     df_cutoff_2 <- max(which(raw_bend_data$Location == "Bend Genetics, LLC")) - 1
+#     
+#     # Create the analytical_report_for_samples dataframe
+#     analytical_report_for_samples <- raw_bend_data[1:df_cutoff_1, ]
+#     
+#     # Find the index of the row where "Sample ID" appears in the "Sample ID" column
+#     sample_id_row_index <- min(which(raw_bend_data$`Sample ID` == "Sample ID"))
+#     
+#     # Create the sample_results dataframe
+#     sample_results <- raw_bend_data[(sample_id_row_index + 1):df_cutoff_2, ]  
+#     
+#     sample_results <- sample_results|>
+#         rename(
+#             Method = Location,
+#             Target = `Date Collected`,
+#             Result = `Date Received`,
+#             `Quantitation Limit` = Matrix,
+#             Units = Preserved,
+#             Notes = BG_ID
+#         ) |> 
+#         mutate_if(is.character, utf8::utf8_encode) |> 
+#         mutate(
+#             Units = ifelse(Units== "\\xb5g/L", "ug/L", Units),
+#             Result = readr::parse_number(Result) 
+#         )
+#     
+#     bend_full_df <-
+#         left_join(analytical_report_for_samples, sample_results) |> 
+#         filter(!is.na(Target))
+# 
+#              }
 
 bend_genetics_make_activity_id <-
     function(location_id,
@@ -221,7 +249,7 @@ bend_genetics_to_wqx <- function(data) {
     data |>        
         mutate("Project ID" = project_id_lookup[Location],
                "Monitoring Location ID" = Location,
-               "Activity ID User Supplied (PARENTs)" = NA,
+               "Activity ID User Supplied (PARENTs)" = "",
                "Activity Type" = "Sample-Routine",
                "Activity Media Name" = Matrix,
                # use the lubridate package function mdy_hm()to format date in m/d/y
@@ -230,26 +258,26 @@ bend_genetics_to_wqx <- function(data) {
                "Activity Start Time" = format(mdy_hm(`Date Collected`), "%H:%M"),
                "Activity Start Time Zone" = "PST",
                # Need activity depth/height, unit
-               "Activity Depth/Height Measure" = NA,
-               "Activity Depth/Height Unit" = NA,
+               "Activity Depth/Height Measure" = "",
+               "Activity Depth/Height Unit" = "",
                # Confirm Sample Collection method id is BVR SWQAPP
                "Sample Collection Method ID" = "BVR SWQAPP",
                "Sample Collection Method Context" = "CA_BVR",
                # Confirm Equipment for bend is Water Bottle
                "Sample Collection Equipment Name" = "Water Bottle",
-               "Sample Collection Equipment Comment" = NA,
+               "Sample Collection Equipment Comment" = "",
                "Characteristic Name" = ifelse(Target == "Microcystin/Nod.", "Microcystin/nodularin genes mcyE/ndaF", Target),
-               "Characteristic Name User Supplied" = NA,
-               "Method Speciation" = NA,
-               "Result Detection Condition" = ifelse(Result == "ND", "Not Detected", NA),
-               "Result Value" = ifelse(Result == "ND", NA, gsub(",", "", Result)),
-               "Result Unit" = ifelse(Result == "ND", NA, Units),
-               "Result Measure Qualifier" = NA,
+               "Characteristic Name User Supplied" = "",
+               "Method Speciation" = "",
+               "Result Detection Condition" = ifelse(Result == "ND", "Not Detected", ""),
+               "Result Value" = ifelse(Result == "ND", "", gsub(",", "", Result)),
+               "Result Unit" = ifelse(Result == "ND", "", Units),
+               "Result Measure Qualifier" = "",
                "Result Sample Fraction" = "Total",
                "Result Status ID" = "Final",
-               "ResultTemperatureBasis" = NA,
-               "Statistical Base Code" = NA,
-               "ResultTimeBasis" = NA,
+               "ResultTemperatureBasis" = "",
+               "Statistical Base Code" = "",
+               "ResultTimeBasis" = "",
                "Result Value Type" = "Actual",
                # method_lookup is in the lookup table. It points the methods to their IDs.
                "Result Analytical Method ID" = method_id_lookup[Method],

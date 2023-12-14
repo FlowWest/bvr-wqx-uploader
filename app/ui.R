@@ -10,11 +10,9 @@ shinyUI(
                      hydro_lab_ui('hydro_lab')),
             tabPanel(title = 'Bend Genetics',
                      bend_genetics_ui('bend_genetics'))
-            # title = "USER"
         ),
         tabPanel(title = "User Account",
                  user_account_ui('user_account'))
-        # mainPanel()
 ))
     
 #     navbarMenu(
