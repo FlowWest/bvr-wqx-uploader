@@ -173,8 +173,8 @@ bend_genetics_server <- function(input, output, session){
             #Could refactor
             output$bend_genetics_download <- downloadHandler(
                 filename = function() {
-                    bend_genetics_signature(format(lubridate::now(), "%Y%m%d_%H%M%S"))
-                    paste('bend_genetics-data-', bend_genetics_signature(), '.csv', sep='')
+                    bend_signature(format(lubridate::now(), "%Y%m%d_%H%M%S"))
+                    paste('bend_genetics-data-', bend_signature(), '.csv', sep='')
                 },
                 content = function(file) {
                     write.csv(common_bend_genetics_wqx_data(), file, row.names = FALSE)
@@ -185,8 +185,8 @@ bend_genetics_server <- function(input, output, session){
                 path_to_most_recent <- str_replace_all(
                     paste(
                         downloads_path,
-                        "/bend_genetics-lab-data-",
-                        bend_genetics_signature(),
+                        "/bend_genetics-data-",
+                        bend_signature(),
                         ".csv",
                         sep = ""
                     ),
@@ -198,7 +198,7 @@ bend_genetics_server <- function(input, output, session){
                 USER_ID = input$wqx_username
                 CONFIG_ID = input$wqx_config_id
                 FILE_PATH = path_to_most_recent
-                FILE_NAME =  paste("bend_genetics-lab-data-", bend_genetics_signature(), ".csv", sep = "")
+                FILE_NAME =  paste("bend_genetics-data-", bend_signature(), ".csv", sep = "")
                 
                 spsComps::shinyCatch({message("sending request to CDX Web")}, position = "bottom-full-width")
                 

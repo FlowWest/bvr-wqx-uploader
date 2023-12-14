@@ -251,7 +251,7 @@ bend_genetics_to_wqx <- function(data) {
                "Monitoring Location ID" = Location,
                "Activity ID User Supplied (PARENTs)" = "",
                "Activity Type" = "Sample-Routine",
-               "Activity Media Name" = Matrix,
+               "Activity Media Name" = "Water",
                # use the lubridate package function mdy_hm()to format date in m/d/y
                "Activity Start Date" = format(mdy_hm(`Date Collected`), "%m/%d/%Y"),
                # use the lubridate package function mdy_hm() to formate time in HH:MM
@@ -264,7 +264,9 @@ bend_genetics_to_wqx <- function(data) {
                "Sample Collection Method ID" = "BVR SWQAPP",
                "Sample Collection Method Context" = "CA_BVR",
                # Confirm Equipment for bend is Water Bottle
-               "Sample Collection Equipment Name" = "Water Bottle",
+               "Sample Collection Equipment Name" = case_when(`Matrix` == "SPATT" ~ "SPATT Bags",
+                                                              `Matrix` == "Water" ~ "Water Bottle",
+                                                              .default = ""),
                "Sample Collection Equipment Comment" = "",
                "Characteristic Name" = ifelse(Target == "Microcystin/Nod.", "Microcystin/nodularin genes mcyE/ndaF", Target),
                "Characteristic Name User Supplied" = "",
@@ -287,7 +289,7 @@ bend_genetics_to_wqx <- function(data) {
                "Result Detection/Quantitation Limit Type" = "Practical Quantitation Limit",
                "Result Detection/Quantitation Limit Measure" = `Quantitation Limit`,
                "Result Detection/Quantitation Limit Unit" = Units,
-               "Result Comment" = Notes,
+               "Result Comment" = ifelse(is.na(Notes), "", Notes),
                "Activity ID (CHILD-subset)" = bend_genetics_make_activity_id(location_id = Location,
                                                                date = `Activity Start Date`,
                                                                time = `Activity Start Time`,
