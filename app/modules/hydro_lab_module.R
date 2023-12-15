@@ -71,18 +71,29 @@ hydro_lab_ui <- function(id){
 }
 
 hydro_lab_server <- function(input, output, session){
-                uploaded_hydro_lab_data <- reactive({
-                    req(input$hydro_lab_file$datapath)
-                    if (!any(endsWith(input$hydro_lab_file$datapath, c(".csv", ".CSV")))) {
+                uploaded_hydro_lab_data <- eventReactive(input$hydro_lab_file$datapath,{
+                    tryCatch({
+                        req(input$hydro_lab_file$datapath)
+                        
+                        if (!any(endsWith(input$hydro_lab_file$datapath, c(".csv", ".CSV")))) {
+                            sendSweetAlert(
+                                session = session,
+                                title = "Error",
+                                text = "Please upload valid Hydro Lab data files with a '.csv' extension.",
+                                type = "error"
+                            )
+                            return(NULL)
+                        }
+                        purrr::map_df(input$hydro_lab_file$datapath, \(x) parse_hydrolab(x))
+                    },error = function(e) {
                         sendSweetAlert(
                             session = session,
                             title = "Error",
-                            text = "Please upload valid HydroLab data files with a '.csv' extension.",
+                            text = paste("An error occurred:", e$message),
                             type = "error"
                         )
                         return(NULL)
-                    }
-                    purrr::map_df(input$hydro_lab_file$datapath, \(x) parse_hydrolab(x))
+                    })
                 })
 
                 # handle data editing by the user

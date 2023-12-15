@@ -59,19 +59,30 @@ bend_genetics_ui <- function(id){
 }
 
 bend_genetics_server <- function(input, output, session){
-            uploaded_bend_genetics_data <- reactive({
-                req(input$bend_genetics_file$datapath)
-                if (!any(endsWith(input$bend_genetics_file$datapath, c(".csv", ".CSV")))) {
-                    sendSweetAlert(
-                        session = session,
-                        title = "Error",
-                        text = "Please upload valid Bend Genetics data files with a '.csv' extension.",
-                        type = "error"
-                    )
-                    return(NULL)
-                }
-                purrr::map_df(input$bend_genetics_file$datapath, \(x) parse_bend_genetics(x))
-            })
+            uploaded_bend_genetics_data <- eventReactive(input$bend_genetics_file$datapath,{
+                tryCatch({
+                    req(input$bend_genetics_file$datapath)
+                    
+                    if (!any(endsWith(input$bend_genetics_file$datapath, c(".csv", ".CSV")))) {
+                        sendSweetAlert(
+                            session = session,
+                            title = "Error",
+                            text = "Please upload valid Bend Genetics data files with a '.csv' extension.",
+                            type = "error"
+                        )
+                        return(NULL)
+                    }
+                    purrr::map_df(input$bend_genetics_file$datapath, \(x) parse_bend_genetics(x))
+                    },error = function(e) {
+                        sendSweetAlert(
+                            session = session,
+                            title = "Error",
+                            text = paste("An error occurred:", e$message),
+                            type = "error"
+                        )
+                        return(NULL)
+                    })
+                })
 
             bend_genetics_comparison_table <- reactive({
                         uploaded_bend_genetics_data() |>
@@ -104,8 +115,13 @@ bend_genetics_server <- function(input, output, session){
                     return(NULL)
                 }
                 validate(need(input$bend_genetics_file, message = "Select a file to view"))
-                DT::datatable(rvals$data, editable = list(target = "cell", disable = list(columns = c(1,16))),
-                              options = list(scrollX = TRUE, scrollY = TRUE, dom = "t", ordering = FALSE, pageLength = 25))
+                DT::datatable(rvals$data, 
+                              editable = list(target = "cell", 
+                                              disable = list(columns = c(1,3:9, 10:12))),
+                              options = list(
+                                             scrollX = TRUE,
+                                             # ordering = FALSE, 
+                                             pageLength = 25))
             })
             
             output$bend_genetics_qaqc_table <- renderTable({
