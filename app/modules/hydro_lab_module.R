@@ -30,7 +30,7 @@ hydro_lab_ui <- function(id){
                                            all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application.")
                                 ),
                                 card(card_header("Raw Data"), card_body(DT::dataTableOutput(ns("hydro_lab_table")),
-                                                                        style = "height: 900px; width: 100%;")),
+                                                                        style = "height: 600px; width: 100%;")),
                                 tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - 'O', - test passed, ', 'X' - test failed, '!' - verify manually (usually safe to ignore)"),
                                 layout_column_wrap(
                                     width = 1/2,
@@ -46,7 +46,7 @@ hydro_lab_ui <- function(id){
                                 # DT::dataTableOutput(ns("temperature_data_table")),
                                 card(card_header("Edit Data"), card_body(
                                     DT::dataTableOutput(ns("temperature_data_table")),
-                                    style = "height: 9000px; width: 100%;"
+                                    style = "height: 1000px; width: 100%;"
                                 )),
                                 actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data"),
                                 textOutput(ns("check_df_message")),
@@ -137,7 +137,7 @@ hydro_lab_server <- function(input, output, session){
                                                   disable = list(columns = c(1,2, 16))),
                                   options = list(scrollX = TRUE, 
                                                  ordering = FALSE, 
-                                                 pageLength = 25)) |>
+                                                 pageLength = 10)) |>
                         DT::formatStyle(
                             c("CHL"),
                             target = "cel",
@@ -320,7 +320,7 @@ hydro_lab_server <- function(input, output, session){
 
                     DT::datatable(temp_data$filtered_data,
                                   editable = list(target = "cell", disable = list(columns = c(2:35))),
-                                  options = list(scrollX = TRUE, dom = "t", ordering = FALSE, pageLength = 10),
+                                  options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
                                   caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
                 })
                 #disable edit ML

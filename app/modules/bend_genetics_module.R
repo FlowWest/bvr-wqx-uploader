@@ -40,7 +40,7 @@ bend_genetics_ui <- function(id){
                                     "Edit the table below to enter 'Activity Depth/Height Measure', 'Activity Depth/Height Unit', and 'Result Comment'. Click 'Generate WQX Ready Data' to reformat 'Activity ID'."),
                              card(card_header("Edit Data"), card_body(
                                  DT::dataTableOutput(ns("edited_wqx_table")),
-                                 style = "height: 1000px; width: 100%;"
+                                 style = "height: 900px; width: 100%;"
                              )
                              ),
                              # DT::dataTableOutput(ns("edited_wqx_table")),

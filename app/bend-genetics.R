@@ -264,8 +264,8 @@ bend_genetics_to_wqx <- function(data) {
                "Activity Start Time" = format(mdy_hm(`Date Collected`), "%H:%M"),
                "Activity Start Time Zone" = "PST",
                # Need activity depth/height, unit
-               "Activity Depth/Height Measure" = "",
-               "Activity Depth/Height Unit" = "",
+               "Activity Depth/Height Measure" = "0.151",
+               "Activity Depth/Height Unit" = "m",
                # Confirm Sample Collection method id is BVR SWQAPP
                "Sample Collection Method ID" = "BVR SWQAPP",
                "Sample Collection Method Context" = "CA_BVR",
