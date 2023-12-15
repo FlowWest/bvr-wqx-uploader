@@ -111,12 +111,18 @@ unit_lookup <- c(
 method_id_lookup <- c(
     "SM9223B" = "9223-B",
     "EPA 300.0" = "300.0",
-    "ELISA" = "520060",
     "QPCR" = "1611",
     "EPA 1664A" = "1664A",
     "SM4500-NO3 E" = "4500-NO3(E)",
     "SM4500-P F" = "4500-P-F",
     "SM5310C" = "5310-C"
+)
+
+abraxis_id_lookup = c(
+    "Anatoxin-a" = "520060",
+    "Cylindrospermopsin" = "522011",
+    "Microcystin/Nod." = "520011",
+    "Saxitoxin" = "52255B"
 )
 
 method_context_lookup <- c(
@@ -228,7 +234,7 @@ bend_genetics_make_activity_id <-
              equipment_comment = NULL) {
         YYYYMMDD <- gsub('/', '', date)
         activity <- ifelse(activity_type == "Sample-Routine", "SR", "FM")
-        equipment <- ifelse(equipment_name == "Probe/Sensor", "PS", NA)
+        equipment <- ifelse(equipment_name == "Probe/Sensor", "PS", "")
         hhmm <- gsub(':', '', time)
         equipment_comment <- case_when(
             equipment_comment == "Hydrolab Surveyor DS5 Multiprobe" ~ "Hydro",
@@ -282,7 +288,9 @@ bend_genetics_to_wqx <- function(data) {
                "ResultTimeBasis" = "",
                "Result Value Type" = "Actual",
                # method_lookup is in the lookup table. It points the methods to their IDs.
-               "Result Analytical Method ID" = method_id_lookup[Method],
+               "Result Analytical Method ID" = case_when(
+                   `Method` == "ELISA" ~ abraxis_id_lookup[Target],
+                   .default = method_id_lookup[Method]),
                # method_context_lookup is in the lookup table. It points the method to their method context.
                "Result Analytical Method Context" = method_context_lookup[Method],
                "Analysis Start Date" = format(mdy_hm(`Date Received`), "%m/%d/%Y"),

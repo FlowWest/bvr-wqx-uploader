@@ -117,7 +117,7 @@ hydro_lab_server <- function(input, output, session){
                     editable_cols[16] <- FALSE
                     validate(need(input$hydro_lab_file, message = "Select a file to view"))
                     DT::datatable(rvals$data, editable = list(target = "cell", disable = list(columns = c(1,2, 16))),
-                                  options = list(scrollX = TRUE, dom = "t", ordering = FALSE, pageLength = 25)) |>
+                                  options = list(scrollX = TRUE, ordering = FALSE, pageLength = 25)) |>
                         DT::formatStyle(
                             c("CHL"),
                             target = "cel",

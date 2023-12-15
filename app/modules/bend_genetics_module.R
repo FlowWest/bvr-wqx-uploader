@@ -30,11 +30,16 @@ bend_genetics_ui <- function(id){
                              )
                          ),
                          tabPanel(
-                             "Formatted Data",
-                             br(),
+                             "Enter Additional Data",
+                             value = "additional",
+                             tags$p(class = "p-3 border rounded",
+                                    "Edit the table below to enter 'Activity Depth/Height Measure', 'Activity Depth/Height Unit', and 'Result Comment'. Click 'Generate WQX Ready Data' to reformat 'Activity ID'."),
+                             DT::dataTableOutput(ns("edited_wqx_table")),
                              actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data"),
-                             br(),
-                             # textOutput(ns("check_df_message")),
+                             textOutput(ns("check_df_message"))
+                             ),
+                         tabPanel(
+                             "Formatted Data",
                              tags$p(class = "p-3 border rounded",
                                     "Review WQX formatted data. Click 'Download' and then 'Upload to WQX' when ready."),
                              bslib::layout_columns(
@@ -100,7 +105,7 @@ bend_genetics_server <- function(input, output, session){
                 }
                 validate(need(input$bend_genetics_file, message = "Select a file to view"))
                 DT::datatable(rvals$data, editable = list(target = "cell", disable = list(columns = c(1,16))),
-                              options = list(scrollX = TRUE, dom = "t", ordering = FALSE, pageLength = 25))
+                              options = list(scrollX = TRUE, scrollY = TRUE, dom = "t", ordering = FALSE, pageLength = 25))
             })
             
             output$bend_genetics_qaqc_table <- renderTable({
@@ -143,32 +148,56 @@ bend_genetics_server <- function(input, output, session){
             # handle data uploads
             bend_signature <- reactiveVal(NULL)
             bend_wqx_status <- reactiveVal(NULL)
-            common_bend_genetics_wqx_data <- reactiveVal(NULL)
+            bend_edited <- reactiveValues(wqx_data=NULL)
+            common_bend_genetics_wqx_data <- reactiveValues(wqx_data=NULL)
             bend_genetics_data <- reactiveValues(formatted_data = NULL)
             
-            bend_genetics_data_wqx <- reactive({
+            observe({
+                if (is.null(rvals$data)) {
+                    return(NULL)
+                }
                 bend_genetics_data$formatted_data <- bend_genetics_to_wqx(rvals$data)
-                # bend_genetics_data$formatted_data <- clean_bend_wqx(bend_lab_data$formatted_data)
-                # View(bend_genetics_data$formatted_data)
-
             })
             
-            # bend_genetics_wqx_formatted <-  eventReactive(input$generate_formatted_df, {
-            #     req(input$bend_genetics_file$datapath)
-            #     bend_genetics_data$formatted_data <- clean_bend_wqx(bend_genetics_data$formatted_data)
-            # })
+            observe({
+                if (is.null(bend_genetics_data$formatted_data)){
+                    return(NULL)
+                }
+                bend_genetics_data$formatted_data <- clean_bend_wqx(bend_genetics_data$formatted_data)
+            })
+            # bend_genetics_data_formatt
+            output$edited_wqx_table <- DT::renderDataTable({
+                
+                DT::datatable(bend_genetics_data$formatted_data,
+                              editable = list(target = "cell", disable = list(columns = c(0, 2:9, 12:34))),
+                              options = list(scrollX = TRUE, ordering = FALSE, pageLength = 25),
+                              caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
+            })
             
+            observeEvent(input$edited_wqx_table_cell_edit, {
+                bend_genetics_data$formatted_data <<- DT::editData(bend_genetics_data$formatted_data, input$edited_wqx_table_cell_edit)
+                })
+
             observeEvent(input$generate_formatted_df, {
-                common_bend_genetics_wqx_data(clean_bend_wqx(bend_genetics_data_wqx()))
-                # output$check_df_message <- renderText({
-                #     Sys.sleep(0.5)
-                #     "Check Formatted Data tab for generated WQX data sheet. To delete the added data, click on 'Delete Last Added Result'."
-                # })
+                # common_bend_genetics_wqx_data(bend_genetics_data_wqx())
+                common_bend_genetics_wqx_data$wqx_data <- bend_genetics_data$formatted_data |>
+                    mutate("Activity ID (CHILD-subset)" = bend_genetics_make_activity_id(location_id = `Monitoring Location ID`,
+                                                               date = `Activity Start Date`,
+                                                               time = `Activity Start Time`,
+                                                               activity_type = `Activity Type`,
+                                                               equipment_name = `Sample Collection Equipment Name`,
+                                                               depth = `Activity Depth/Height Measure`)) |> 
+                    relocate("Activity ID (CHILD-subset)", .before = "Activity ID User Supplied (PARENTs)")
+                # common_bend_genetics_wqx_data(bend_genetics_data$formatted_data)
+                output$check_df_message <- renderText({
+                    Sys.sleep(0.5)
+                    "Check Formatted Data tab for generated WQX data sheet."
+                })
             })
             
             output$bend_genetics_wqx_formatted <- renderTable({
-                req(common_bend_genetics_wqx_data())
-                common_bend_genetics_wqx_data()
+                req(common_bend_genetics_wqx_data$wqx_data)
+                common_bend_genetics_wqx_data$wqx_data
             })
             #Could refactor
             output$bend_genetics_download <- downloadHandler(
@@ -177,7 +206,7 @@ bend_genetics_server <- function(input, output, session){
                     paste('bend_genetics-data-', bend_signature(), '.csv', sep='')
                 },
                 content = function(file) {
-                    write.csv(common_bend_genetics_wqx_data(), file, row.names = FALSE)
+                    write.csv(common_bend_genetics_wqx_data$wqx_data, file, row.names = FALSE)
                 }
             )
             bend_genetics_wqx_status <- eventReactive(input$bend_genetics_upload, {
