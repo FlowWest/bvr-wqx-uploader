@@ -29,7 +29,8 @@ hydro_lab_ui <- function(id){
                                            "This section provides view of raw data, as well as results for Qa/Qc checks. Verify that
                                            all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application.")
                                 ),
-                                card(card_header("Raw Data"), card_body(DT::dataTableOutput(ns("hydro_lab_table")))),
+                                card(card_header("Raw Data"), card_body(DT::dataTableOutput(ns("hydro_lab_table")),
+                                                                        style = "height: 900px; width: 100%;")),
                                 tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - 'O', - test passed, ', 'X' - test failed, '!' - verify manually (usually safe to ignore)"),
                                 layout_column_wrap(
                                     width = 1/2,
@@ -42,7 +43,11 @@ hydro_lab_ui <- function(id){
                                 value = "additional",
                                 tags$p(class = "p-3 border rounded",
                                        "Enter additional AccuWeather 'Temperature, Air' measurement and 'Result Comment' for each date and location in the sidebar panel."),
-                                DT::dataTableOutput(ns("temperature_data_table")),
+                                # DT::dataTableOutput(ns("temperature_data_table")),
+                                card(card_header("Edit Data"), card_body(
+                                    DT::dataTableOutput(ns("temperature_data_table")),
+                                    style = "height: 9000px; width: 100%;"
+                                )),
                                 actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data"),
                                 textOutput(ns("check_df_message")),
                                 tags$p(class = "p-3 border rounded",
@@ -127,8 +132,12 @@ hydro_lab_server <- function(input, output, session){
                     editable_cols[1:2] <- FALSE
                     editable_cols[16] <- FALSE
                     validate(need(input$hydro_lab_file, message = "Select a file to view"))
-                    DT::datatable(rvals$data, editable = list(target = "cell", disable = list(columns = c(1,2, 16))),
-                                  options = list(scrollX = TRUE, ordering = FALSE, pageLength = 25)) |>
+                    DT::datatable(rvals$data, 
+                                  editable = list(target = "cell", 
+                                                  disable = list(columns = c(1,2, 16))),
+                                  options = list(scrollX = TRUE, 
+                                                 ordering = FALSE, 
+                                                 pageLength = 25)) |>
                         DT::formatStyle(
                             c("CHL"),
                             target = "cel",
@@ -311,7 +320,7 @@ hydro_lab_server <- function(input, output, session){
 
                     DT::datatable(temp_data$filtered_data,
                                   editable = list(target = "cell", disable = list(columns = c(2:35))),
-                                  options = list(scrollX = TRUE, dom = "t", ordering = FALSE),
+                                  options = list(scrollX = TRUE, dom = "t", ordering = FALSE, pageLength = 10),
                                   caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
                 })
                 #disable edit ML

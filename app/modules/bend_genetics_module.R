@@ -21,7 +21,11 @@ bend_genetics_ui <- function(id){
                                         "This section provides view of raw data, as well as results for Qa/Qc checks. Verify that
                                            all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application.")
                              ),
-                             card(card_header("Raw Data"), card_body(DT::dataTableOutput(ns("bend_genetics_table")))),
+                             card(card_header("Raw Data"), card_body(
+                                 DT::dataTableOutput(ns("bend_genetics_table")),
+                                 style = "height: 900px; width: 100%;"
+                                 )
+                                ),
                              tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - 'O', - test passed, ', 'X' - test failed, '!' - verify manually (usually safe to ignore)"),
                              layout_column_wrap(
                                  width = 1/2,
@@ -34,7 +38,18 @@ bend_genetics_ui <- function(id){
                              value = "additional",
                              tags$p(class = "p-3 border rounded",
                                     "Edit the table below to enter 'Activity Depth/Height Measure', 'Activity Depth/Height Unit', and 'Result Comment'. Click 'Generate WQX Ready Data' to reformat 'Activity ID'."),
-                             DT::dataTableOutput(ns("edited_wqx_table")),
+                             card(card_header("Edit Data"), card_body(
+                                 DT::dataTableOutput(ns("edited_wqx_table")),
+                                 style = "height: 1000px; width: 100%;"
+                             )
+                             ),
+                             # DT::dataTableOutput(ns("edited_wqx_table")),
+                             # tags$style(HTML("
+                             #      edited_wqx_table {
+                             #        height: 900px;
+                             #        width: 100%;
+                             #      }
+                             #    ")),
                              actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data"),
                              textOutput(ns("check_df_message"))
                              ),
@@ -118,10 +133,8 @@ bend_genetics_server <- function(input, output, session){
                 DT::datatable(rvals$data, 
                               editable = list(target = "cell", 
                                               disable = list(columns = c(1,3:9, 10:12))),
-                              options = list(
-                                             scrollX = TRUE,
-                                             # ordering = FALSE, 
-                                             pageLength = 25))
+                              options = list(scrollX = TRUE,
+                                             pageLength = 10))
             })
             
             output$bend_genetics_qaqc_table <- renderTable({
@@ -186,7 +199,7 @@ bend_genetics_server <- function(input, output, session){
                 
                 DT::datatable(bend_genetics_data$formatted_data,
                               editable = list(target = "cell", disable = list(columns = c(0, 2:9, 12:34))),
-                              options = list(scrollX = TRUE, ordering = FALSE, pageLength = 25),
+                              options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
                               caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
             })
             
