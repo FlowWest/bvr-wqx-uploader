@@ -43,7 +43,6 @@ hydro_lab_ui <- function(id){
                                 value = "additional",
                                 tags$p(class = "p-3 border rounded",
                                        "Enter additional AccuWeather 'Temperature, Air' measurement and 'Result Comment' for each date and location in the sidebar panel."),
-                                # DT::dataTableOutput(ns("temperature_data_table")),
                                 card(card_header("Edit Data"), card_body(
                                     DT::dataTableOutput(ns("temperature_data_table")),
                                     style = "height: 1000px; width: 100%;"
@@ -67,8 +66,10 @@ hydro_lab_ui <- function(id){
                                                      tags$div(HTML("<b> Starting WQX upload. Please wait 25 seconds for the upload status from CDX...</b>"),id="loadmessage")),
                                     uiOutput(ns("hydro_upload_status"))
                                 ),
-                                # DT::dataTableOutput("hydro_lab_wqx_formatted")
-                                tableOutput(ns("hydro_lab_wqx_formatted"))
+                                card(card_header("Preview Final Upload"), card_body(
+                                    DT::dataTableOutput(ns("hydro_lab_wqx_formatted")),
+                                    style = "height: 1500px; width: 100%;"
+                                ))
                                 )
                             )
                         )
@@ -364,11 +365,23 @@ hydro_lab_server <- function(input, output, session){
                    })
                 })
 
-
-                output$hydro_lab_wqx_formatted <- renderTable({
-                    req(common_hydro_lab_wqx_data())
-                    common_hydro_lab_wqx_data()
+                output$temperature_data_table <- DT::renderDataTable({
+                    
+                    DT::datatable(temp_data$filtered_data,
+                                  editable = list(target = "cell", disable = list(columns = c(2:35))),
+                                  options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
+                                  caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
                 })
+                output$hydro_lab_wqx_formatted <- DT::renderDataTable({
+                    
+                    DT::datatable(common_hydro_lab_wqx_data(),
+                                  options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
+                                  caption = "Preview data before download.")
+                })
+                #     renderTable({
+                #     req(common_hydro_lab_wqx_data())
+                #     common_hydro_lab_wqx_data()
+                # })
 
 
 

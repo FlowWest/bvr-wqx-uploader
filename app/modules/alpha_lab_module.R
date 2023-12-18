@@ -43,13 +43,6 @@ alpha_lab_ui <- function(id){
                                  style = "height: 1000px; width: 100%;"
                              )
                              ),
-                             # DT::dataTableOutput(ns("edited_wqx_table")),
-                             # tags$style(HTML("
-                             #      edited_wqx_table {
-                             #        height: 900px;
-                             #        width: 100%;
-                             #      }
-                             #    ")),
                              actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data"),
                              textOutput(ns("check_df_message"))
                          ),
@@ -65,8 +58,10 @@ alpha_lab_ui <- function(id){
                                                   tags$div(HTML("<b> Starting WQX upload. Please wait 25 seconds for the upload status from CDX...</b>"),id="loadmessage")),
                                  uiOutput(ns("alpha_upload_status"))
                              ),
-                             # DT::dataTableOutput("alpha_lab_wqx_formatted")
-                             tableOutput(ns("alpha_lab_wqx_formatted"))
+                             card(card_header("Preview Final Upload"), card_body(
+                                 DT::dataTableOutput(ns("alpha_lab_wqx_formatted")),
+                                 style = "height: 1400px; width: 100%;"
+                             ))
                          )
                      )
                  )
@@ -98,12 +93,6 @@ alpha_lab_server <- function(input, output, session){
             return(NULL)
         })
     })
-    
-    # alpha_lab_comparison_table <- reactive({
-    #     uploaded_alpha_lab_data() |>
-    #         tidyr::pivot_wider(names_from = "Target", values_from = "Result", values_fn = as.numeric) |>
-    #         rename("Microcycstin Nod" = "Microcystin/Nod.")
-    # })
     
     # handle data editing by the user
     rvals <- reactiveValues(data = NULL)
@@ -188,13 +177,6 @@ alpha_lab_server <- function(input, output, session){
         alpha_lab_data$formatted_data <- alpha_lab_to_wqx(rvals$data)
     })
     
-    # observe({
-    # if (is.null(alpha_lab_data$formatted_data)){
-    # return(NULL)
-    # }
-    # alpha_lab_data$formatted_data <- clean_alpha_wqx(alpha_lab_data$formatted_data)
-    # })
-    # alpha_lab_data_formatt
     output$edited_wqx_table <- DT::renderDataTable({
         
         DT::datatable(alpha_lab_data$formatted_data,
@@ -223,11 +205,12 @@ alpha_lab_server <- function(input, output, session){
             "Check Formatted Data tab for generated WQX data sheet."
         })
     })
-    
-    output$alpha_lab_wqx_formatted <- renderTable({
-        req(common_alpha_lab_wqx_data$wqx_data)
-        common_alpha_lab_wqx_data$wqx_data
-    })
+    output$alpha_lab_wqx_formatted <- DT::renderDataTable({
+        
+        DT::datatable(common_alpha_lab_wqx_data$wqx_data,
+                      options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
+                      caption = "Preview data before download.")
+    })    
     #Could refactor
     output$alpha_lab_download <- downloadHandler(
         filename = function() {

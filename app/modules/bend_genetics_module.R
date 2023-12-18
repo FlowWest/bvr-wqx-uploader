@@ -43,13 +43,6 @@ bend_genetics_ui <- function(id){
                                  style = "height: 1000px; width: 100%;"
                              )
                              ),
-                             # DT::dataTableOutput(ns("edited_wqx_table")),
-                             # tags$style(HTML("
-                             #      edited_wqx_table {
-                             #        height: 900px;
-                             #        width: 100%;
-                             #      }
-                             #    ")),
                              actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data"),
                              textOutput(ns("check_df_message"))
                              ),
@@ -65,8 +58,10 @@ bend_genetics_ui <- function(id){
                                                   tags$div(HTML("<b> Starting WQX upload. Please wait 25 seconds for the upload status from CDX...</b>"),id="loadmessage")),
                                  uiOutput(ns("bend_upload_status"))
                              ),
-                             # DT::dataTableOutput("bend_genetics_wqx_formatted")
-                             tableOutput(ns("bend_genetics_wqx_formatted"))
+                             card(card_header("Preview Final Upload"), card_body(
+                                 DT::dataTableOutput(ns("bend_genetics_wqx_formatted")),
+                                 style = "height: 1500px; width: 100%;"
+                             ))
                          )
                      )
                  )
@@ -223,11 +218,13 @@ bend_genetics_server <- function(input, output, session){
                     "Check Formatted Data tab for generated WQX data sheet."
                 })
             })
-            
-            output$bend_genetics_wqx_formatted <- renderTable({
-                req(common_bend_genetics_wqx_data$wqx_data)
-                common_bend_genetics_wqx_data$wqx_data
+            output$bend_genetics_wqx_formatted <- DT::renderDataTable({
+                
+                DT::datatable(common_bend_genetics_wqx_data$wqx_data,
+                              options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
+                              caption = "Preview data before download.")
             })
+            
             #Could refactor
             output$bend_genetics_download <- downloadHandler(
                 filename = function() {
