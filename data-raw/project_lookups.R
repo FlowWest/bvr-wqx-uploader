@@ -168,7 +168,7 @@ save_objects <- function() {
         method_context_lookup,
         characteristic_lookup,
         method_speciation_lookup,
-        # project_sites,
+        abraxis_id_lookup,
         file = "data/lookup_objects.rdata"
     )
     
