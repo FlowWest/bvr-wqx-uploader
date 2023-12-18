@@ -12,10 +12,11 @@ library(shinycssloaders)
 # reticulate::use_miniconda("wqxUpload")
 reticulate::use_virtualenv("wqxUpload")
 
+load("../data/lookup_objects.rdata")
 
 source("modules/hydro_lab_module.R")
 source("modules/bend_genetics_module.R")
-# source('modules/alpha_lab_module.R')
+source('modules/alpha_lab_module.R')
 source('modules/user_account_module.R')
 
 source("hydro-lab.R")
