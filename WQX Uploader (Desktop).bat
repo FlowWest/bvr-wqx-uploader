@@ -55,22 +55,22 @@ IF NOT DEFINED RPath (
     echo Found R directory: %RPath%
 )
 
-cd %USERPROFILE%\Downloads\bvr-wqx-uploader
+cd "%USERPROFILE%\Downloads\bvr-wqx-uploader\bvr-wqx-uploader"
+ 
+REM Check if the folder is already a Git repository
+IF EXIST "%CD%\.git" (
+    echo This is already a Git repository.
+) else (
+    echo This is not a Git repository. Initializing a new one...
+    :: Initialize a new Git repository
+    git init
 
-%GIT_EXECUTABLE% fetch origin
-FOR /F %%A IN ('%GIT_EXECUTABLE% rev-parse HEAD') DO SET "LOCAL=%%A"
-FOR /F %%B IN ('%GIT_EXECUTABLE% rev-parse origin/main') DO SET "REMOTE=%%B"
+    :: Add a remote origin pointing to a GitHub repository with the same name
+    set "githubRepo=https://github.com/FlowWest/bvr-wqx-uploader.git"
+    git remote add origin !githubRepo!
 
-IF NOT "%LOCAL%"=="%REMOTE%" (
-    echo Updating the application...
-
-    REM Pull the latest changes
-    %GIT_EXECUTABLE% pull origin main
-    
-    REM Additional update steps (if needed)
-    REM e.g., apply database migrations, install new dependencies, etc.
-) ELSE (
-    echo No updates available.
+    echo Initialized Git repository and added remote origin to:
+    echo !githubRepo!
 )
 
 cd app
