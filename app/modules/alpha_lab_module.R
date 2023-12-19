@@ -56,7 +56,7 @@ alpha_lab_ui <- function(id){
                                  actionButton(ns("alpha_lab_upload"), label = "Upload to WQX", icon = shiny::icon("rocket")),
                                  conditionalPanel(condition="$('html').hasClass('shiny-busy')",
                                                   tags$div(HTML("<b> Starting WQX upload. Please wait 25 seconds for the upload status from CDX...</b>"),id="loadmessage")),
-                                 uiOutput(ns("alpha_upload_status"))
+                                 uiOutput(ns("alpha_lab_upload_status"))
                              ),
                              card(card_header("Preview Final Upload"), card_body(
                                  DT::dataTableOutput(ns("alpha_lab_wqx_formatted")),
@@ -68,7 +68,7 @@ alpha_lab_ui <- function(id){
              ))
 }
 
-alpha_lab_server <- function(input, output, session){
+alpha_lab_server <- function(input, output, session, account_info){
     uploaded_alpha_lab_data <- eventReactive(input$alpha_lab_file$datapath,{
         tryCatch({
             req(input$alpha_lab_file$datapath)
@@ -197,7 +197,7 @@ alpha_lab_server <- function(input, output, session){
                                                                              time = `Activity Start Time`,
                                                                              activity_type = `Activity Type`,
                                                                              equipment_name = `Sample Collection Equipment Name`,
-                                                                                 depth = `Activity Depth/Height Measure`)) |> 
+                                                                             depth = `Activity Depth/Height Measure`)) |> 
             relocate("Activity ID (CHILD-subset)", .before = "Activity ID User Supplied (PARENTs)")
         # common_alpha_lab_wqx_data(alpha_lab_data$formatted_data)
         output$check_df_message <- renderText({
@@ -235,9 +235,9 @@ alpha_lab_server <- function(input, output, session){
             "/"
         )
         
-        API_KEY = input$wqx_api_key
-        USER_ID = input$wqx_username
-        CONFIG_ID = input$wqx_config_id
+        API_KEY = account_info$selectedApiKey()
+        USER_ID = account_info$selectedUsername()
+        CONFIG_ID = account_info$selectedConfigId()
         FILE_PATH = path_to_most_recent
         FILE_NAME =  paste("alpha_lab-data-", alpha_signature(), ".csv", sep = "")
         

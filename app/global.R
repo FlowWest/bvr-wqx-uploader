@@ -9,8 +9,8 @@ library(shinyWidgets)
 library(shinycssloaders)
 
 # change this based on who is using the app
-reticulate::use_miniconda("wqxUpload")
-# reticulate::use_virtualenv("wqxUpload")
+# reticulate::use_miniconda("wqxUpload")
+reticulate::use_virtualenv("wqxUpload")
 
 load("../data/lookup_objects.rdata")
 

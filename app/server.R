@@ -1,8 +1,8 @@
 function(input, output, session) {
-    callModule(hydro_lab_server, "hydro_lab")
-    callModule(user_account_server, "user_account")
-    callModule(bend_genetics_server, "bend_genetics")
-    callModule(alpha_lab_server, "alpha_lab")
+    account_info <- callModule(user_account_server, "user_account")
+    callModule(hydro_lab_server, "hydro_lab", account_info)
+    callModule(bend_genetics_server, "bend_genetics", account_info)
+    callModule(alpha_lab_server, "alpha_lab", account_info)
 
 }
 

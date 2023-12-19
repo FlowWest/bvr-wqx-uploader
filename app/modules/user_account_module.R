@@ -30,6 +30,7 @@ user_account_server <- function(input, output, session){
                 }
             })
             
+            
             observeEvent(input$generate_button, {
                 template <- data.frame(WQX_API_KEY = character(0), USER_ID = character(0), CONFIG_ID = character(0))
                 dir.create(cdx_account_path, recursive = TRUE)
@@ -54,4 +55,29 @@ user_account_server <- function(input, output, session){
                 updateSelectInput(session, "wqx_api_key", "API Key", choices = cdx_account$WQX_API_KEY)
                 updateSelectInput(session, "wqx_config_id", "Config ID", choices = cdx_account$CONFIG_ID)
             })
+            
+            selectedUsername <- reactiveVal(NULL)
+            selectedApiKey <- reactiveVal(NULL)
+            selectedConfigId <- reactiveVal(NULL)
+            
+            observeEvent(input$wqx_api_key, {
+                selectedUsername(input$wqx_username)
+            })
+            
+            observeEvent(input$wqx_api_key, {
+                selectedApiKey(input$wqx_api_key)
+            })
+            
+            observeEvent(input$wqx_config_id, {
+                selectedConfigId(input$wqx_config_id)
+            })
+            
+            return(list(
+                selectedApiKey = selectedApiKey,
+                selectedUsername = selectedUsername,
+                selectedConfigId = selectedConfigId
+            ))
+            # return(selectedApiKey)
+            
+            
 }

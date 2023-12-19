@@ -169,7 +169,7 @@ save_objects <- function() {
         characteristic_lookup,
         method_speciation_lookup,
         abraxis_id_lookup,
-        file = "data/lookup_objects.rdata"
+        file = "../data/lookup_objects.rdata"
     )
     
 }
