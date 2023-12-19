@@ -77,7 +77,11 @@ alpha_lab_to_wqx <- function(data) {
                 "",
                 Result
             ),
-            "Result Unit" = ifelse(UNITS == ".", "", UNITS),
+            "Result Unit" = case_when(UNITS == "." ~ "",
+                                      Result == "Absent" ~ "",
+                                      Result == "Present" ~ "",
+                                      Result == "ND" ~ "", 
+                                      TRUE ~ UNITS),
             "Result Measure Qualifier" = "",
             "Result Sample Fraction" = "Total",
             "Result Status ID" = "Final",
