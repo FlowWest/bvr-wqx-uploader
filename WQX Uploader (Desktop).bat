@@ -60,6 +60,7 @@ cd "%USERPROFILE%\Downloads\bvr-wqx-uploader\bvr-wqx-uploader"
 REM Check if the folder is already a Git repository
 IF EXIST "%CD%\.git" (
     echo This is already a Git repository.
+    git pull origin
 ) else (
     echo This is not a Git repository. Initializing a new one...
     :: Initialize a new Git repository
@@ -67,10 +68,10 @@ IF EXIST "%CD%\.git" (
 
     :: Add a remote origin pointing to a GitHub repository with the same name
     set "githubRepo=https://github.com/FlowWest/bvr-wqx-uploader.git"
-    git remote add origin !githubRepo!
+    git remote add origin %githubRepo%
 
     echo Initialized Git repository and added remote origin to:
-    echo !githubRepo!
+    echo %githubRepo%
 )
 
 cd app
