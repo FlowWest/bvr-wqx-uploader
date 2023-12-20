@@ -39,7 +39,37 @@ read_bend <- function(file) {
   bend_full_df <-   left_join(first_df, second_df)
 }
 
-bend_raw <- read_bend("data-raw/bend/20220913_BV_Results.csv")
+parse_bend_genetics <- function(file_path) {
+    bend_raw <- read_csv(file_path, skip = 7) |>
+        select(-'...8')
+    
+    analytical_report_for_samples <- bend_raw[1:which(is.na(bend_raw$`Sample ID`))[1] - 1,]
+    
+    bend_raw_na <- bend_raw |>
+        filter(!if_all(everything(), is.na))
+    
+    sample_results <- bend_raw_na[(which(is.na(bend_raw_na$`Sample ID`))[1:4][4] + 3):(which(is.na(bend_raw_na$`Sample ID`))[5] - 1),] |>
+        rename(
+            Method = Location,
+            Target = `Date Collected`,
+            Result = `Date Received`,
+            `Quantitation Limit` = Matrix,
+            Units = Preserved,
+            Notes = BG_ID
+        ) |> 
+        mutate_if(is.character, utf8::utf8_encode) |> 
+        mutate(
+            Units = ifelse(Units == "\\xb5g/L", "ug/L", Units)
+        )
+    
+    bend_full_df <- left_join(analytical_report_for_samples, sample_results) |> 
+        filter(!is.na(Target))
+    
+    return(bend_full_df)
+}
+bend_new <- read_csv("data-raw/bend/20220913_BV_Results.csv", skip = 7)
+bend_raw <- read_csv("data-raw/bend/20230330_BV_Results.csv", skip = 7)  
+    # select(-'...8')
 bend_raw_xlsx <- read_bend("data-raw/bend/BendHAB.xlsx")
 
 # ------------------------------------------------------------------------------
@@ -70,6 +100,35 @@ skip_n <- which(stringr::str_detect(header_chunk, "^SAMPLE RESULTS"))
   # slice(100) |> glimpse()
   # unlist(., use.names= FALSE)
 
+parse_bend_genetics <- function(file_path) {
+    bend_raw <- read_csv(file_path, skip = 7) |>
+        select(-'...8')
+    
+    analytical_report_for_samples <- bend_raw[1:which(is.na(bend_raw$`Sample ID`))[1] - 1,]
+    
+    bend_raw_na <- bend_raw |>
+        filter(!if_all(everything(), is.na))
+    
+    sample_results <- bend_raw_na[(which(is.na(bend_raw_na$`Sample ID`))[1:4][4] + 3):(which(is.na(bend_raw_na$`Sample ID`))[5] - 1),] |>
+        rename(
+            Method = Location,
+            Target = `Date Collected`,
+            Result = `Date Received`,
+            `Quantitation Limit` = Matrix,
+            Units = Preserved,
+            Notes = BG_ID
+        ) |> 
+        mutate_if(is.character, utf8::utf8_encode) |> 
+        mutate(
+            Units = ifelse(Units == "\\xb5g/L", "ug/L", Units)
+        )
+    
+    bend_full_df <- left_join(analytical_report_for_samples, sample_results) |> 
+        filter(!is.na(Target))
+    
+    return(bend_full_df)
+}
+bend read_csv("bend/20230330_BV_Results.csv")
 bend_raw <- read_excel("data-raw/bend/BendHAB.xlsx", skip = 5)  |>  
   clean_names() |> 
   mutate(sample_id = as.numeric(sample_id)) |> 

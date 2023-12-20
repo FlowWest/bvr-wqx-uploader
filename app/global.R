@@ -9,8 +9,15 @@ library(shinyWidgets)
 library(shinycssloaders)
 
 # change this based on who is using the app
-# reticulate::use_miniconda("wqxUpload")
-reticulate::use_virtualenv("wqxUpload")
+reticulate::use_miniconda("wqxUpload")
+# reticulate::use_virtualenv("wqxUpload")
+
+load("../data/lookup_objects.rdata")
+
+source("modules/hydro_lab_module.R")
+source("modules/bend_genetics_module.R")
+source('modules/alpha_lab_module.R')
+source('modules/user_account_module.R')
 
 source("hydro-lab.R")
 source("alpha-lab.R")
@@ -80,4 +87,8 @@ bend_genetics_range_rules <- validator(
     "Cylindrospermopsin in valid range" = in_range(as.numeric(na.omit(`Cylindrospermopsin`)), 0, 1000),
     "Saxitoxin in valid range" = in_range(as.numeric(na.omit(`Saxitoxin`)), 0, 1000)
     
+)
+
+bend_genetics_custom_rules <- validator(
+    "Location ID is Valid" = location_id %in% names(project_id_lookup)
 )
