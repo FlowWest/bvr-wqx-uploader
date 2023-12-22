@@ -9,8 +9,8 @@ library(shinyWidgets)
 library(shinycssloaders)
 
 # change this based on who is using the app
-reticulate::use_miniconda("wqxUpload")
-# reticulate::use_virtualenv("wqxUpload")
+# reticulate::use_miniconda("wqxUpload")
+reticulate::use_virtualenv("wqxUpload")
 
 load("../data/lookup_objects.rdata")
 
@@ -24,9 +24,21 @@ source("alpha-lab.R")
 source("bend-genetics.R")
 
 file_info <- reactiveValues(file_exists = TRUE)
+project_file_info <- reactieValues(file_exits = TRUE)
 
 # Function to check if the file exists
 check_file <- function(path) {
+    if (!file.exists(path)) {
+        file_info$file_exists <- FALSE
+        return(invisible())
+    }
+    file_info$file_exists <- TRUE
+    cdx_account <- read_csv(cdx_account_file)
+    return(cdx_account)
+    
+}
+
+check_pr_location_file <- function(path) {
     if (!file.exists(path)) {
         file_info$file_exists <- FALSE
         return(invisible())
@@ -42,7 +54,8 @@ cdx_account_path <- file.path(Sys.getenv("USERPROFILE"), "Documents/CDX_Account"
 cdx_account_file <- paste0(cdx_account_path, "/cdx-account-info.csv")
 cdx_account <- check_file(cdx_account_file)
 
-
+cdx_pr_loc_file <- paste0(cdx_account_path, "/cdx-project-location.csv")
+cdx_pr_loc <- check_file(cdx_pr_loc_file)
 
 # Hydro Lab Rules -------------------------------------------------------------
 hydro_lab_range_rules <- validator(

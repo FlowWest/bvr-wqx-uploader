@@ -4,14 +4,14 @@ user_account_ui <- function(id){
                  tags$h2("Manage WQX Credentials"),
                  sidebarLayout(
                      sidebarPanel(width = 4,
-                                  selectInput(ns("wqx_username"), "Username", choices = cdx_account$USER_ID),
-                                  selectInput(ns("wqx_api_key"), "API Key", choices = cdx_account$WQX_API_KEY),
-                                  selectInput(ns("wqx_config_id"), "Config ID", choices = cdx_account$CONFIG_ID),
+                                  textAreaInput(ns("location_name"), "Enter Location Name", rows = 1),
+                                  textAreaInput(ns("project_name"), "Enter Project Name", rows = 1),
+                                  actionButton(ns("add_result"), "Add Result"),
                                   ),
                 mainPanel(
                     uiOutput(ns("error_message")),
                     br(),
-                    actionButton(ns("load_credential"), "Load Credential")
+                    actionButton(ns("load_project_location"), "Load Projects and Locations")
     
                 )
             )

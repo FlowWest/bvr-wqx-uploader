@@ -121,7 +121,7 @@ alpha_lab_server <- function(input, output, session, account_info){
         validate(need(input$alpha_lab_file, message = "Select a file to view"))
         DT::datatable(rvals$data, 
                       editable = list(target = "cell", 
-                                      disable = list(columns = c(1,3:9, 10:12))),
+                                      disable = list(columns = c(1,3:35))),
                       options = list(scrollX = TRUE,
                                      pageLength = 10))
     })
