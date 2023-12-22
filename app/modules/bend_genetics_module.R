@@ -95,19 +95,27 @@ bend_genetics_server <- function(input, output, session, account_info){
             })
         })
 
-    bend_genetics_comparison_table <- reactive({
-                uploaded_bend_genetics_data() |>
-                    tidyr::pivot_wider(names_from = "Target", values_from = "Result", values_fn = as.numeric) |>
-                    rename("Microcycstin Nod" = "Microcystin/Nod.")
-            })
+    # bend_genetics_comparison_table <- reactive({
+    #             uploaded_bend_genetics_data() |>
+    #                 tidyr::pivot_wider(names_from = "Target", values_from = "Result", values_fn = as.numeric) |>
+    #                 rename("Microcycstin Nod" = "Microcystin/Nod.")
+    #         })
 
     # handle data editing by the user
     rvals <- reactiveValues(data = NULL)
+    bend_comparison <- reactiveValues(data = NULL)
 
     observe({
+        bend_comparison$data <- uploaded_bend_genetics_data() |> 
+            pivot_wider(names_from = "Target", values_from = "Result")
+        print(colnames (bend_comparison$data))
+        
         rvals$data <- uploaded_bend_genetics_data()
+        # |>
+        #     tidyr::pivot_wider(names_from = "Target", values_from = "Result", values_fn = as.numeric) |>
+        #     rename("Microcycstin Nod" = "Microcystin/Nod.")
+            
     })
-    #
     observeEvent(input$reset, {
         rvals$data <- NULL
         bend_signature <- NULL
@@ -117,27 +125,72 @@ bend_genetics_server <- function(input, output, session, account_info){
     })
     #
     observeEvent(input$bend_genetics_table_cell_edit, {
-        rvals$data <<- DT::editData(rvals$data, input$bend_genetics_table_cell_edit)
+        bend_comparison$data <<- DT::editData(bend_comparison$data, input$bend_genetics_table_cell_edit)
     })
     #
     output$bend_genetics_table <- DT::renderDataTable({
-        if (is.null(rvals$data)) {
+        if (is.null(bend_comparison$data)) {
             return(NULL)
         }
         validate(need(input$bend_genetics_file, message = "Select a file to view"))
-        DT::datatable(rvals$data, 
-                      editable = list(target = "cell", 
-                                      disable = list(columns = c(1,3:9, 10:12))),
-                      options = list(scrollX = TRUE,
-                                     pageLength = 10))
+        analyte_list <- c("Anatoxin-a", "Cylindrospermopsin", "Microcystin", "Microcystin/Nod.", "Saxitoxin")
+        nm1 <- intersect(analyte_list, colnames(bend_comparison$data))
+        # print(nm1)
+        DT::datatable(bend_comparison$data, 
+                              editable = list(target = "cell", 
+                                              disable = list(columns = c(1,3:9, 10:12))),
+                              options = list(scrollX = TRUE,
+                                             pageLength = 10))  |>  
+                        DT::formatStyle(
+                            c(nm1),
+                            target = "cel",
+                            backgroundColor = DT::styleInterval(c(1, 1000), c("#f29f99", "white", "#f29f99")))
+    
+        # }}
+        # DT::datatable(bend_comparison$data, 
+        #               editable = list(target = "cell", 
+        #                               disable = list(columns = c(1,3:9, 10:12))),
+        #               options = list(scrollX = TRUE,
+        #                              pageLength = 10))  |>  
+        #     if("Anatoxin-a" %in% colnames(bend_comparison$data)){
+        #         DT::formatStyle(
+        #                 c("Anatoxin-a"),
+        #                 target = "cel",
+        #                 backgroundColor = DT::styleInterval(c(1, 1000), c("#f29f99", "white", "#f29f99")))
+        #     }
+            # DT::formatStyle(
+            #     c("Anatoxin-a"),
+            #     target = "cel",
+            #     backgroundColor = DT::styleInterval(c(1, 1000), c("#f29f99", "white", "#f29f99"))
+            # ) |> 
+            # DT::formatStyle(
+            #     c("Cylindrospermopsin"),
+            #     target = "cel",
+            #     backgroundColor = DT::styleInterval(c(1, 1000), c("#f29f99", "white", "#f29f99"))
+            # ) |>
+            # DT::formatStyle(
+            #     c("'Microcystin/Nod.'"),
+            #     target = "cel",
+            #     backgroundColor = DT::styleInterval(c(1, 1000), c("#f29f99", "white", "#f29f99"))
+            # ) |>
+            # DT::formatStyle(
+            #     c("Saxitoxin"),
+            #     target = "cel",
+            #     backgroundColor = DT::styleInterval(c(1, 1000), c("#f29f99", "white", "#f29f99"))
+            # ) |> 
+            # DT::formatStyle(
+            #     c("Microcystin"),
+            #     target = "cel",
+            #     backgroundColor = DT::styleInterval(c(1, 300000), c("#f29f99", "white", "#f29f99"))
+            # ) 
     })
             
     output$bend_genetics_qaqc_table <- renderTable({
-        if (is.null(rvals$data)) {
+        if (is.null(bend_comparison$data)) {
             return(NULL)
         }
-        validate(need(rvals$data, message = "Select a file to view qa/qc results."))
-        validation_results <- validate::confront(rvals$data, bend_genetics_range_rules)
+        validate(need(bend_comparison$data, message = "Select a file to view qa/qc results."))
+        validation_results <- validate::confront(bend_comparison$data, bend_genetics_range_rules)
         as_tibble(summary(validation_results)) |>
             mutate(pass = case_when(
                 error == TRUE ~ "!",
