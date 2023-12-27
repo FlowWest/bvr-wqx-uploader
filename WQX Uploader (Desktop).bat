@@ -1,5 +1,6 @@
 @echo off
 SETLOCAL
+setlocal enabledelayedexpansion
 
 REM Function to find the Git executable
 FOR %%I IN (
@@ -55,7 +56,8 @@ IF NOT DEFINED RPath (
     echo Found R directory: %RPath%
 )
 
-cd "%USERPROFILE%\Downloads\bvr-wqx-uploader\bvr-wqx-uploader"
+
+
  
 REM Check if the folder is already a Git repository
 IF EXIST "%CD%\.git" (
@@ -73,6 +75,24 @@ IF EXIST "%CD%\.git" (
     echo Initialized Git repository and added remote origin to:
     echo %githubRepo%
 )
+
+
+set "downloadsFolder=%USERPROFILE%\Downloads"
+set "latestVersion="
+
+for /f "tokens=*" %%a in ('dir /b /ad /o-n "%downloadsFolder%\bvr-wqx-uploader-*" 2^>nul') do (
+    set "latestVersion=%%a"
+    goto :found
+)
+
+:found
+if not "%latestVersion%"=="" (
+    cd "%downloadsFolder%\%latestVersion%\%latestVersion%"
+    echo Latest version found: %latestVersion%
+) else (
+    echo No version of bvr-wqx-uploader found in the Downloads folder.
+)
+
 
 cd app
 
