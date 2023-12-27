@@ -69,14 +69,18 @@ hydro_lab_custom_rules <- validator(
 # Alpha Labs Rules ----------------------------------------------------------
 
 alpha_lab_range_rules <- validator(
-    "Nitrate + Nitrite in valid range" = in_range(as.numeric(`Nitrate as N`), 0, 10) || `Nitrate as N` == "Absent", 
-    "Oil & Grease (HEM) in valid range" = in_range(`Oil & Grease (HEM)`, 0, 3000),
-    "Phosphorus, total in valid range" = in_range(`Phosphorus, total`, 0, 2),
-    "Total Organic Carbon in valid range" = in_range(`Total Organic Carbon`, 0, 10),
-    "Total Coliform in valid range" = in_range(as.numeric(`Total Coliform`), 0, 300000) || `Total Coliform` == "Absent",
-    "Fecal Coliform in valid range" = in_range(`Fecal Coliform`, 0, 300000), 
-    "Total Kjeldahl Nitrogen in valid range" = in_range(`Total Kjeldahl Nitrogen`, 0, 10)
+    "Nitrate + Nitrite in valid range" = in_range(as.numeric(na.omit(`Nitrate + Nitrite as N`)), 0, 10), 
+    "Oil & Grease (HEM) in valid range" = in_range(as.numeric(na.omit(`Oil & Grease (HEM)`)), 0, 3000),
+    "Phosphorus, total in valid range" = in_range(as.numeric(na.omit(`Phosphorus, total`)), 0, 2),
+    "Total Organic Carbon in valid range" = in_range(as.numeric(na.omit(`Total Organic Carbon`)), 0, 10),
+    "Total Coliform in valid range" = in_range(as.numeric(na.omit(`Total Coliform`)), 0, 300000),
+    "Fecal Coliform in valid range" = in_range(as.numeric(na.omit(`Fecal Coliform`)), 0, 300000), 
+    "Total Kjeldahl Nitrogen in valid range" = in_range(as.numeric(na.omit(`Total Kjeldahl Nitrogen`)), 0, 10)
     
+)
+
+bend_genetics_custom_rules <- validator(
+    "Location ID is Valid" = location_id %in% names(project_id_lookup)
 )
 
 #Bend Genetics Rules ----------------------------------------------------

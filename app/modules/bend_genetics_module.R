@@ -95,21 +95,29 @@ bend_genetics_server <- function(input, output, session, account_info){
             })
         })
 
-    bend_genetics_comparison_table <- reactive({
-                uploaded_bend_genetics_data() |>
-                    tidyr::pivot_wider(names_from = "Target", values_from = "Result", values_fn = as.numeric) |>
-                    rename("Microcycstin Nod" = "Microcystin/Nod.")
-            })
+    # bend_genetics_comparison_table <- reactive({
+    #             uploaded_bend_genetics_data() |>
+    #                 tidyr::pivot_wider(names_from = "Target", values_from = "Result", values_fn = as.numeric) |>
+    #                 rename("Microcycstin Nod" = "Microcystin/Nod.")
+    #         })
 
     # handle data editing by the user
-    rvals <- reactiveValues(data = NULL)
+    # rvals <- reactiveValues(data = NULL)
+    bend_comparison <- reactiveValues(data = NULL)
+    bend_genetics_data <- reactiveValues(formatted_data = NULL)
+    
 
     observe({
-        rvals$data <- uploaded_bend_genetics_data()
+        bend_comparison$data <- uploaded_bend_genetics_data() |> 
+            mutate(Result = ifelse(Result != "ND", as.numeric(Result), "ND")) |>
+            pivot_wider(names_from = "Target", values_from = "Result")   
+            
+            # print(colnames(bend_comparison$data))
+        
+        # rvals$data <- uploaded_bend_genetics_data()
     })
-    #
     observeEvent(input$reset, {
-        rvals$data <- NULL
+        # rvals$data <- NULL
         bend_signature <- NULL
         bend_wqx_status <- NULL
         common_bend_genetics_wqx_data <- NULL
@@ -117,27 +125,50 @@ bend_genetics_server <- function(input, output, session, account_info){
     })
     #
     observeEvent(input$bend_genetics_table_cell_edit, {
-        rvals$data <<- DT::editData(rvals$data, input$bend_genetics_table_cell_edit)
+        bend_comparison$data <<- DT::editData(bend_comparison$data, input$bend_genetics_table_cell_edit)
     })
     #
     output$bend_genetics_table <- DT::renderDataTable({
-        if (is.null(rvals$data)) {
+        if (is.null(bend_comparison$data)) {
             return(NULL)
         }
         validate(need(input$bend_genetics_file, message = "Select a file to view"))
-        DT::datatable(rvals$data, 
-                      editable = list(target = "cell", 
-                                      disable = list(columns = c(1,3:9, 10:12))),
-                      options = list(scrollX = TRUE,
-                                     pageLength = 10))
+        analyte_list <- c("Anatoxin-a", "Cylindrospermopsin", "Microcystin", "Microcystin/Nod.", "Saxitoxin")
+        nm1 <- intersect(analyte_list, colnames(bend_comparison$data))
+        # print(nm1)
+        datatable <- DT::datatable(bend_comparison$data, 
+                              editable = list(target = "cell", 
+                                              disable = list(columns = c(1,3:9, 10:11))),
+                              options = list(scrollX = TRUE,
+                                             pageLength = 10))
+        for (analyte in nm1) {
+            if(analyte == "Microcystin"){
+                datatable <- datatable |>
+                    DT::formatStyle(
+                        columns = analyte,
+                        target = "cell",
+                        backgroundColor = DT::styleInterval(c(1, 300000), c("#f29f99", "white", "#f29f99"))
+                    )
+            } else{
+                datatable <- datatable |>
+                    DT::formatStyle(
+                        columns = analyte,
+                        target = "cell",
+                        backgroundColor = DT::styleInterval(c(1, 1000), c("#f29f99", "white", "#f29f99"))
+                    ) 
+            }
+            
+        }
+        return(datatable)
+    
     })
             
     output$bend_genetics_qaqc_table <- renderTable({
-        if (is.null(rvals$data)) {
+        if (is.null(bend_comparison$data)) {
             return(NULL)
         }
-        validate(need(rvals$data, message = "Select a file to view qa/qc results."))
-        validation_results <- validate::confront(rvals$data, bend_genetics_range_rules)
+        validate(need(bend_comparison$data, message = "Select a file to view qa/qc results."))
+        validation_results <- validate::confront(bend_comparison$data, bend_genetics_range_rules)
         as_tibble(summary(validation_results)) |>
             mutate(pass = case_when(
                 error == TRUE ~ "!",
@@ -151,11 +182,11 @@ bend_genetics_server <- function(input, output, session, account_info){
     })
             
     output$bend_genetics_custom_qaqc_table <- renderTable({
-        if (is.null(rvals$data)) {
+        if (is.null(bend_comparison$data)) {
             return(NULL)
         }
-        validate(need(rvals$data, message = "Select a file to view custom qa/qc results."))
-        validation_results <- validate::confront(rvals$data, bend_genetics_custom_rules)
+        validate(need(bend_comparison$data, message = "Select a file to view custom qa/qc results."))
+        validation_results <- validate::confront(bend_comparison$data, bend_genetics_custom_rules)
         as_tibble(summary(validation_results)) |>
             mutate(pass = case_when(
                 error == TRUE ~ "!",
@@ -168,43 +199,67 @@ bend_genetics_server <- function(input, output, session, account_info){
             select(-c("nNA","items","warning","expression"))
     })
             
+    observe({
+        if (is.null(bend_comparison$data)) {
+            return(NULL)
+        }
+        bend_genetics_data$formatted_data <- bend_comparison$data |> 
+            pivot_longer(cols = -c("Sample ID", 
+                                   "Location", 
+                                   "Date Collected", 
+                                   "Date Received", 
+                                   "Matrix",
+                                   "Preserved",
+                                   "BG_ID",
+                                   "Method",
+                                   "Quantitation Limit",
+                                   "Units",
+                                   "Notes"),
+                         names_to = "Target",
+                         values_to = "Result") |> 
+            relocate("Result", .before = "Quantitation Limit") |> 
+            relocate("Target", .before = "Result") |> 
+            drop_na("Result")
             
+    })        
             # handle data uploads
     bend_signature <- reactiveVal(NULL)
     bend_wqx_status <- reactiveVal(NULL)
     bend_edited <- reactiveValues(wqx_data=NULL)
     common_bend_genetics_wqx_data <- reactiveValues(wqx_data=NULL)
-    bend_genetics_data <- reactiveValues(formatted_data = NULL)
-            
+
     observe({
-        if (is.null(rvals$data)) {
+        if (is.null(bend_genetics_data$formatted_data)) {
             return(NULL)
         }
-        bend_genetics_data$formatted_data <- bend_genetics_to_wqx(rvals$data)
+        bend_edited$wqx_data <- bend_genetics_to_wqx(bend_genetics_data$formatted_data)
+        
     })
             
     observe({
         if (is.null(bend_genetics_data$formatted_data)){
             return(NULL)
         }
-        bend_genetics_data$formatted_data <- clean_bend_wqx(bend_genetics_data$formatted_data)
+        bend_edited$wqx_data <- clean_bend_wqx(bend_edited$wqx_data)
     })
-            # bend_genetics_data_formatt
+    
     output$edited_wqx_table <- DT::renderDataTable({
         
-        DT::datatable(bend_genetics_data$formatted_data,
+        DT::datatable(bend_edited$wqx_data,
                       editable = list(target = "cell", disable = list(columns = c(0, 2:9, 12:34))),
                       options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
                       caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
     })
             
     observeEvent(input$edited_wqx_table_cell_edit, {
-        bend_genetics_data$formatted_data <<- DT::editData(bend_genetics_data$formatted_data, input$edited_wqx_table_cell_edit)
+        bend_edited$wqx_data <<- DT::editData(bend_edited$wqx_data, input$edited_wqx_table_cell_edit)
         })
+    
+ 
 
     observeEvent(input$generate_formatted_df, {
         # common_bend_genetics_wqx_data(bend_genetics_data_wqx())
-        common_bend_genetics_wqx_data$wqx_data <- bend_genetics_data$formatted_data |>
+        common_bend_genetics_wqx_data$wqx_data <- bend_edited$wqx_data |>
             mutate("Activity ID (CHILD-subset)" = bend_genetics_make_activity_id(location_id = `Monitoring Location ID`,
                                                        date = `Activity Start Date`,
                                                        time = `Activity Start Time`,

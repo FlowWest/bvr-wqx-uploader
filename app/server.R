@@ -3,6 +3,4 @@ function(input, output, session) {
     callModule(hydro_lab_server, "hydro_lab", account_info)
     callModule(bend_genetics_server, "bend_genetics", account_info)
     callModule(alpha_lab_server, "alpha_lab", account_info)
-
 }
-     

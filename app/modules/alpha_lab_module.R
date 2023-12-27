@@ -23,7 +23,7 @@ alpha_lab_ui <- function(id){
                              ),
                              card(card_header("Raw Data"), card_body(
                                  DT::dataTableOutput(ns("alpha_lab_table")),
-                                 style = "height: 1300px; width: 100%;"
+                                 style = "height: 1400px; width: 100%;"
                              )
                              ),
                              tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - 'O', - test passed, ', 'X' - test failed, '!' - verify manually (usually safe to ignore)"),
@@ -95,15 +95,18 @@ alpha_lab_server <- function(input, output, session, account_info){
     })
     
     # handle data editing by the user
-    rvals <- reactiveValues(data = NULL)
+    # rvals <- reactiveValues(data = NULL)
+    alpha_comparison <- reactiveValues(data = NULL)
+    alpha_labs_data <- reactiveValues(formatted_data = NULL)
     
     observe({
-        rvals$data <- uploaded_alpha_lab_data()
+        alpha_comparison$data <- uploaded_alpha_lab_data() |> 
+            mutate(Result = ifelse(Result != "ND" & Result != "Absent" & Result != "Present", as.numeric(Result), Result)) |>
+            pivot_wider(names_from = "ANALYTE", values_from = "Result")   
+
     })
     #
     observeEvent(input$reset, {
-        
-        rvals$data <- NULL
         alpha_signature <- NULL
         alpha_wqx_status <- NULL
         common_alpha_lab_wqx_data <- NULL
@@ -111,27 +114,91 @@ alpha_lab_server <- function(input, output, session, account_info){
     })
     #
     observeEvent(input$alpha_lab_table_cell_edit, {
-        rvals$data <<- DT::editData(rvals$data, input$alpha_lab_table_cell_edit)
+        alpha_comparison$data <<- DT::editData(alpha_comparison$data, input$alpha_lab_table_cell_edit)
     })
-    #
+
     output$alpha_lab_table <- DT::renderDataTable({
-        if (is.null(rvals$data)) {
+        if (is.null(alpha_comparison$data)) {
             return(NULL)
         }
         validate(need(input$alpha_lab_file, message = "Select a file to view"))
-        DT::datatable(rvals$data, 
-                      editable = list(target = "cell", 
-                                      disable = list(columns = c(1,3:9, 10:12))),
-                      options = list(scrollX = TRUE,
-                                     pageLength = 10))
+        analyte_list <- c(
+            "Oil & Grease (HEM)", 
+            "Nitrate + Nitrite as N", 
+            "Phosphorus, total", 
+            "Total Organic Carbon",
+            "Total Kjeldahl Nitrogen",
+            "Fecal Coliform",
+            "Total Coliform")
+        nm1 <- intersect(analyte_list, colnames(alpha_comparison$data))
+        # print(nm1)
+        datatable <- DT::datatable(alpha_comparison$data, 
+                                   editable = list(target = "cell", 
+                                                   disable = list(columns = c(1, 3:4, 6:45))),
+                                   options = list(scrollX = TRUE,
+                                                  pageLength = 10))
+        for (analyte in nm1) {
+            if(analyte == "Oil & Grease (HEM)"){
+                datatable <- datatable |>
+                    DT::formatStyle(
+                        columns = analyte,
+                        target = "cell",
+                        backgroundColor = DT::styleInterval(c(0, 3000), c("#f29f99", "white", "#f29f99"))
+                    )
+            }else if(analyte == "Nitrate + Nitrite as N"){
+                datatable <- datatable |>
+                    DT::formatStyle(
+                        columns = analyte,
+                        target = "cell",
+                        backgroundColor = DT::styleInterval(c(0, 10), c("#f29f99", "white", "#f29f99"))
+                    )
+            }else if(analyte == "Phosphorus, total"){
+                datatable <- datatable |>
+                    DT::formatStyle(
+                        columns = analyte,
+                        target = "cell",
+                        backgroundColor = DT::styleInterval(c(0, 2), c("#f29f99", "white", "#f29f99"))
+                    )
+            }else if(analyte == "Total Organic Carbon"){
+                datatable <- datatable |>
+                    DT::formatStyle(
+                        columns = analyte,
+                        target = "cell",
+                        backgroundColor = DT::styleInterval(c(0, 10), c("#f29f99", "white", "#f29f99"))
+                    )
+            }else if(analyte == "Total Kjeldahl Nitrogen"){
+                datatable <- datatable |>
+                    DT::formatStyle(
+                        columns = analyte,
+                        target = "cell",
+                        backgroundColor = DT::styleInterval(c(0, 10), c("#f29f99", "white", "#f29f99"))
+                    )
+            }else if(analyte == "Total Coliform"){
+                datatable <- datatable |>
+                    DT::formatStyle(
+                        columns = analyte,
+                        target = "cell",
+                        backgroundColor = DT::styleInterval(c(0, 300000), c("#f29f99", "white", "#f29f99"))
+                    )
+            }else if(analyte == "Fecal Coliform"){
+                datatable <- datatable |>
+                    DT::formatStyle(
+                        columns = analyte,
+                        target = "cell",
+                        backgroundColor = DT::styleInterval(c(0, 300000), c("#f29f99", "white", "#f29f99"))
+                    )
+            }
+        }
+        return(datatable)
+        
     })
     
     output$alpha_lab_qaqc_table <- renderTable({
-        if (is.null(rvals$data)) {
+        if (is.null(alpha_comparison)) {
             return(NULL)
         }
-        validate(need(rvals$data, message = "Select a file to view qa/qc results."))
-        validation_results <- validate::confront(rvals$data, alpha_lab_range_rules)
+        validate(need(alpha_comparison$data, message = "Select a file to view qa/qc results."))
+        validation_results <- validate::confront(alpha_comparison$data, alpha_lab_range_rules)
         as_tibble(summary(validation_results)) |>
             mutate(pass = case_when(
                 error == TRUE ~ "!",
@@ -144,54 +211,64 @@ alpha_lab_server <- function(input, output, session, account_info){
             select(-c("nNA","items","warning","expression"))
     })
     
-    # output$alpha_lab_custom_qaqc_table <- renderTable({
-    #     if (is.null(rvals$data)) {
-    #         return(NULL)
-    #     }
-    #     validate(need(rvals$data, message = "Select a file to view custom qa/qc results."))
-    #     validation_results <- validate::confront(rvals$data, alpha_lab_custom_rules)
-    #     as_tibble(summary(validation_results)) |>
-    #         mutate(pass = case_when(
-    #             error == TRUE ~ "!",
-    #             warning == TRUE ~ "!",
-    #             items == passes ~ "O",
-    #             fails > 0 ~ "X",
-    #             TRUE ~ "?"
-    #         ),
-    #         name = stringr::str_replace_all(name, "\\.", " "))  |>
-    #         select(-c("nNA","items","warning","expression"))
-    # })
+    output$alpha_lab_custom_qaqc_table <- renderTable({
+        if (is.null(alpha_comparison$data)) {
+            return(NULL)
+        }
+        validate(need(alpha_comparison$data, message = "Select a file to view custom qa/qc results."))
+        validation_results <- validate::confront(alpha_comparison$data, alpha_lab_custom_rules)
+        as_tibble(summary(validation_results)) |>
+            mutate(pass = case_when(
+                error == TRUE ~ "!",
+                warning == TRUE ~ "!",
+                items == passes ~ "O",
+                fails > 0 ~ "X",
+                TRUE ~ "?"
+            ),
+            name = stringr::str_replace_all(name, "\\.", " "))  |>
+            select(-c("nNA","items","warning","expression"))
+    })
     
-    
+    observe({
+        if (is.null(alpha_comparison$data)) {
+            return(NULL)
+        }
+        alpha_labs_data$formatted_data <- alpha_comparison$data |>  
+            pivot_longer(cols = (starts_with("ANALYTEORDER")+1):ncol(alpha_comparison$data),
+                         names_to = "ANALYTE",
+                         values_to = "Result") |> 
+            relocate("Result", .before = "DL") |> 
+            relocate("ANALYTE", .before = "CASNUMBER") |>
+            drop_na("Result")
+    })
     # handle data uploads
     alpha_signature <- reactiveVal(NULL)
     alpha_wqx_status <- reactiveVal(NULL)
     alpha_edited <- reactiveValues(wqx_data=NULL)
     common_alpha_lab_wqx_data <- reactiveValues(wqx_data=NULL)
-    alpha_lab_data <- reactiveValues(formatted_data = NULL)
-    
+
     observe({
-        if (is.null(rvals$data)) {
+        if (is.null(alpha_comparison$data)) {
             return(NULL)
         }
-        alpha_lab_data$formatted_data <- alpha_lab_to_wqx(rvals$data)
+        alpha_edited$wqx_data <- alpha_lab_to_wqx(alpha_labs_data$formatted_data)
     })
     
     output$edited_wqx_table <- DT::renderDataTable({
         
-        DT::datatable(alpha_lab_data$formatted_data,
+        DT::datatable(alpha_edited$wqx_data,
                       editable = list(target = "cell", disable = list(columns = c(0, 3:9, 12:34))),
                       options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
                       caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
     })
     
     observeEvent(input$edited_wqx_table_cell_edit, {
-        alpha_lab_data$formatted_data <<- DT::editData(alpha_lab_data$formatted_data, input$edited_wqx_table_cell_edit)
+        alpha_edited$wqx_data <<- DT::editData(alpha_edited$wqx_data, input$edited_wqx_table_cell_edit)
     })
     
     observeEvent(input$generate_formatted_df, {
         # common_alpha_lab_wqx_data(alpha_lab_data_wqx())
-        common_alpha_lab_wqx_data$wqx_data <- alpha_lab_data$formatted_data |>
+        common_alpha_lab_wqx_data$wqx_data <- alpha_edited$wqx_data |>
             mutate("Activity ID (CHILD-subset)" = alpha_lab_make_activity_id(location_id = `Monitoring Location ID`,
                                                                              date = `Activity Start Date`,
                                                                              time = `Activity Start Time`,
