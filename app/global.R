@@ -79,7 +79,7 @@ alpha_lab_range_rules <- validator(
     
 )
 
-bend_genetics_custom_rules <- validator(
+alpha_lab_custom_rules <- validator(
     "Location ID is Valid" = location_id %in% names(project_id_lookup)
 )
 
