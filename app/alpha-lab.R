@@ -101,7 +101,7 @@ alpha_lab_to_wqx <- function(data) {
             ),
             "Result Analytical Method Context" = method_context_lookup[METHODNAME],
             "Analysis Start Date" = format(mdy_hms(ANADATE), "%m/%d/%Y"),
-            "Result Detection/Quantitation Limit Type" = ifelse(is.na(DL), "", "Method Detection Level"),
+            "Result Detection/Quantitation Limit Type" = ifelse(is.na(DL), "", "Lower Reporting Limit"),
             "Result Detection/Quantitation Limit Measure" = ifelse(is.na(DL), "", DL),
             "Result Detection/Quantitation Limit Unit" = ifelse(UNITS == ".", "", UNITS),
             "Result Comment" = ""
