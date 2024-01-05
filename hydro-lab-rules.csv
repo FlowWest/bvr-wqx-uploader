@@ -1,3 +1,0 @@
-rule name,rule type,rule parameters,target characteristic
-resistivity is in valid rage,range,"-10, 100",Res
-resistivitu is formatted correctlu,format,d.dd,Res

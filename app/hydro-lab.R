@@ -8,8 +8,8 @@ parse_hydrolab <- function(filepath) {
              col_select = c(1:28)) |>
         mutate_if(is.character, utf8::utf8_encode) |>
         select(-starts_with("...")) |>
-        mutate("location_id" = location_for_selected_hydrolab) |>
-        filter(str_count(Date, "\\d+") > 2) # TODO a little sus
+        mutate("location_id" = location_for_selected_hydrolab) |> 
+        filter(grepl("^[0-9]", Date))
 }
 
 hydro_lab_make_activity_id <-
