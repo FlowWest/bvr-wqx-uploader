@@ -147,14 +147,14 @@ bend_genetics_server <- function(input, output, session, account_info){
                     DT::formatStyle(
                         columns = analyte,
                         target = "cell",
-                        backgroundColor = DT::styleInterval(c(1, 300000), c("#f29f99", "white", "#f29f99"))
+                        backgroundColor = DT::styleInterval(c(0, 0.8), c("#f29f99", "white", "#f29f99"))
                     )
             } else{
                 datatable <- datatable |>
                     DT::formatStyle(
                         columns = analyte,
                         target = "cell",
-                        backgroundColor = DT::styleInterval(c(1, 1000), c("#f29f99", "white", "#f29f99"))
+                        backgroundColor = DT::styleInterval(c(0, 0.001), c("#f29f99", "white", "#f29f99"))
                     ) 
             }
             

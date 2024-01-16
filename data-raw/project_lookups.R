@@ -120,7 +120,10 @@ method_id_lookup <- c(
     "EPA 1664A" = "1664A",
     "SM4500-NO3 E" = "4500-NO3(E)",
     "SM4500-P F" = "4500-P-F",
-    "SM5310C" = "5310-C"
+    "SM5310C" = "5310-C",
+    "SM9221C,E" = "9221-E",
+    "SM9221B,C" = "9221-B",
+    "EPA 351.2" = "351.2"
 )
 
 abraxis_id_lookup = c(
@@ -138,7 +141,10 @@ method_context_lookup <- c(
     "EPA 1664A" = "USEPA",
     "SM4500-NO3 E" = "APHA",
     "SM4500-P F" = "APHA",
-    "SM5310C" = "APHA"
+    "SM5310C" = "APHA",
+    "SM9221C,E" = "APHA",
+    "SM9221B,C" = "APHA",
+    "EPA 351.2" = "USEPA"
     
 )
 

@@ -110,7 +110,8 @@ alpha_lab_server <- function(input, output, session, account_info){
         alpha_signature <- NULL
         alpha_wqx_status <- NULL
         common_alpha_lab_wqx_data$wqx_data <- NULL
-        # alpha_lab_data$formatted_data <- NULL
+        alpha_comparison$data <- NULL
+        alpha_labs_data$formatted_data <- NULL
     })
     #
     observeEvent(input$alpha_lab_table_cell_edit, {
