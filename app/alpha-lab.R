@@ -3,7 +3,10 @@ parse_alphalab <- function(filepath) {
         tidyr::separate(SAMPLENAME, into=c("sample1", "sample2"), sep = " ") |> # TODO this looks a little too hard-coded 
         dplyr::mutate(SAMPLENAME = ifelse(sample1 %in% names(project_id_lookup), sample1, sample2)) |>
         dplyr::select(-sample1, -sample2) |> 
-        dplyr::relocate(SAMPLENAME, .before = LABSAMPID)
+        dplyr::relocate(SAMPLENAME, .before = LABSAMPID) |> 
+        mutate(SAMPLENAME = ifelse(SAMPLENAME == "BVSWDI", "BVSWD1", SAMPLENAME),
+               SAMPLENAME = ifelse(SAMPLENAME == "BVRTCI", "BVRTC1", SAMPLENAME),
+               SAMPLENAME = ifelse(SAMPLENAME == "BVCLI", "BVCL1", SAMPLENAME))
 }
 
 alpha_lab_make_activity_id <- function(location_id,

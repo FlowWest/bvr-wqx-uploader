@@ -122,6 +122,7 @@ bend_genetics_server <- function(input, output, session, account_info){
         bend_wqx_status <- NULL
         common_bend_genetics_wqx_data <- NULL
         bend_genetics_data$formatted_data <- NULL
+        bend_comparison$data <- NULL
     })
     #
     observeEvent(input$bend_genetics_table_cell_edit, {
