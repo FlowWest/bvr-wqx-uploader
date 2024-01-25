@@ -138,8 +138,8 @@ bend_genetics_server <- function(input, output, session, account_info){
         nm1 <- intersect(analyte_list, colnames(bend_comparison$data))
         # print(nm1)
         datatable <- DT::datatable(bend_comparison$data, 
-                              editable = list(target = "cell", 
-                                              disable = list(columns = c(1,3:9, 10:11))),
+                              editable = list(target = "cell"), 
+                                              # disable = list(columns = c(1,3:9, 10:11))),
                               options = list(scrollX = TRUE,
                                              pageLength = 10))
         for (analyte in nm1) {
