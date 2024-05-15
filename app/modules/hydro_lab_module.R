@@ -195,6 +195,11 @@ hydro_lab_server <- function(input, output, session, account_info){
                 c("PCY"),
                 target = "cel",
                 backgroundColor = DT::styleInterval(c(100, 200000), c("#f29f99", "white", "#f29f99"))
+            )|>
+            DT::formatStyle(
+                c("Res"),
+                target = "cel",
+                backgroundColor = DT::styleInterval(c(0.1, 20), c("#f29f99", "white", "#f29f99"))
             )
     })
     

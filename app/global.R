@@ -49,7 +49,7 @@ hydro_lab_range_rules <- validator(
     "Temperature in valid range" = in_range(as.numeric(Temp), 0, 30), 
     "Depth in valid range" = in_range(as.numeric(Depth10), 0.01, 10), 
     "Specific Conductivity in valid range" = in_range(as.numeric(SpCond), 0.01, 1), 
-    "Resistivity in valid range" = in_range(as.numeric(Res), 0.1, 5),
+    "Resistivity in valid range" = in_range(as.numeric(Res), 0.1, 20),
     "Salinity in valid range" = in_range(as.numeric(Sal), 0.01, 1), 
     "Total Dissolved Solids in valid range" = in_range(as.numeric(TDS), 0.01, 1),
     "Dissolved Oxygen saturation in valid range" = in_range(as.numeric(`DO%`), 0.01, 150), 
