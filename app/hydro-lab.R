@@ -69,7 +69,7 @@ hydro_lab_to_wqx <- function(data) {
                "Activity Start Time Zone" = "PST",
                "Activity Depth/Height Measure" = as.numeric(Depth10),
                "Activity Depth/Height Unit" = "m",
-               "Sample Collection Method ID" = "BVR Tribal SWQAPP",
+               "Sample Collection Method ID" = "BVR SWQAPP",
                "Sample Collection Method Context" = "CA_BVR",
                "Sample Collection Equipment Name" = "Probe/Sensor",
                "Sample Collection Equipment Comment" = "Hydrolab Surveyor DS5 Multiprobe",
