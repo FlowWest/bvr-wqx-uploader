@@ -25,13 +25,13 @@ bend_genetics_ui <- function(id){
                                  DT::dataTableOutput(ns("bend_genetics_table")),
                                  style = "height: 900px; width: 100%;"
                                  )
-                                ),
-                             tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - 'O', - test passed, ', 'X' - test failed, '!' - verify manually (usually safe to ignore)"),
-                             layout_column_wrap(
-                                 width = 1/2,
-                                 card(card_header("Range based rules"), card_body(tableOutput(ns("bend_genetics_qaqc_table")))),
-                                 card(card_header("Custom rules"), card_body(tableOutput(ns("bend_genetics_custom_qaqc_table"))))
-                             )
+                                )
+                             # tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - 'O', - test passed, ', 'X' - test failed, '!' - verify manually (usually safe to ignore)")
+                             # layout_column_wrap(
+                             #     width = 1/2,
+                             #     card(card_header("Range based rules"), card_body(tableOutput(ns("bend_genetics_qaqc_table")))),
+                             #     card(card_header("Custom rules"), card_body(tableOutput(ns("bend_genetics_custom_qaqc_table"))))
+                             # )
                          ),
                          tabPanel(
                              "Enter Additional Data",
@@ -95,11 +95,11 @@ bend_genetics_server <- function(input, output, session, account_info){
             })
         })
 
-    # bend_genetics_comparison_table <- reactive({
-    #             uploaded_bend_genetics_data() |>
-    #                 tidyr::pivot_wider(names_from = "Target", values_from = "Result", values_fn = as.numeric) |>
-    #                 rename("Microcycstin Nod" = "Microcystin/Nod.")
-    #         })
+    bend_genetics_comparison_table <- reactive({
+                uploaded_bend_genetics_data() |>
+                    tidyr::pivot_wider(names_from = "Target", values_from = "Result", values_fn = as.numeric) |>
+                    rename("Microcycstin Nod" = "Microcystin/Nod.")
+            })
 
     # handle data editing by the user
     # rvals <- reactiveValues(data = NULL)
@@ -164,41 +164,41 @@ bend_genetics_server <- function(input, output, session, account_info){
     
     })
             
-    output$bend_genetics_qaqc_table <- renderTable({
-        if (is.null(bend_comparison$data)) {
-            return(NULL)
-        }
-        validate(need(bend_comparison$data, message = "Select a file to view qa/qc results."))
-        validation_results <- validate::confront(bend_comparison$data, bend_genetics_range_rules)
-        as_tibble(summary(validation_results)) |>
-            mutate(pass = case_when(
-                error == TRUE ~ "!",
-                warning == TRUE ~ "!",
-                items == passes ~ "O",
-                fails > 0 ~ "X",
-                TRUE ~ "?"
-            ),
-            name = stringr::str_replace_all(name, "\\.", " ")) |>
-            select(-c("nNA","items","warning","expression"))
-    })
-            
-    output$bend_genetics_custom_qaqc_table <- renderTable({
-        if (is.null(bend_comparison$data)) {
-            return(NULL)
-        }
-        validate(need(bend_comparison$data, message = "Select a file to view custom qa/qc results."))
-        validation_results <- validate::confront(bend_comparison$data, bend_genetics_custom_rules)
-        as_tibble(summary(validation_results)) |>
-            mutate(pass = case_when(
-                error == TRUE ~ "!",
-                warning == TRUE ~ "!",
-                items == passes ~ "O",
-                fails > 0 ~ "X",
-                TRUE ~ "?"
-            ),
-            name = stringr::str_replace_all(name, "\\.", " "))  |>
-            select(-c("nNA","items","warning","expression"))
-    })
+    # output$bend_genetics_qaqc_table <- renderTable({
+    #     if (is.null(bend_comparison$data)) {
+    #         return(NULL)
+    #     }
+    #     validate(need(bend_comparison$data, message = "Select a file to view qa/qc results."))
+    #     validation_results <- validate::confront(bend_comparison$data, bend_genetics_range_rules)
+    #     as_tibble(summary(validation_results)) |>
+    #         mutate(pass = case_when(
+    #             error == TRUE ~ "!",
+    #             warning == TRUE ~ "!",
+    #             items == passes ~ "O",
+    #             fails > 0 ~ "X",
+    #             TRUE ~ "?"
+    #         ),
+    #         name = stringr::str_replace_all(name, "\\.", " ")) |>
+    #         select(-c("nNA","items","warning","expression"))
+    # })
+    #         
+    # output$bend_genetics_custom_qaqc_table <- renderTable({
+    #     if (is.null(bend_comparison$data)) {
+    #         return(NULL)
+    #     }
+    #     validate(need(bend_comparison$data, message = "Select a file to view custom qa/qc results."))
+    #     validation_results <- validate::confront(bend_comparison$data, bend_genetics_custom_rules)
+    #     as_tibble(summary(validation_results)) |>
+    #         mutate(pass = case_when(
+    #             error == TRUE ~ "!",
+    #             warning == TRUE ~ "!",
+    #             items == passes ~ "O",
+    #             fails > 0 ~ "X",
+    #             TRUE ~ "?"
+    #         ),
+    #         name = stringr::str_replace_all(name, "\\.", " "))  |>
+    #         select(-c("nNA","items","warning","expression"))
+    # })
             
     observe({
         if (is.null(bend_comparison$data)) {

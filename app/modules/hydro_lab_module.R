@@ -31,13 +31,13 @@ hydro_lab_ui <- function(id){
                                            all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application.")
                                 ),
                                 card(card_header("Raw Data"), card_body(DT::dataTableOutput(ns("hydro_lab_table")),
-                                                                        style = "height: 600px; width: 100%;")),
-                                tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - 'O', - test passed, ', 'X' - test failed, '!' - verify manually (usually safe to ignore)"),
-                                layout_column_wrap(
-                                    width = 1/2,
-                                    card(card_header("Range based rules"), card_body(tableOutput(ns("hydro_lab_qaqc_table")))),
-                                    card(card_header("Custom rules"), card_body(tableOutput(ns("hydro_lab_custom_qaqc_table"))))
-                                )
+                                                                        style = "height: 600px; width: 100%;"))
+                                # tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - 'O', - test passed, ', 'X' - test failed, '!' - verify manually (usually safe to ignore)"),
+                                # layout_column_wrap(
+                                #     width = 1/2,
+                                #     card(card_header("Range based rules"), card_body(tableOutput(ns("hydro_lab_qaqc_table")))),
+                                #     card(card_header("Custom rules"), card_body(tableOutput(ns("hydro_lab_custom_qaqc_table"))))
+                                # )
                             ),
                             tabPanel(
                                 "Enter Additional Data",
@@ -136,8 +136,8 @@ hydro_lab_server <- function(input, output, session, account_info){
         editable_cols[16] <- FALSE
         validate(need(input$hydro_lab_file, message = "Select a file to view"))
         DT::datatable(rvals$data, 
-                      editable = list(target = "cell", 
-                                      disable = list(columns = c(1,2, 16))),
+                      editable = list(target = "cell"), 
+                                      # disable = list(columns = c(1,2, 16))),
                       options = list(scrollX = TRUE, 
                                      ordering = FALSE, 
                                      pageLength = 10)) |>
@@ -199,42 +199,42 @@ hydro_lab_server <- function(input, output, session, account_info){
     })
     
     
-    output$hydro_lab_qaqc_table <- renderTable({
-        if (is.null(rvals$data)) {
-            return(NULL)
-        }
-        validate(need(rvals$data, message = "Select a file to view qa/qc results."))
-        validation_results <- validate::confront(rvals$data, hydro_lab_range_rules)
-        as_tibble(summary(validation_results)) |>
-            mutate(pass = case_when(
-                error == TRUE ~ "!",
-                warning == TRUE ~ "!",
-                items == passes ~ "O",
-                fails > 0 ~ "X",
-                TRUE ~ "?"
-            ),
-            name = stringr::str_replace_all(name, "\\.", " ")) |>
-            select(-c("nNA","items","warning","expression"))
-    })
-    
-    output$hydro_lab_custom_qaqc_table <- renderTable({
-        if (is.null(rvals$data)) {
-            return(NULL)
-        }
-        validate(need(rvals$data, message = "Select a file to view custom qa/qc results."))
-        validation_results <- validate::confront(rvals$data, hydro_lab_custom_rules)
-        as_tibble(summary(validation_results)) |>
-            mutate(pass = case_when(
-                error == TRUE ~ "!",
-                warning == TRUE ~ "!",
-                items == passes ~ "O",
-                fails > 0 ~ "X",
-                TRUE ~ "?"
-            ),
-            name = stringr::str_replace_all(name, "\\.", " "))  |>
-            select(-c("nNA","items","warning","expression"))
-    })
-    
+    # output$hydro_lab_qaqc_table <- renderTable({
+    #     if (is.null(rvals$data)) {
+    #         return(NULL)
+    #     }
+    #     validate(need(rvals$data, message = "Select a file to view qa/qc results."))
+    #     validation_results <- validate::confront(rvals$data, hydro_lab_range_rules)
+    #     as_tibble(summary(validation_results)) |>
+    #         mutate(pass = case_when(
+    #             error == TRUE ~ "!",
+    #             warning == TRUE ~ "!",
+    #             items == passes ~ "O",
+    #             fails > 0 ~ "X",
+    #             TRUE ~ "?"
+    #         ),
+    #         name = stringr::str_replace_all(name, "\\.", " ")) |>
+    #         select(-c("nNA","items","warning","expression"))
+    # })
+    # 
+    # output$hydro_lab_custom_qaqc_table <- renderTable({
+    #     if (is.null(rvals$data)) {
+    #         return(NULL)
+    #     }
+    #     validate(need(rvals$data, message = "Select a file to view custom qa/qc results."))
+    #     validation_results <- validate::confront(rvals$data, hydro_lab_custom_rules)
+    #     as_tibble(summary(validation_results)) |>
+    #         mutate(pass = case_when(
+    #             error == TRUE ~ "!",
+    #             warning == TRUE ~ "!",
+    #             items == passes ~ "O",
+    #             fails > 0 ~ "X",
+    #             TRUE ~ "?"
+    #         ),
+    #         name = stringr::str_replace_all(name, "\\.", " "))  |>
+    #         select(-c("nNA","items","warning","expression"))
+    # })
+    # 
     
     # handle data uploads
     hydro_signature <- reactiveVal(NULL)
@@ -406,7 +406,7 @@ hydro_lab_server <- function(input, output, session, account_info){
             paste('hydro-lab-data-', hydro_signature(), '.csv', sep='')
         },
         content = function(file) {
-            write.csv(common_hydro_lab_wqx_data(), file, row.names = FALSE)
+            write.csv(common_hydrlo_ab_wqx_data(), file, row.names = FALSE)
         }
     )
     hydro_wqx_status <- eventReactive(input$hydro_lab_upload, {
