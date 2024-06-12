@@ -95,11 +95,11 @@ bend_genetics_server <- function(input, output, session, account_info){
             })
         })
 
-    bend_genetics_comparison_table <- reactive({
-                uploaded_bend_genetics_data() |>
-                    tidyr::pivot_wider(names_from = "Target", values_from = "Result", values_fn = as.numeric) |>
-                    rename("Microcycstin Nod" = "Microcystin/Nod.")
-            })
+    # bend_genetics_comparison_table <- reactive({
+    #             uploaded_bend_genetics_data() |>
+    #                 tidyr::pivot_wider(names_from = "Target", values_from = "Result", values_fn = as.numeric) |>
+    #                 rename("Microcycstin Nod" = "Microcystin/Nod.")
+    #         })
 
     # handle data editing by the user
     # rvals <- reactiveValues(data = NULL)
