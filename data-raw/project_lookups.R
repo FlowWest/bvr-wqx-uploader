@@ -92,7 +92,8 @@ project_id_lookup <- c(
     "UA-07" = "HAB",
     "UA-08" = "HAB",
     "PILLS01" = "HAB", #not in cdx
-    "LAKEPILS01" = "HAB" #not in cdx
+    "LAKEPILS01" = "HAB",
+    "HILL01" = "CS"#not in cdx
 )
 
 hydro_unit_lookup <- c(

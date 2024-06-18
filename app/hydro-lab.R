@@ -146,7 +146,7 @@ append_input_data <- function(data, temperature_air, result_comment){
    last_row_source <- tail(data, 1)
     last_row_source$`Activity Depth/Height Measure` <- ""
     last_row_source$`Activity Depth/Height Unit` <- ""
-    last_row_source$`Sample Collection Equipment Name` <- "Miscellaneous(Other)"
+    last_row_source$`Sample Collection Equipment Name` <- "Miscellaneous (Other)"
     last_row_source$`Sample Collection Equipment Comment` <- "AccuWeather"
     last_row_source$`Characteristic Name` <- "Temperature, Air"
     last_row_source$`Result Value` <- temperature_air
