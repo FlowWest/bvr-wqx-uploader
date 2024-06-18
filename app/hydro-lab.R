@@ -114,7 +114,7 @@ hydro_lab_to_wqx <- function(data) {
                "Result Comment" = ""
 
         ) |> 
-        select(-c(Date, Time)) |>
+        select(-c(Date, Time, Depth)) |>
         relocate("Project ID",
                  "Monitoring Location ID",
                  "Activity ID (CHILD-subset)",
