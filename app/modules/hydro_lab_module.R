@@ -152,7 +152,7 @@ hydro_lab_server <- function(input, output, session, account_info){
                 backgroundColor = DT::styleInterval(c(0, 30), c("#f29f99", "white", "#f29f99"))
             ) |>
             DT::formatStyle(
-                c("Depth10"),
+                c("Depth"),
                 target = "cel",
                 backgroundColor = DT::styleInterval(c(0.01,10), c("#f29f99", "white", "#f29f99"))
             ) |>
@@ -187,7 +187,7 @@ hydro_lab_server <- function(input, output, session, account_info){
                 backgroundColor = DT::styleInterval(c(5, 11), c("#f29f99", "white", "#f29f99"))
             ) |>
             DT::formatStyle(
-                c("Turb"),
+                c("Turbidity"),
                 target = "cel",
                 backgroundColor = DT::styleInterval(c(1.5, 1000), c("#f29f99", "white", "#f29f99"))
             ) |>
@@ -406,7 +406,7 @@ hydro_lab_server <- function(input, output, session, account_info){
             paste('hydro-lab-data-', hydro_signature(), '.csv', sep='')
         },
         content = function(file) {
-            write.csv(common_hydrlo_ab_wqx_data(), file, row.names = FALSE)
+            write.csv(common_hydro_lab_wqx_data(), file, row.names = FALSE)
         }
     )
     hydro_wqx_status <- eventReactive(input$hydro_lab_upload, {

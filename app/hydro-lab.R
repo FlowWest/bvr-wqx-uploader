@@ -2,14 +2,24 @@ parse_hydrolab <- function(filepath) {
     regex_pattern <- "\\w+"
     raw_name <- readLines(filepath, 1)
     location_for_selected_hydrolab <- unlist(str_extract_all(raw_name, regex_pattern))[4]
-    read_csv(filepath,
+    depth_cols <- c("Depth10", "Dep25")
+    turb_cols <- c("Turb", "TurbSC")
+    data <- read_csv(filepath,
              skip = 5,
              col_types = "c",
              col_select = c(1:28)) |>
         mutate_if(is.character, utf8::utf8_encode) |>
         select(-starts_with("...")) |>
-        mutate("location_id" = location_for_selected_hydrolab) |> 
+        mutate("location_id" = location_for_selected_hydrolab) |>
+        mutate("project_id" = project_id_lookup[location_id]) |> 
         filter(grepl("^[0-9]", Date))
+    turb <- turb_cols[turb_cols %in% colnames(data)]
+    depth <- depth_cols[depth_cols %in% colnames(data)]
+    print(colnames(data))
+    data <- data |> 
+        rename("Turbidity" = turb,
+               "Depth" = depth)
+    return(data)
 }
 
 hydro_lab_make_activity_id <-
@@ -51,23 +61,24 @@ hydro_lab_to_wqx <- function(data) {
                "Dissolved oxygen saturation" = "DO%",
                "Dissolved oxygen (DO)" = "DO",
                "pH" = "pH",
-               "Turbidity" = "Turb",
+               # "Turbidity" = turb,
+               # "Depth" = depth,
                "Chlorophyll a" = "CHL",
                "Phycocyanin" = "PCY",
-               "Monitoring Location ID" = location_id)|> 
+               "Monitoring Location ID" = location_id,
+               "Project ID" = project_id)|> 
         pivot_longer(
-            !c(Date, Time, Depth10, `Monitoring Location ID`),
+            !c(Date, Time, Depth, `Monitoring Location ID`, `Project ID`),
             names_to = "Characteristic Name",
             "values_to" = "Result Value"
         ) |>
-        mutate("Project ID" = project_id_lookup[`Monitoring Location ID`],
-               "Activity ID User Supplied(PARENTs)" = "",
+        mutate("Activity ID User Supplied(PARENTs)" = "",
                "Activity Type" = "Field Msr/Obs",
                "Activity Media Name" = "Water",
                "Activity Start Date" = format(mdy(Date), "%m/%d/%Y"),
                "Activity Start Time" = format(parse_date_time(Time, c('HMS', 'HM')), "%H:%M"),
                "Activity Start Time Zone" = "PST",
-               "Activity Depth/Height Measure" = as.numeric(Depth10),
+               "Activity Depth/Height Measure" = as.numeric(Depth),
                "Activity Depth/Height Unit" = "m",
                "Sample Collection Method ID" = "BVR SWQAPP",
                "Sample Collection Method Context" = "CA_BVR",
@@ -103,7 +114,7 @@ hydro_lab_to_wqx <- function(data) {
                "Result Comment" = ""
 
         ) |> 
-        select(-c(Date, Depth10, Time)) |>
+        select(-c(Date, Time)) |>
         relocate("Project ID",
                  "Monitoring Location ID",
                  "Activity ID (CHILD-subset)",
