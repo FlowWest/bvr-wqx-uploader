@@ -110,7 +110,7 @@ bend_genetics_server <- function(input, output, session, account_info){
     observe({
         bend_comparison$data <- uploaded_bend_genetics_data() |> 
             mutate(Result = ifelse(Result != "ND", as.numeric(Result), "ND")) |>
-            pivot_wider(names_from = "Target", values_from = "Result")   
+            pivot_wider(names_from = `Characteristic Name`, values_from = "Result") 
             
             # print(colnames(bend_comparison$data))
         
@@ -205,22 +205,23 @@ bend_genetics_server <- function(input, output, session, account_info){
             return(NULL)
         }
         bend_genetics_data$formatted_data <- bend_comparison$data |> 
-            pivot_longer(cols = -c("Sample ID", 
-                                   "Location", 
-                                   "Date Collected", 
-                                   "Date Received", 
-                                   "Matrix",
-                                   "Preserved",
-                                   "BG_ID",
-                                   "Method",
-                                   "Quantitation Limit",
-                                   "Units",
-                                   "Notes"),
-                         names_to = "Target",
+            pivot_longer(cols = `Anatoxin-a`:`Pheophytin a`,
+                # "Sample ID", 
+                #                    "Location", 
+                #                    "Date Collected", 
+                #                    "Date Received", 
+                #                    "Matrix",
+                #                    "Preserved",
+                #                    "BG_ID",
+                #                    "Method",
+                #                    "Quantitation Limit",
+                #                    "Units",
+                #                    "Notes"),
+                         names_to = "Characteristic Name",
                          values_to = "Result") |> 
-            relocate("Result", .before = "Quantitation Limit") |> 
-            relocate("Target", .before = "Result") |> 
-            drop_na("Result")
+            # relocate("Result", .before = "Quantitation Limit") |> 
+            relocate("Characteristic Name", .before = "Result") |>
+            drop_na("Result") |> View()
             
     })        
             # handle data uploads

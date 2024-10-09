@@ -21,7 +21,8 @@ source('modules/user_account_module.R')
 
 source("hydro-lab.R")
 source("alpha-lab.R")
-source("bend-genetics.R")
+# source("bend-genetics.R")
+source("new-bend-genetics.R")
 
 file_info <- reactiveValues(file_exists = TRUE)
 
@@ -86,7 +87,7 @@ alpha_lab_custom_rules <- validator(
 #Bend Genetics Rules ----------------------------------------------------
 bend_genetics_range_rules <- validator(
     "Microcystin/Nod. in valid range" = in_range(as.numeric(na.omit(`Microcycstin Nod`)), 0, 1000),
-    "Microcystin in valid range" = in_range(as.numeric(na.omit(`Microcystin`)), 0, 300000),
+    # "Microcystin in valid range" = in_range(as.numeric(na.omit(`Microcystin`)), 0, 300000),
     "Anatoxin-a in valid range" = in_range(as.numeric(na.omit(`Anatoxin-a`)), 0, 1000),
     "Cylindrospermopsin in valid range" = in_range(as.numeric(na.omit(`Cylindrospermopsin`)), 0, 1000),
     "Saxitoxin in valid range" = in_range(as.numeric(na.omit(`Saxitoxin`)), 0, 1000)

@@ -133,8 +133,7 @@ bend_genetics_to_wqx <- function(data) {
                # method_lookup is in the lookup table. It points the methods to their IDs.
                "Result Analytical Method ID" = case_when(
                    `Method` == "ELISA" ~ abraxis_id_lookup[Target],
-                   `Method` == "QPCR" ~ method_id_lookup[Method]
-                   .default = ""),
+                   .default = method_id_lookup[Method]),
                # method_context_lookup is in the lookup table. It points the method to their method context.
                "Result Analytical Method Context" = method_context_lookup[Method],
                "Analysis Start Date" = format(mdy_hm(`Date Received`), "%m/%d/%Y"),
