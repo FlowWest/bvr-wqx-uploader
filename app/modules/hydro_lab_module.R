@@ -411,6 +411,7 @@ hydro_lab_server <- function(input, output, session, account_info){
     )
     hydro_wqx_status <- eventReactive(input$hydro_lab_upload, {
         downloads_path <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
+        print(downloads_path)
         path_to_most_recent <- str_replace_all(
             paste(
                 downloads_path,
