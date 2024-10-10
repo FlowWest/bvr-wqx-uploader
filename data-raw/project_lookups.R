@@ -136,7 +136,8 @@ abraxis_id_lookup = c(
     "Anatoxin-a" = "520060",
     "Cylindrospermopsin" = "522011",
     "Microcystin/Nod." = "520011",
-    "Saxitoxin" = "52255B"
+    "Saxitoxin" = "52255B",
+    "Microcystin/nodularin genes mcyE/ndaF" = "520011"
 )
 
 method_context_lookup <- c(
@@ -171,6 +172,13 @@ method_speciation_lookup <- c(
     "Total Nitrogen" = "as N",
     "Total Kjeldahl Nitrogen" = "as N",
     "Orthophosphate" = "as P"
+)
+
+elisa_quantitation_limit_lookup <- c(
+    "Microcystin/nodularin genes mcyE/ndaF" = "0.15",
+    "Anatoxin-a" = "0.15",
+    "Saxitoxin" = "0.02",
+    "Cylindrospermopsin" = ""
 )
 
 save_objects <- function() {

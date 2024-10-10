@@ -26,11 +26,8 @@ bend_genetics_make_activity_id <-
     }
 
 parse_bend_genetics <- function(file_path) {
-    bend_full_df <- read_csv(file_path) |> 
-        # pivot_longer(cols = `Anatoxin-a (ug/L)`:`Pheophytin-a (ug/L)`,
-        #                 names_to = "Target",
-        #                 values_to = "Result",
-        #                 values_ptypes = character()) |> 
+    bend_full_df <- read_csv(file_path) |>
+        mutate(across(`Anatoxin-a (ug/L)`:`Pheophytin-a (ug/L)`, as.character)) |> 
         pivot_longer(cols = `Anatoxin-a (ug/L)`:`Pheophytin-a (ug/L)`,
                            names_to = "Target",
                            values_to = "Result",
@@ -56,8 +53,8 @@ parse_bend_genetics <- function(file_path) {
                "Method" = case_when(`Characteristic Name` == "Pheophytin a" ~ "EPA 455.0",
                                     `Characteristic Name` == "Chlorophyll a" ~ "EPA 455.0",
                                     .default = `Method`)) |> 
-        select(-c(`Target`, `Project`)) 
-        # relocate("Project ID", .before = "Location")
+        select(-c(`Target`, `Project`)) |> 
+        relocate("Project ID", .before = "Location")
     # View(bend_full_df)
     
     return(bend_full_df)
@@ -131,9 +128,17 @@ bend_genetics_to_wqx <- function(data) {
             # method_context_lookup is in the lookup table. It points the method to their method context.
             "Result Analytical Method Context" = method_context_lookup[Method],
             "Analysis Start Date" = format(mdy(`Received`), "%m/%d/%Y"),
-            "Result Detection/Quantitation Limit Type" = "",
-            "Result Detection/Quantitation Limit Measure" = "",
-            "Result Detection/Quantitation Limit Unit" = "",
+            "Result Detection/Quantitation Limit Type" = "Practical Quantitation Limit",
+            "Result Detection/Quantitation Limit Measure" = case_when(
+                `Method` == "QPCR" ~ "100",
+                `Method` == "ELISA" ~ elisa_quantitation_limit_lookup[`Characteristic Name`],
+                .default = ""
+            ),
+            "Result Detection/Quantitation Limit Unit" = case_when(
+                `Method` == "QPCR" ~ "copies/mL",
+                `Method` == "ELISA" ~ "ug/L",
+                .default = ""
+            ),
             "Result Comment" = ifelse(is.na(Notes), "", Notes),
             "Activity ID (CHILD-subset)" = bend_genetics_make_activity_id(location_id = Location,
                                                                           date = `Activity Start Date`,
@@ -145,8 +150,10 @@ bend_genetics_to_wqx <- function(data) {
         relocate("Activity ID (CHILD-subset)", .before = "Activity ID User Supplied (PARENTs)") |> 
         relocate("Characteristic Name", .before = "Characteristic Name User Supplied") |> 
         relocate("Result Unit", .before = "Result Measure Qualifier") |>
+        relocate("Project ID", .before = "Monitoring Location ID") |> 
+        select("Project ID":"Result Comment")
         # relocate("Result", .before = "Result Unit") |> 
-        select(-c(0:14)) |> 
-        select(-c(`Result`, `Method`))
+        # select(-c(0:13)) |> 
+        # select(-c(`Result`, `Method`)) |> View()
         # select(-c(`Method`))
 }

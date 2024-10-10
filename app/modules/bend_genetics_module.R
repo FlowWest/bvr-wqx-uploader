@@ -134,7 +134,7 @@ bend_genetics_server <- function(input, output, session, account_info){
             return(NULL)
         }
         validate(need(input$bend_genetics_file, message = "Select a file to view"))
-        analyte_list <- c("Anatoxin-a", "Cylindrospermopsin", "Microcystin", "Microcystin/Nod.", "Saxitoxin")
+        analyte_list <- c("Anatoxin-a", "Cylindrospermopsin", "Microcystin", "Microcystin/nodularin genes mcyE/ndaF", "Saxitoxin")
         nm1 <- intersect(analyte_list, colnames(bend_comparison$data))
         # print(nm1)
         datatable <- DT::datatable(bend_comparison$data, 
@@ -221,7 +221,7 @@ bend_genetics_server <- function(input, output, session, account_info){
                          values_to = "Result") |> 
             # relocate("Result", .before = "Quantitation Limit") |> 
             relocate("Characteristic Name", .before = "Result") |>
-            drop_na("Result") |> View()
+            drop_na("Result") 
             
     })        
             # handle data uploads
@@ -248,7 +248,8 @@ bend_genetics_server <- function(input, output, session, account_info){
     output$edited_wqx_table <- DT::renderDataTable({
         
         DT::datatable(bend_edited$wqx_data,
-                      editable = list(target = "cell", disable = list(columns = c(0, 2:9, 12:34))),
+                      editable = list(target = "cell"),
+                                      # , disable = list(columns = c(0, 2:9, 12:34))),
                       options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
                       caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
     })
