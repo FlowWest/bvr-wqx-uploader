@@ -174,12 +174,12 @@ method_speciation_lookup <- c(
     "Orthophosphate" = "as P"
 )
 
-elisa_quantitation_limit_lookup <- c(
-    "Microcystin/nodularin genes mcyE/ndaF" = "0.15",
-    "Anatoxin-a" = "0.15",
-    "Saxitoxin" = "0.02",
-    "Cylindrospermopsin" = ""
-)
+# elisa_quantitation_limit_lookup <- c(
+#     "Microcystin/nodularin genes mcyE/ndaF" = "0.15",
+#     "Anatoxin-a" = "0.15",
+#     "Saxitoxin" = "0.02",
+#     "Cylindrospermopsin" = ""
+# )
 
 save_objects <- function() {
     save(

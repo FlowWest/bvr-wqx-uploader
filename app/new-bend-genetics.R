@@ -129,16 +129,8 @@ bend_genetics_to_wqx <- function(data) {
             "Result Analytical Method Context" = method_context_lookup[Method],
             "Analysis Start Date" = format(mdy(`Received`), "%m/%d/%Y"),
             "Result Detection/Quantitation Limit Type" = "Practical Quantitation Limit",
-            "Result Detection/Quantitation Limit Measure" = case_when(
-                `Method` == "QPCR" ~ "100",
-                `Method` == "ELISA" ~ elisa_quantitation_limit_lookup[`Characteristic Name`],
-                .default = ""
-            ),
-            "Result Detection/Quantitation Limit Unit" = case_when(
-                `Method` == "QPCR" ~ "copies/mL",
-                `Method` == "ELISA" ~ "ug/L",
-                .default = ""
-            ),
+            "Result Detection/Quantitation Limit Measure" = "",
+            "Result Detection/Quantitation Limit Unit" = "",
             "Result Comment" = ifelse(is.na(Notes), "", Notes),
             "Activity ID (CHILD-subset)" = bend_genetics_make_activity_id(location_id = Location,
                                                                           date = `Activity Start Date`,
