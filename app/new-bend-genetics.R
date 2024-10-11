@@ -149,3 +149,18 @@ bend_genetics_to_wqx <- function(data) {
         # select(-c(`Result`, `Method`)) |> View()
         # select(-c(`Method`))
 }
+clean_bend_wqx <- function(data) {
+    data |> 
+        mutate(
+            "Result Unit" = ifelse(
+                data$`Result Unit` == "µg/L",
+                "ug/L",
+                data$`Result Unit`
+            ),
+            "Result Detection/Quantitation Limit Unit" = ifelse(
+                data$`Result Detection/Quantitation Limit Unit` == "µg/L",
+                "ug/L",
+                data$`Result Detection/Quantitation Limit Unit`
+            )
+        )
+}
