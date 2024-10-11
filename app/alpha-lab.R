@@ -124,5 +124,6 @@ alpha_lab_to_wqx <- function(data) {
                 `Result Unit`
             )
         ) |>
-        relocate("Result Analytical Method Context", .before = "Analysis Start Date")
+        relocate("Result Analytical Method Context", .before = "Analysis Start Date") |> 
+        select("Project ID":"Result Comment")
 }
