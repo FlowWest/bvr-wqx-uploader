@@ -32,7 +32,7 @@ IF NOT DEFINED RPath (
 set "downloadsFolder=%USERPROFILE%\Downloads"
 set "latestVersion="
 
-for /f "tokens=*" %%a in ('powershell -command "Get-ChildItem -Directory -Path %downloadsFolder% | Where-Object { $_.Name -match '^bvr-wqx-uploader-' } | Sort-Object { [Version]($_.Name -replace '^bvr-wqx-uploader-', '') } -Descending | Select-Object -First 1 | ForEach-Object { $_.Name }"') do (
+for /f "tokens=*" %%a in ('dir /b /ad /o-n "%downloadsFolder%\bvr-wqx-uploader-*" 2^>nul') do (
     set "latestVersion=%%a"
     goto :found
 )
