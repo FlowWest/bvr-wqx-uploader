@@ -40,8 +40,25 @@ parse_bend_genetics_macro <- function(file_path, sheet_name){
     formatted_received_date <- format(as_date(received_date), "%m/%d/%Y")
     location <- unlist(bend_meta_data[4,5])
     Matrix <- unlist(ifelse(bend_meta_data[4,2] == "Water Grab", "Water", "SPATT"))
+    # sheet_name <- 'Sample10'
+    
     bend_results <- read_excel(file_path, sheet = sheet_name, skip = 10) |>
         filter(!is.na(`Method`)) |>
+        mutate(
+            "Project ID" = project_id_lookup[location],
+            "Monitoring Location ID" = location,
+            "Activity Start Date" = activity_date,
+            "Activity Start Time" = activity_time,
+            "Sample Collection Equipment Name" = case_when(`Matrix` == "SPATT" ~ "SPATT Bags",
+                                                           `Matrix` == "Water" ~ "Water Bottle",
+                                                           .default = ""),
+            "Analysis Start Date" = formatted_received_date
+        )
+    return(bend_results)
+    
+    
+bend_genetics_to_wqx <- function(data) {
+    bend_results <- data |>
         mutate("Project ID" = project_id_lookup[location],
                "Monitoring Location ID" = location,
                "Activity ID User Supplied (PARENTs)" = "",
@@ -94,7 +111,21 @@ parse_bend_genetics_macro <- function(file_path, sheet_name){
         ) |> 
         select(-c("Method", "Analyte", "Result", "Reporting Limit", "Units", "Qualifiers", "Batch")) |> 
         relocate("Activity ID (CHILD-subset)", .before = "Activity ID User Supplied (PARENTs)")
-    
+        
+    final_bend_results <- bend_results |> 
+        mutate(
+            `Result Unit` = ifelse(
+                bend_results$`Result Unit` == "μg/L",
+                "ug/L",
+                bend_results$`Result Unit`
+            ),
+            `Result Detection/Quantitation Limit Unit` = ifelse(
+                bend_results$`Result Detection/Quantitation Limit Unit` == "μg/L",
+                "ug/L",
+                bend_results$`Result Detection/Quantitation Limit Unit`
+            )
+        )
+    return(final_bend_results)
     }
 
 sheet_names <- excel_sheets(file_path)
