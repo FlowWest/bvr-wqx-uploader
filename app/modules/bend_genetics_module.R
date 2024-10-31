@@ -74,7 +74,7 @@ bend_genetics_server <- function(input, output, session, account_info){
         tryCatch({
             req(input$bend_genetics_file$datapath)
             
-            if (!any(endsWith(input$bend_genetics_file$datapath, c(".csv", ".CSV")))) {
+            if (!any(endsWith(input$bend_genetics_file$datapath, c("xlsm", "xls")))) {
                 sendSweetAlert(
                     session = session,
                     title = "Error",
@@ -83,7 +83,13 @@ bend_genetics_server <- function(input, output, session, account_info){
                 )
                 return(NULL)
             }
-            purrr::map_df(input$bend_genetics_file$datapath, \(x) parse_bend_genetics(x))
+            
+            sheet_names <- excel_sheets(input$bend_genetics_file$datapath)
+            sample_sheets <- sheet_names[str_detect(sheet_names, "^Sample")]
+            file_path_vect <- rep(input$bend_genetics_file$datapath, length(sample_sheets))
+            
+            all_sample_data<- purrr::map2(file_path_vect, sample_sheets, parse_bend_genetics_macro)
+            bind_rows(all_sample_data)
             },error = function(e) {
                 sendSweetAlert(
                     session = session,
@@ -108,9 +114,10 @@ bend_genetics_server <- function(input, output, session, account_info){
     
 
     observe({
-        bend_comparison$data <- uploaded_bend_genetics_data() |> 
-            mutate(Result = ifelse(Result != "ND", as.numeric(Result), "ND")) |>
-            pivot_wider(names_from = `Characteristic Name`, values_from = "Result") 
+        bend_comparison$data <- uploaded_bend_genetics_data() 
+        # |> 
+            # mutate(Result = ifelse(Result != "ND", as.numeric(Result), "ND")) |>
+            # pivot_wider(names_from = `Characteristic Name`, values_from = "Result") 
             
             # print(colnames(bend_comparison$data))
         
@@ -204,9 +211,10 @@ bend_genetics_server <- function(input, output, session, account_info){
         if (is.null(bend_comparison$data)) {
             return(NULL)
         }
-        bend_genetics_data$formatted_data <- bend_comparison$data |> 
-            pivot_longer(cols = `Anatoxin-a`:`Pheophytin a`,
-                # "Sample ID", 
+        bend_genetics_data$formatted_data <- bend_comparison$data 
+        # |> 
+        #     pivot_longer(cols = `Anatoxin-a`:`Pheophytin a`,
+        #         # "Sample ID", 
                 #                    "Location", 
                 #                    "Date Collected", 
                 #                    "Date Received", 
@@ -217,11 +225,11 @@ bend_genetics_server <- function(input, output, session, account_info){
                 #                    "Quantitation Limit",
                 #                    "Units",
                 #                    "Notes"),
-                         names_to = "Characteristic Name",
-                         values_to = "Result") |> 
+                         # names_to = "Characteristic Name",
+                         # values_to = "Result") |> 
             # relocate("Result", .before = "Quantitation Limit") |> 
-            relocate("Characteristic Name", .before = "Result") |>
-            drop_na("Result") 
+            # relocate("Characteristic Name", .before = "Result") |>
+            # drop_na("Result") 
             
     })        
             # handle data uploads

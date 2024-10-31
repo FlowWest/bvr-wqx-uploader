@@ -22,7 +22,8 @@ source('modules/user_account_module.R')
 source("hydro-lab.R")
 source("alpha-lab.R")
 # source("bend-genetics.R")
-source("new-bend-genetics.R")
+# source("new-bend-genetics.R")
+source('bend-genetics-macro.R')
 
 file_info <- reactiveValues(file_exists = TRUE)
 
