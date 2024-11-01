@@ -114,10 +114,10 @@ bend_genetics_server <- function(input, output, session, account_info){
     
 
     observe({
-        bend_comparison$data <- uploaded_bend_genetics_data() 
-        # |> 
+        bend_comparison$data <- uploaded_bend_genetics_data() |> 
             # mutate(Result = ifelse(Result != "ND", as.numeric(Result), "ND")) |>
-            # pivot_wider(names_from = `Characteristic Name`, values_from = "Result") 
+            pivot_wider(names_from = "Analyte", values_from = "Result") |>
+            relocate(c("Method": "Units"), .after = last_col())
             
             # print(colnames(bend_comparison$data))
         
@@ -211,22 +211,12 @@ bend_genetics_server <- function(input, output, session, account_info){
         if (is.null(bend_comparison$data)) {
             return(NULL)
         }
-        bend_genetics_data$formatted_data <- bend_comparison$data 
-        # |> 
-        #     pivot_longer(cols = `Anatoxin-a`:`Pheophytin a`,
-        #         # "Sample ID", 
-                #                    "Location", 
-                #                    "Date Collected", 
-                #                    "Date Received", 
-                #                    "Matrix",
-                #                    "Preserved",
-                #                    "BG_ID",
-                #                    "Method",
-                #                    "Quantitation Limit",
-                #                    "Units",
-                #                    "Notes"),
-                         # names_to = "Characteristic Name",
-                         # values_to = "Result") |> 
+        bend_genetics_data$formatted_data <- bend_comparison$data |> 
+            pivot_longer(
+                cols = (which(names(pivoted) == "Analysis Start Date") +1):(which(names(pivoted) == "Method")-1),
+                names_to = "Analyte",
+                values_to = "Result")|>
+            drop_na("Result")
             # relocate("Result", .before = "Quantitation Limit") |> 
             # relocate("Characteristic Name", .before = "Result") |>
             # drop_na("Result") 

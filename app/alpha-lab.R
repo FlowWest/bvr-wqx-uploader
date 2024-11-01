@@ -54,8 +54,14 @@ alpha_lab_to_wqx <- function(data) {
             "Activity ID User Supplied (PARENTs)" = "",
             "Activity Type" = "Sample-Routine",
             "Activity Media Name" = MATRIX,
-            "Activity Start Date" = format(mdy_hms(SAMPDATE), "%m/%d/%Y"),
-            "Activity Start Time" = format(mdy_hms(SAMPDATE), "%H:%M"),
+            "Activity Start Date" = case_when(
+                class(SAMPDATE)[1] == "character" ~ format(mdy_hms(SAMPDATE), "%m/%d/%Y"),
+                class(SAMPDATE)[1] == "POSIXct" ~ format(`SAMPDATE`,"%m/%d/%Y"),
+                TRUE ~ ""),
+            "Activity Start Time" = case_when(
+                class(SAMPDATE)[1] == "character" ~ format(mdy_hms(SAMPDATE), "%H:%M"),
+                class(SAMPDATE)[1] == "POSIXct" ~ format(`SAMPDATE`,"%H:%M"),
+                TRUE ~ ""),
             "Activity Start Time Zone" = "PST",
             "Activity Depth/Height Measure" = "0.152",
             "Activity Depth/Height Unit" = "m",
@@ -103,7 +109,10 @@ alpha_lab_to_wqx <- function(data) {
                 depth = `Activity Depth/Height Measure`
             ),
             "Result Analytical Method Context" = method_context_lookup[METHODNAME],
-            "Analysis Start Date" = format(mdy_hms(ANADATE), "%m/%d/%Y"),
+            "Analysis Start Date" = case_when(
+                class(ANADATE)[1] == "character" ~ format(mdy_hms(ANADATE), "%m/%d/%Y"),
+                class(ANADATE)[1] == "POSIXct" ~ format(`ANADATE`,"%m/%d/%Y"),
+                TRUE ~ ""),
             "Result Detection/Quantitation Limit Type" = ifelse(is.na(DL), "", "Lower Reporting Limit"),
             "Result Detection/Quantitation Limit Measure" = ifelse(is.na(DL), "", DL),
             "Result Detection/Quantitation Limit Unit" = ifelse(UNITS == ".", "", UNITS),

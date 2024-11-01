@@ -22,7 +22,7 @@ parse_bend_genetics_macro <- function(file_path, sheet_name){
     activity_hours_part <- floor(activity_fractional_day * 24)
     activity_minutes_part <- floor((activity_fractional_day * 24 - activity_hours_part) * 60)
     
-    reported_datetime <- date + hours(activity_hours_part) + minutes(activity_minutes_part)
+    reported_datetime <- activity_start_date + hours(activity_hours_part) + minutes(activity_minutes_part)
     
     activity_date <- format(as_date(activity_start_date), "%m/%d/%Y")
     activity_time <- format(reported_datetime, "%H:%M")
@@ -108,15 +108,15 @@ bend_genetics_to_wqx <- function(data) {
     
     final_bend_results <- bend_wqx_results |> 
         mutate(
-            `Result Unit` = ifelse(
-                bend_results$`Result Unit` == "μg/L",
+            'Result Unit' = ifelse(
+                bend_wqx_results$"Result Unit" == "μg/L",
                 "ug/L",
-                bend_results$`Result Unit`
+                bend_wqx_results$"Result Unit"
             ),
-            `Result Detection/Quantitation Limit Unit` = ifelse(
-                bend_results$`Result Detection/Quantitation Limit Unit` == "μg/L",
+            'Result Detection/Quantitation Limit Unit' = ifelse(
+                bend_wqx_results$'Result Detection/Quantitation Limit Unit' == "μg/L",
                 "ug/L",
-                bend_results$`Result Detection/Quantitation Limit Unit`
+                bend_wqx_results$'Result Detection/Quantitation Limit Unit'
             )
         )
     return(final_bend_results)
