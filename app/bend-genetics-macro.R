@@ -16,6 +16,28 @@ make_activity_id <- function(location_id, date, activity_type, equipment_name, d
 
 
 parse_bend_genetics_macro <- function(file_path, sheet_name){
+    left_metadata_raw <- read_excel(file_path, sheet = sheet_name, range = "A3:B8", col_names = c("key", "value"))
+    right_metadata_raw <- read_excel(file_path, sheet = sheet_name, range = "D3:E8", col_names = c("key", "value"))
+    
+    #process metadata
+    left_metadata <- map2_dfc(left_metadata_raw$key, left_metadata_raw$value, function(x, y) {
+        if (!is.na(x)) {
+            
+            if (x == "Received:") {
+                as.Date(as.numeric(y) - 2, origin = "1900-01-01")
+            } else if (x == "Time:") {
+                format(as.POSIXct(as.numeric(y) * 86400, origin = "1970-01-01", tz = "UTC"), "%H:%M:%S")
+            } else if (x %in% c("Matrix:", "BG ID:")) {
+                y
+            } else if (x == "Reported:") {
+                as.POSIXct((as.numeric(y) - 2) * 86400, origin = "1900-01-01")
+            }
+        }
+    })
+    left_col_names <- stringr::str_replace(left_metadata$key[!is.na(left_metadata$key)], ":", "")
+    colnames(left_metadata) <- left_col_names
+    
+    
     bend_meta_data <- read_excel(file_path, sheet = sheet_name) 
     activity_start_date <- ymd_hms("1899-12-30 00:00:00") + days(floor(as.numeric(bend_meta_data[5,5]))) 
     activity_fractional_day <- as.numeric(bend_meta_data[5,5]) %% 1
