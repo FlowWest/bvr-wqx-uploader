@@ -7,6 +7,7 @@ library(reticulate)
 library(spsComps)
 library(shinyWidgets)
 library(shinycssloaders)
+library(readxl)
 # library(request)
 # change this based on who is using the app
 reticulate::use_miniconda("wqxUpload")

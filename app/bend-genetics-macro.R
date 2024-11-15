@@ -16,6 +16,7 @@ make_activity_id <- function(location_id, date, activity_type, equipment_name, d
 
 
 parse_bend_genetics_macro <- function(file_path, sheet_name){
+    
     left_metadata_raw <- read_excel(file_path, sheet = sheet_name, range = "A3:B8", col_names = c("key", "value"))
     right_metadata_raw <- read_excel(file_path, sheet = sheet_name, range = "D3:E8", col_names = c("key", "value"))
     
@@ -34,39 +35,48 @@ parse_bend_genetics_macro <- function(file_path, sheet_name){
             }
         }
     })
-    left_col_names <- stringr::str_replace(left_metadata$key[!is.na(left_metadata$key)], ":", "")
+    
+    right_metadata <- map2_dfc(right_metadata_raw$key, right_metadata_raw$value, function(x, y) {
+        if (!is.na(x)) {
+            
+            if (x == "Customer:") {
+                y
+            } else if (x == "Project:") {
+                y
+            } else if (x == "Location:"){
+                y
+            } else if (x == "Collected:") {
+                as.POSIXct((as.numeric(y) - 2) * 86400, origin = "1900-01-01")
+            } else if (x == "Sample ID:") {
+                y
+            }
+        }
+    })
+    
+    left_col_names <- stringr::str_replace(left_metadata_raw$key[!is.na(left_metadata_raw$key)], ":", "")
     colnames(left_metadata) <- left_col_names
+    right_col_names <- stringr::str_replace(right_metadata_raw$key[!is.na(right_metadata_raw$key)], ":", "")
+    colnames(right_metadata) <- right_col_names
     
-    
-    bend_meta_data <- read_excel(file_path, sheet = sheet_name) 
-    activity_start_date <- ymd_hms("1899-12-30 00:00:00") + days(floor(as.numeric(bend_meta_data[5,5]))) 
-    activity_fractional_day <- as.numeric(bend_meta_data[5,5]) %% 1
-    activity_hours_part <- floor(activity_fractional_day * 24)
-    activity_minutes_part <- floor((activity_fractional_day * 24 - activity_hours_part) * 60)
-    
-    reported_datetime <- activity_start_date + hours(activity_hours_part) + minutes(activity_minutes_part)
-    
-    activity_date <- format(as_date(activity_start_date), "%m/%d/%Y")
-    activity_time <- format(reported_datetime, "%H:%M")
-    
-    received_date <- ymd_hms("1899-12-30 00:00:00") + days(floor(as.numeric(bend_meta_data[2,2])))
-    formatted_received_date <- format(as_date(received_date), "%m/%d/%Y")
-    location <- unlist(bend_meta_data[4,5])
-    Matrix <- unlist(ifelse(bend_meta_data[4,2] == "Water Grab", "Water", "SPATT"))
-    # sheet_name <- 'Sample10'
+    full_metadata <- cross_join(right_metadata, left_metadata) 
+    full_metadata_formatted <- full_metadata |> 
+        mutate(
+            Matrix = ifelse(Matrix == "Water Grab", "Water", "SPATT"),
+            activity_start_date = format(as_date(Collected), "%m/%d/%Y"),
+            activity_start_time = format(Collected, "%H:%M"))
     
     bend_results <- read_excel(file_path, sheet = sheet_name, skip = 10) |>
         filter(!is.na(`Method`)) |>
         mutate(
-            "Project ID" = project_id_lookup[location],
-            "Monitoring Location ID" = location,
-            "Activity Start Date" = activity_date,
-            "Activity Start Time" = activity_time,
+            "Project ID" = project_id_lookup[full_metadata_formatted$Location],
+            "Monitoring Location ID" = full_metadata_formatted$Location,
+            "Activity Start Date" = full_metadata_formatted$activity_start_date,
+            "Activity Start Time" = full_metadata_formatted$activity_start_time,
             "Sample Collection Equipment Name" = case_when(`Matrix` == "SPATT" ~ "SPATT Bags",
                                                            `Matrix` == "Water" ~ "Water Bottle",
                                                            .default = ""),
-            "Analysis Start Date" = formatted_received_date
-        ) |> 
+            "Analysis Start Date" = full_metadata_formatted$Received
+        ) |>
         select(-c("Qualifiers", "Batch"))
     return(bend_results)
 }

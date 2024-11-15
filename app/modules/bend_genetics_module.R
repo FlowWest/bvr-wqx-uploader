@@ -5,7 +5,7 @@ bend_genetics_ui <- function(id){
              tags$h2("Bend Genetics Data"),
              sidebarLayout(
                  sidebarPanel(width = 3,
-                              fileInput(ns("bend_genetics_file"), "Select Bend Genetics File", multiple = TRUE),
+                              fileInput(ns("bend_genetics_file"), "Select Bend Genetics File", multiple = FALSE),
                               actionButton(ns("reset"), "Reset")
                               ),
                  mainPanel(
@@ -83,13 +83,22 @@ bend_genetics_server <- function(input, output, session, account_info){
                 )
                 return(NULL)
             }
-            
-            sheet_names <- excel_sheets(input$bend_genetics_file$datapath)
+            # if(any(endsWith(input$bend_genetics_file$datapath, c("xlsm", "xls")))){
+            sheet_names <- readxl::excel_sheets(input$bend_genetics_file$datapath)
             sample_sheets <- sheet_names[str_detect(sheet_names, "^Sample")]
             file_path_vect <- rep(input$bend_genetics_file$datapath, length(sample_sheets))
             
             all_sample_data<- purrr::map2(file_path_vect, sample_sheets, parse_bend_genetics_macro)
             bind_rows(all_sample_data)
+                # return(full_data)
+                # full <- full_data |>
+                #     mutate(bend_type = "MACRO")
+                # full <- full |>
+                #     relocate(bend_type, .before = "Analysis Start Date")
+                # relocate("Result", .before = "Quantitation Limit") |> 
+                
+                # return("MACRO")
+            # }
             },error = function(e) {
                 sendSweetAlert(
                     session = session,
@@ -99,6 +108,7 @@ bend_genetics_server <- function(input, output, session, account_info){
                 )
                 return(NULL)
             })
+            # return(all_sample_data)
         })
 
     # bend_genetics_comparison_table <- reactive({
@@ -114,11 +124,15 @@ bend_genetics_server <- function(input, output, session, account_info){
     
 
     observe({
+        req(uploaded_bend_genetics_data())
+        # if(unique(uploaded_bend_genetics_data()$bend_type) %in% c("MACRO")){
         bend_comparison$data <- uploaded_bend_genetics_data() |> 
-            # mutate(Result = ifelse(Result != "ND", as.numeric(Result), "ND")) |>
-            pivot_wider(names_from = "Analyte", values_from = "Result") |>
+            #     # mutate(Result = ifelse(Result != "ND", as.numeric(Result), "ND")) |>
+            pivot_wider(names_from = `Analyte`, values_from = "Result") |> 
             relocate(c("Method": "Units"), .after = last_col())
             
+        # }
+        #     
             # print(colnames(bend_comparison$data))
         
         # rvals$data <- uploaded_bend_genetics_data()
@@ -212,8 +226,9 @@ bend_genetics_server <- function(input, output, session, account_info){
             return(NULL)
         }
         bend_genetics_data$formatted_data <- bend_comparison$data |> 
+            # relocate("bend_type", .after = last_col()) |> 
             pivot_longer(
-                cols = (which(names(pivoted) == "Analysis Start Date") +1):(which(names(pivoted) == "Method")-1),
+                cols = (which(names(bend_comparison$data) == "Analysis Start Date")+1):(which(names(bend_comparison$data) == "Method")-1),
                 names_to = "Analyte",
                 values_to = "Result")|>
             drop_na("Result")
