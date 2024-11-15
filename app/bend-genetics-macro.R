@@ -135,8 +135,47 @@ bend_genetics_to_wqx <- function(data) {
                                                                           equipment_name = `Sample Collection Equipment Name`,
                                                                           depth = `Activity Depth/Height Measure`)
         ) |> 
-        select(-c("Method", "Analyte", "Result", "Reporting Limit", "Units")) |> 
-        relocate("Activity ID (CHILD-subset)", .before = "Activity ID User Supplied (PARENTs)")
+        select(-c("Method", "Analyte", "Result", "Reporting Limit", "Units"))
+        # relocate("Activity Start Date", .after = "Activity Media Name") |> 
+        # relocate("Activity Start Time", .after = "Activity Start Date") |> 
+        # relocate("Analysis Start Date", .before = "Result Analytical Method Context") |> 
+    bend_wqx_results <- bend_wqx_results[, c(
+        "Project ID", 
+        "Monitoring Location ID", 
+        "Activity ID (CHILD-subset)", 
+        "Activity ID User Supplied (PARENTs)",
+        "Activity Type", 
+         "Activity Media Name", 
+        "Activity Start Date", 
+        "Activity Start Time", 
+        "Activity Start Time Zone", 
+        "Activity Depth/Height Measure", 
+        "Activity Depth/Height Unit", 
+        "Sample Collection Method ID", 
+        "Sample Collection Method Context",	
+        "Sample Collection Equipment Name",	
+        "Sample Collection Equipment Comment",	
+        "Characteristic Name",	
+        "Characteristic Name User Supplied",
+        "Method Speciation",	
+        "Result Detection Condition",
+        "Result Value",	
+        "Result Unit",	
+        "Result Measure Qualifier",	
+        "Result Sample Fraction",	
+        "Result Status ID",	
+        "ResultTemperatureBasis",	
+        "Statistical Base Code",	
+        "ResultTimeBasis",	
+        "Result Value Type",	
+        "Result Analytical Method ID",	
+        "Result Analytical Method Context",	
+        "Analysis Start Date",	
+        "Result Detection/Quantitation Limit Type",	
+        "Result Detection/Quantitation Limit Measure",	
+        "Result Detection/Quantitation Limit Unit",
+        "Result Comment"
+    )]
     
     final_bend_results <- bend_wqx_results |> 
         mutate(
