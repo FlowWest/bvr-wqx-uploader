@@ -16,7 +16,8 @@ make_activity_id <- function(location_id, date, activity_type, equipment_name, d
 
 
 parse_bend_genetics_macro <- function(file_path, sheet_name){
-    
+    # file_path <- "data-raw/bend/20241004_BV_LIMS_report.xlsm"
+    # sheet_name <- "Sample1"
     left_metadata_raw <- read_excel(file_path, sheet = sheet_name, range = "A3:B8", col_names = c("key", "value"))
     right_metadata_raw <- read_excel(file_path, sheet = sheet_name, range = "D3:E8", col_names = c("key", "value"))
     
@@ -72,10 +73,10 @@ parse_bend_genetics_macro <- function(file_path, sheet_name){
             "Monitoring Location ID" = full_metadata_formatted$Location,
             "Activity Start Date" = full_metadata_formatted$activity_start_date,
             "Activity Start Time" = full_metadata_formatted$activity_start_time,
-            "Sample Collection Equipment Name" = case_when(`Matrix` == "SPATT" ~ "SPATT Bags",
-                                                           `Matrix` == "Water" ~ "Water Bottle",
+            "Sample Collection Equipment Name" = case_when(full_metadata_formatted$Matrix == "SPATT" ~ "SPATT Bags",
+                                                           full_metadata_formatted$Matrix == "Water" ~ "Water Bottle",
                                                            .default = ""),
-            "Analysis Start Date" = full_metadata_formatted$Received
+            "Analysis Start Date" = format(as_date(full_metadata_formatted$Received),"%m/%d/%Y")
         ) |>
         select(-c("Qualifiers", "Batch"))
     return(bend_results)
@@ -128,7 +129,7 @@ bend_genetics_to_wqx <- function(data) {
             "Result Detection/Quantitation Limit Measure" = `Reporting Limit`,
             "Result Detection/Quantitation Limit Unit" = Units,
             "Result Comment" = "",
-            "Activity ID (CHILD-subset)" = bend_genetics_make_activity_id(location_id = location,
+            "Activity ID (CHILD-subset)" = bend_genetics_make_activity_id(location_id = `Monitoring Location ID`,
                                                                           date = `Activity Start Date`,
                                                                           time = `Activity Start Time`,
                                                                           activity_type = `Activity Type`,

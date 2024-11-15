@@ -78,7 +78,7 @@ bend_genetics_server <- function(input, output, session, account_info){
                 sendSweetAlert(
                     session = session,
                     title = "Error",
-                    text = "Please upload valid Bend Genetics data files with a '.csv' extension.",
+                    text = "Please upload valid Bend Genetics data files with a '.xlsm' or '.xls' extension.",
                     type = "error"
                 )
                 return(NULL)
@@ -247,6 +247,7 @@ bend_genetics_server <- function(input, output, session, account_info){
         if (is.null(bend_genetics_data$formatted_data)) {
             return(NULL)
         }
+        # View(bend_genetics_data$formatted_data)
         bend_edited$wqx_data <- bend_genetics_to_wqx(bend_genetics_data$formatted_data)
         
     })
