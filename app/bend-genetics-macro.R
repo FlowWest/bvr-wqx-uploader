@@ -177,19 +177,20 @@ bend_genetics_to_wqx <- function(data) {
         "Result Detection/Quantitation Limit Unit",
         "Result Comment"
     )]
-    
-    final_bend_results <- bend_wqx_results |> 
+    return(bend_wqx_results)
+}
+clean_bend_wqx <- function(data) {
+    data |> 
         mutate(
             'Result Unit' = ifelse(
-                bend_wqx_results$"Result Unit" == "μg/L",
+                data$"Result Unit" == "μg/L",
                 "ug/L",
-                bend_wqx_results$"Result Unit"
+                data$"Result Unit"
             ),
             'Result Detection/Quantitation Limit Unit' = ifelse(
-                bend_wqx_results$'Result Detection/Quantitation Limit Unit' == "μg/L",
+                data$'Result Detection/Quantitation Limit Unit' == "μg/L",
                 "ug/L",
-                bend_wqx_results$'Result Detection/Quantitation Limit Unit'
+                data$'Result Detection/Quantitation Limit Unit'
             )
         )
-    return(final_bend_results)
 }
