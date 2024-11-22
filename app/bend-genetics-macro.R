@@ -1,4 +1,4 @@
-make_activity_id <- function(location_id, date, activity_type, equipment_name, depth = NULL, time = NULL) {
+bend_genetics_make_activity_id <- function(location_id, date, activity_type, equipment_name, depth = NULL, time = NULL) {
     YYYYMMDD <- gsub('/', '', date)
     activity <- ifelse(activity_type == "Sample-Routine", "SR", "FM")
     equipment <- case_when(
@@ -129,7 +129,7 @@ bend_genetics_to_wqx <- function(data) {
             "Result Detection/Quantitation Limit Measure" = `Reporting Limit`,
             "Result Detection/Quantitation Limit Unit" = Units,
             "Result Comment" = "",
-            "Activity ID (CHILD-subset)" = make_activity_id(location_id = `Monitoring Location ID`,
+            "Activity ID (CHILD-subset)" = bend_genetics_make_activity_id(location_id = `Monitoring Location ID`,
                                                                           date = `Activity Start Date`,
                                                                           time = `Activity Start Time`,
                                                                           activity_type = `Activity Type`,

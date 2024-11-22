@@ -100,9 +100,15 @@ alpha_lab_server <- function(input, output, session, account_info){
     alpha_labs_data <- reactiveValues(formatted_data = NULL)
     
     observe({
-        alpha_comparison$data <- uploaded_alpha_lab_data() |> 
-            mutate(Result = ifelse(Result != "ND" & Result != "Absent" & Result != "Present", as.numeric(Result), Result)) |>
-            pivot_wider(names_from = "ANALYTE", values_from = "Result")   
+        # uploaded_data <- uploaded_alpha_lab_data()
+        alpha_comparison$data <- uploaded_alpha_lab_data() |>  
+            mutate(RESULT = ifelse(RESULT != "ND" 
+                                 & RESULT != "Absent" 
+                                 & RESULT != "Present", 
+                                 as.numeric(RESULT), RESULT)) |> 
+            pivot_wider(names_from = "ANALYTE", values_from = "RESULT")
+            
+        # alpha_comparison$data <- alpha_comparison$data |> 
 
     })
     #
@@ -235,16 +241,17 @@ alpha_lab_server <- function(input, output, session, account_info){
             return(NULL)
         }
         alpha_labs_data$formatted_data <- alpha_comparison$data |>  
-            pivot_longer(cols = (starts_with("ANALYTEORDER")+1):ncol(alpha_comparison$data),
+            pivot_longer(cols = (ncol(uploaded_alpha_lab_data())-1):ncol(alpha_comparison$data),
                          names_to = "ANALYTE",
-                         values_to = "Result") |> 
-            relocate("Result", .before = "DL") |> 
+                         values_to = "RESULT") |> 
+            relocate("RESULT", .before = "DL") |> 
             relocate("ANALYTE", .before = "CASNUMBER") |>
-            drop_na("Result")
+            drop_na("RESULT")
     })
     # handle data uploads
     alpha_signature <- reactiveVal(NULL)
     alpha_wqx_status <- reactiveVal(NULL)
+    
     alpha_edited <- reactiveValues(wqx_data=NULL)
     common_alpha_lab_wqx_data <- reactiveValues(wqx_data=NULL)
 

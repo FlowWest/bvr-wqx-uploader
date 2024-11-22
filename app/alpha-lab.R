@@ -1,5 +1,7 @@
 parse_alphalab <- function(filepath) {
-    readxl::read_excel(filepath) |> 
+    file <- readxl::read_excel(filepath)
+    names(file) <- toupper(names(file))
+    file <- file |> 
         tidyr::separate(SAMPLENAME, into=c("sample1", "sample2"), sep = " ") |> # TODO this looks a little too hard-coded 
         dplyr::mutate(SAMPLENAME = ifelse(sample1 %in% names(project_id_lookup), sample1, sample2)) |>
         dplyr::select(-sample1, -sample2) |> 
@@ -42,11 +44,19 @@ alpha_lab_make_activity_id <- function(location_id,
 
 alpha_lab_format_for_range_validation <- function(data) {
     data |> 
-        select(PROJECT, ANALYTE, Result) |> 
-        pivot_wider(names_from = "ANALYTE", values_from = "Result")
+        select(PROJECT, ANALYTE, RESULT) |> 
+        pivot_wider(names_from = "ANALYTE", values_from = "RESULT")
 }
 
 alpha_lab_to_wqx <- function(data) {
+    
+    date_columns <- c("SAMPDATE", "ANADATE")
+    for (col in date_columns) {
+        if (is.character(data[[col]])) {
+            data[[col]] <- mdy_hms(data[[col]])
+        }
+    }
+    
     data |> 
         mutate(
             "Project ID" = project_id_lookup[SAMPLENAME],
@@ -54,14 +64,8 @@ alpha_lab_to_wqx <- function(data) {
             "Activity ID User Supplied (PARENTs)" = "",
             "Activity Type" = "Sample-Routine",
             "Activity Media Name" = MATRIX,
-            "Activity Start Date" = case_when(
-                class(SAMPDATE)[1] == "character" ~ format(mdy_hms(SAMPDATE), "%m/%d/%Y"),
-                class(SAMPDATE)[1] == "POSIXct" ~ format(`SAMPDATE`,"%m/%d/%Y"),
-                TRUE ~ ""),
-            "Activity Start Time" = case_when(
-                class(SAMPDATE)[1] == "character" ~ format(mdy_hms(SAMPDATE), "%H:%M"),
-                class(SAMPDATE)[1] == "POSIXct" ~ format(`SAMPDATE`,"%H:%M"),
-                TRUE ~ ""),
+            "Activity Start Date" = format(SAMPDATE,"%m/%d/%Y"),
+            "Activity Start Time" = format(SAMPDATE,"%H:%S"),
             "Activity Start Time Zone" = "PST",
             "Activity Depth/Height Measure" = "0.152",
             "Activity Depth/Height Unit" = "m",
@@ -75,21 +79,21 @@ alpha_lab_to_wqx <- function(data) {
             "Method Speciation" = ifelse(
                 ANALYTE %in% names(method_speciation_lookup), method_speciation_lookup[ANALYTE], ""),
             "Result Detection Condition" = case_when(
-                Result == "ND" ~ "Not Detected",
-                Result == "Absent" ~ "Not Present",
-                Result == "Present" ~ "Detected Not Quantified",
+                RESULT == "ND" ~ "Not Detected",
+                RESULT == "Absent" ~ "Not Present",
+                RESULT == "Present" ~ "Detected Not Quantified",
                 TRUE ~ ""
             ),
             "Result Value" = ifelse(
-                Result == "Absent" |
-                    Result == "ND" | Result == "Present",
+                RESULT == "Absent" |
+                    RESULT == "ND" | RESULT == "Present",
                 "",
-                Result
+                RESULT
             ),
             "Result Unit" = case_when(UNITS == "." ~ "",
-                                      Result == "Absent" ~ "",
-                                      Result == "Present" ~ "",
-                                      Result == "ND" ~ "", 
+                                      RESULT == "Absent" ~ "",
+                                      RESULT == "Present" ~ "",
+                                      RESULT == "ND" ~ "", 
                                       TRUE ~ UNITS),
             "Result Measure Qualifier" = "",
             "Result Sample Fraction" = "Total",
@@ -97,7 +101,7 @@ alpha_lab_to_wqx <- function(data) {
             "ResultTemperatureBasis" = "",
             "Statistical Base Code" = "",
             "ResultTimeBasis" = "",
-            "Result Value Type" = ifelse(is.na(Result), "", "Actual"),
+            "Result Value Type" = ifelse(is.na(RESULT), "", "Actual"),
             "Result Analytical Method ID" = ifelse(
                 is.na(METHODNAME), "", method_id_lookup[METHODNAME]),
             "Activity ID (CHILD-subset)" = alpha_lab_make_activity_id(
@@ -109,17 +113,14 @@ alpha_lab_to_wqx <- function(data) {
                 depth = `Activity Depth/Height Measure`
             ),
             "Result Analytical Method Context" = method_context_lookup[METHODNAME],
-            "Analysis Start Date" = case_when(
-                class(ANADATE)[1] == "character" ~ format(mdy_hms(ANADATE), "%m/%d/%Y"),
-                class(ANADATE)[1] == "POSIXct" ~ format(`ANADATE`,"%m/%d/%Y"),
-                TRUE ~ ""),
+            "Analysis Start Date" = format(ANADATE,"%m/%d/%Y"),
             "Result Detection/Quantitation Limit Type" = ifelse(is.na(DL), "", "Lower Reporting Limit"),
             "Result Detection/Quantitation Limit Measure" = ifelse(is.na(DL), "", DL),
             "Result Detection/Quantitation Limit Unit" = ifelse(UNITS == ".", "", UNITS),
             "Result Comment" = ""
             
         ) %>%
-        select(-c(0:48)) %>%
+        select(-c(0:(which(names(.)=="Project ID") - 1))) %>%
         relocate("Activity ID (CHILD-subset)", .before = "Activity ID User Supplied (PARENTs)") |> 
         mutate(
             "Result Analytical Method Context" = ifelse(
