@@ -5,7 +5,7 @@ alpha_lab_ui <- function(id){
              tags$h2("Alpha Lab Data"),
              sidebarLayout(
                  sidebarPanel(width = 3,
-                              fileInput(ns("alpha_lab_file"), "Select Alpha Lab File", multiple = TRUE),
+                              fileInput(ns("alpha_lab_file"), "Select Alpha Lab File", multiple = FALSE),
                               actionButton(ns("reset"), "Reset")
                  ),
                  mainPanel(
