@@ -128,14 +128,16 @@ method_id_lookup <- c(
     "SM5310C" = "5310-C",
     "SM9221C,E" = "9221-E",
     "SM9221B,C" = "9221-B",
-    "EPA 351.2" = "351.2"
+    "EPA 351.2" = "351.2",
+    "EPA 455.0" = "455.0"
 )
 
 abraxis_id_lookup = c(
     "Anatoxin-a" = "520060",
     "Cylindrospermopsin" = "522011",
     "Microcystin/Nod." = "520011",
-    "Saxitoxin" = "52255B"
+    "Saxitoxin" = "52255B",
+    "Microcystin/nodularin genes mcyE/ndaF" = "520011"
 )
 
 method_context_lookup <- c(
@@ -149,7 +151,8 @@ method_context_lookup <- c(
     "SM5310C" = "APHA",
     "SM9221C,E" = "APHA",
     "SM9221B,C" = "APHA",
-    "EPA 351.2" = "USEPA"
+    "EPA 351.2" = "USEPA",
+    "EPA 455.0" = "USEPA"
     
 )
 
@@ -170,6 +173,13 @@ method_speciation_lookup <- c(
     "Total Kjeldahl Nitrogen" = "as N",
     "Orthophosphate" = "as P"
 )
+
+# elisa_quantitation_limit_lookup <- c(
+#     "Microcystin/nodularin genes mcyE/ndaF" = "0.15",
+#     "Anatoxin-a" = "0.15",
+#     "Saxitoxin" = "0.02",
+#     "Cylindrospermopsin" = ""
+# )
 
 save_objects <- function() {
     save(

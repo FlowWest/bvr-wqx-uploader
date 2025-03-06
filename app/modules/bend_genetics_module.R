@@ -5,7 +5,7 @@ bend_genetics_ui <- function(id){
              tags$h2("Bend Genetics Data"),
              sidebarLayout(
                  sidebarPanel(width = 3,
-                              fileInput(ns("bend_genetics_file"), "Select Bend Genetics File", multiple = TRUE),
+                              fileInput(ns("bend_genetics_file"), "Select Bend Genetics File", multiple = FALSE),
                               actionButton(ns("reset"), "Reset")
                               ),
                  mainPanel(
@@ -74,16 +74,31 @@ bend_genetics_server <- function(input, output, session, account_info){
         tryCatch({
             req(input$bend_genetics_file$datapath)
             
-            if (!any(endsWith(input$bend_genetics_file$datapath, c(".csv", ".CSV")))) {
+            if (!any(endsWith(input$bend_genetics_file$datapath, c("xlsm", "xls")))) {
                 sendSweetAlert(
                     session = session,
                     title = "Error",
-                    text = "Please upload valid Bend Genetics data files with a '.csv' extension.",
+                    text = "Please upload valid Bend Genetics data files with a '.xlsm' or '.xls' extension.",
                     type = "error"
                 )
                 return(NULL)
             }
-            purrr::map_df(input$bend_genetics_file$datapath, \(x) parse_bend_genetics(x))
+            # if(any(endsWith(input$bend_genetics_file$datapath, c("xlsm", "xls")))){
+            sheet_names <- readxl::excel_sheets(input$bend_genetics_file$datapath)
+            sample_sheets <- sheet_names[str_detect(sheet_names, "^Sample")]
+            file_path_vect <- rep(input$bend_genetics_file$datapath, length(sample_sheets))
+            
+            all_sample_data<- purrr::map2(file_path_vect, sample_sheets, parse_bend_genetics_macro)
+            bind_rows(all_sample_data)
+                # return(full_data)
+                # full <- full_data |>
+                #     mutate(bend_type = "MACRO")
+                # full <- full |>
+                #     relocate(bend_type, .before = "Analysis Start Date")
+                # relocate("Result", .before = "Quantitation Limit") |> 
+                
+                # return("MACRO")
+            # }
             },error = function(e) {
                 sendSweetAlert(
                     session = session,
@@ -93,6 +108,7 @@ bend_genetics_server <- function(input, output, session, account_info){
                 )
                 return(NULL)
             })
+            # return(all_sample_data)
         })
 
     # bend_genetics_comparison_table <- reactive({
@@ -108,10 +124,15 @@ bend_genetics_server <- function(input, output, session, account_info){
     
 
     observe({
+        req(uploaded_bend_genetics_data())
+        # if(unique(uploaded_bend_genetics_data()$bend_type) %in% c("MACRO")){
         bend_comparison$data <- uploaded_bend_genetics_data() |> 
-            mutate(Result = ifelse(Result != "ND", as.numeric(Result), "ND")) |>
-            pivot_wider(names_from = "Target", values_from = "Result")   
+            #     # mutate(Result = ifelse(Result != "ND", as.numeric(Result), "ND")) |>
+            pivot_wider(names_from = `Analyte`, values_from = "Result") |> 
+            relocate(c("Method": "Units"), .after = last_col())
             
+        # }
+        #     
             # print(colnames(bend_comparison$data))
         
         # rvals$data <- uploaded_bend_genetics_data()
@@ -134,7 +155,7 @@ bend_genetics_server <- function(input, output, session, account_info){
             return(NULL)
         }
         validate(need(input$bend_genetics_file, message = "Select a file to view"))
-        analyte_list <- c("Anatoxin-a", "Cylindrospermopsin", "Microcystin", "Microcystin/Nod.", "Saxitoxin")
+        analyte_list <- c("Anatoxin-a", "Cylindrospermopsin", "Microcystin", "Microcystin/nodularin genes mcyE/ndaF", "Saxitoxin")
         nm1 <- intersect(analyte_list, colnames(bend_comparison$data))
         # print(nm1)
         datatable <- DT::datatable(bend_comparison$data, 
@@ -205,22 +226,15 @@ bend_genetics_server <- function(input, output, session, account_info){
             return(NULL)
         }
         bend_genetics_data$formatted_data <- bend_comparison$data |> 
-            pivot_longer(cols = -c("Sample ID", 
-                                   "Location", 
-                                   "Date Collected", 
-                                   "Date Received", 
-                                   "Matrix",
-                                   "Preserved",
-                                   "BG_ID",
-                                   "Method",
-                                   "Quantitation Limit",
-                                   "Units",
-                                   "Notes"),
-                         names_to = "Target",
-                         values_to = "Result") |> 
-            relocate("Result", .before = "Quantitation Limit") |> 
-            relocate("Target", .before = "Result") |> 
+            # relocate("bend_type", .after = last_col()) |> 
+            pivot_longer(
+                cols = (which(names(bend_comparison$data) == "Analysis Start Date")+1):(which(names(bend_comparison$data) == "Method")-1),
+                names_to = "Analyte",
+                values_to = "Result")|>
             drop_na("Result")
+            # relocate("Result", .before = "Quantitation Limit") |> 
+            # relocate("Characteristic Name", .before = "Result") |>
+            # drop_na("Result") 
             
     })        
             # handle data uploads
@@ -233,6 +247,7 @@ bend_genetics_server <- function(input, output, session, account_info){
         if (is.null(bend_genetics_data$formatted_data)) {
             return(NULL)
         }
+        # View(bend_genetics_data$formatted_data)
         bend_edited$wqx_data <- bend_genetics_to_wqx(bend_genetics_data$formatted_data)
         
     })
@@ -247,7 +262,8 @@ bend_genetics_server <- function(input, output, session, account_info){
     output$edited_wqx_table <- DT::renderDataTable({
         
         DT::datatable(bend_edited$wqx_data,
-                      editable = list(target = "cell", disable = list(columns = c(0, 2:9, 12:34))),
+                      editable = list(target = "cell"),
+                                      # , disable = list(columns = c(0, 2:9, 12:34))),
                       options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
                       caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
     })
