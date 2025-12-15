@@ -105,7 +105,7 @@ bend_genetics_to_wqx <- function(data) {
             # `Matrix` == "Water" ~ "Water Bottle",
             # .default = ""),
             "Sample Collection Equipment Comment" = "",
-            "Characteristic Name" = ifelse(Analyte == "Microcystin/Nod.", "Microcystin/nodularin genes mcyE/ndaF", Analyte),
+            "Characteristic Name" = ifelse(Analyte == "Microcystin/Nod.", "Microcystin/nodularin", Analyte),
             "Characteristic Name User Supplied" = "",
             "Method Speciation" = "",
             "Result Detection Condition" = ifelse(Result == "ND", "Not Detected", ""),

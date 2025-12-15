@@ -155,7 +155,7 @@ bend_genetics_server <- function(input, output, session, account_info){
             return(NULL)
         }
         validate(need(input$bend_genetics_file, message = "Select a file to view"))
-        analyte_list <- c("Anatoxin-a", "Cylindrospermopsin", "Microcystin", "Microcystin/nodularin genes mcyE/ndaF", "Saxitoxin")
+        analyte_list <- c("Anatoxin-a", "Cylindrospermopsin", "Microcystin", "Microcystin/Nod.", "Saxitoxin")
         nm1 <- intersect(analyte_list, colnames(bend_comparison$data))
         # print(nm1)
         datatable <- DT::datatable(bend_comparison$data, 
