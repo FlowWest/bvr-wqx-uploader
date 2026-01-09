@@ -42,7 +42,7 @@ parse_bend_genetics <- function(file_path) {
                                     # `Result Unit` == "toxins/g" ~ "ELISA",
                                     # `Result Unit` == "toxin/g" ~ "ELISA",
                                     .default = "")) |> 
-        mutate("Characteristic Name" = case_when(`Characteristic Name` == "Microcystin/Nod." ~ "Microcystin/nodularin genes mcyE/ndaF",
+        mutate("Characteristic Name" = case_when(`Characteristic Name` == "Microcystin/Nod." ~ "Microcystin/nodularin",
                                                  `Characteristic Name` == "qPCR-anaC" ~ "Anatoxin-a",
                                                  `Characteristic Name` == "qPCR-mcyE" ~ "Microcystin",
                                                  `Characteristic Name` == "qPCR-sxtA" ~ "Saxitoxin",
