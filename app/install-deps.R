@@ -3,7 +3,6 @@ message("checking to see what needs to be installed....")
 deps <- c("shinycssloaders", 
           "shinyWidgets",
           "spsComps",
-          "reticulate",
           "validate",
           "bslib",
           "lubridate",
@@ -20,7 +19,11 @@ deps <- c("shinycssloaders",
           "remotes",
           "DT",
           "emo",
-          "wqxWeb"
+          "httr2",
+          "digest",
+          "base64enc",
+          "jsonlite",
+          "readxl"
           )
 
 installed_deps <- installed.packages()
@@ -32,9 +35,6 @@ for (dep in deps){
       if(dep == "emo"){
           message(paste("installing:", dep))
           remotes::install_github("hadley/emo")
-      }else if(dep == "wqxWeb"){
-          message(paste("installing:", dep))
-          remotes::install_github("flowwest/wqxWeb")
       }else{
           message(paste("installing:", dep))
           install.packages(dep, repos='https://cloud.r-project.org')  
