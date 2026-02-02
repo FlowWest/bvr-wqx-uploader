@@ -74,11 +74,11 @@ bend_genetics_server <- function(input, output, session, account_info){
         tryCatch({
             req(input$bend_genetics_file$datapath)
             
-            if (!any(endsWith(input$bend_genetics_file$datapath, c("xlsm", "xls")))) {
+            if (!any(endsWith(input$bend_genetics_file$datapath, c("xlsm", "xls", "xlsx")))) {
                 sendSweetAlert(
                     session = session,
                     title = "Error",
-                    text = "Please upload valid Bend Genetics data files with a '.xlsm' or '.xls' extension.",
+                    text = "Please upload valid Bend Genetics data files with a '.xlsm','.xls', or 'xlsx' extension.",
                     type = "error"
                 )
                 return(NULL)
