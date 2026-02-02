@@ -17,8 +17,9 @@ bend_genetics_make_activity_id <- function(location_id, date, activity_type, equ
 
 parse_bend_genetics_macro <- function(file_path, sheet_name){
     # file_path <- "data-raw/bend/20241004_BV_LIMS_report.xlsm"
-    # sheet_name <- "Sample1"
-    left_metadata_raw <- read_excel(file_path, sheet = sheet_name, range = "A3:B8", col_names = c("key", "value"))
+    # file_path <- "data-raw/bend/08.06.2025 HAB.xlsm"
+    # sheet_name <- "Sample2"
+    left_metadata_raw <- read_excel(file_path, sheet = sheet_name, range = "A5:B5", col_names = c("key", "value"))
     right_metadata_raw <- read_excel(file_path, sheet = sheet_name, range = "D3:E8", col_names = c("key", "value"))
     
     #process metadata
