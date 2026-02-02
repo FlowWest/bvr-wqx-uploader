@@ -128,7 +128,7 @@ alpha_lab_server <- function(input, output, session, account_info){
         if (is.null(alpha_comparison$data)) {
             return(NULL)
         }
-        validate(need(input$alpha_lab_file, message = "Select a file to view"))
+        shiny::validate(shiny::need(input$alpha_lab_file, message = "Select a file to view"))
         analyte_list <- c(
             "Oil & Grease (HEM)", 
             "Nitrate + Nitrite as N", 
@@ -344,7 +344,7 @@ alpha_lab_server <- function(input, output, session, account_info){
     })
     
     output$alpha_lab_upload_status <- renderUI({
-        validate(need(alpha_lab_wqx_status(), "start upload, status of upload will be shown here after completion"))
+        shiny::validate(shiny::need(alpha_lab_wqx_status(), "start upload, status of upload will be shown here after completion"))
         if (alpha_lab_wqx_status()$StatusName == "Import Failed") {
             tags$p(tags$b("Import failed."), "Please retry upload.", style = "{color: red;}")
         } else

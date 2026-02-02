@@ -3,7 +3,6 @@ message("checking to see what needs to be installed....")
 deps <- c("shinycssloaders", 
           "shinyWidgets",
           "spsComps",
-          "validate",
           "bslib",
           "lubridate",
           "forcats",

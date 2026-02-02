@@ -154,7 +154,7 @@ bend_genetics_server <- function(input, output, session, account_info){
         if (is.null(bend_comparison$data)) {
             return(NULL)
         }
-        validate(need(input$bend_genetics_file, message = "Select a file to view"))
+        shiny::validate(shiny::need(input$bend_genetics_file, message = "Select a file to view"))
         analyte_list <- c("Anatoxin-a", "Cylindrospermopsin", "Microcystin", "Microcystin/Nod.", "Saxitoxin")
         nm1 <- intersect(analyte_list, colnames(bend_comparison$data))
         # print(nm1)
@@ -348,7 +348,7 @@ bend_genetics_server <- function(input, output, session, account_info){
     })
             
         output$bend_genetics_upload_status <- renderUI({
-            validate(need(bend_genetics_wqx_status(), "start upload, status of upload will be shown here after completion"))
+            shiny::validate(shiny::need(bend_genetics_wqx_status(), "start upload, status of upload will be shown here after completion"))
             if (bend_genetics_wqx_status()$StatusName == "Import Failed") {
                 tags$p(tags$b("Import failed."), "Please retry upload.", style = "{color: red;}")
             } else

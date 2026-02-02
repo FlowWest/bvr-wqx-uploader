@@ -1,6 +1,3 @@
-# Pure R implementation of EPA WQX/CDX API client
-# Replaces Python wqxtools dependency
-
 library(httr2)
 library(digest)
 library(base64enc)
@@ -185,3 +182,4 @@ cdx_submit_to_cdx <- function(session, dataset_id) {
   
   resp_body_json(resp)
 }
+
