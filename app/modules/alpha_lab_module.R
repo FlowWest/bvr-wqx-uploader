@@ -307,7 +307,8 @@ alpha_lab_server <- function(input, output, session, account_info){
         }
     )
     alpha_lab_wqx_status <- eventReactive(input$alpha_lab_upload, {
-        downloads_path <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
+        home_dir <- Sys.getenv("USERPROFILE", Sys.getenv("HOME"))
+        downloads_path <- file.path(home_dir, "Downloads")
         path_to_most_recent <- str_replace_all(
             paste(
                 downloads_path,
