@@ -12,9 +12,9 @@ corporate_theme <- bslib::bs_theme(
     warning = "#ffbe00",
     danger = "#ff5861",
     
-    # Typography
-    base_font = bslib::font_google("Inter"),
-    heading_font = bslib::font_google("Inter"),
+    # Typography (using system fonts to avoid download issues on Windows)
+    base_font = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    heading_font = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
     font_scale = 1,
     
     # Rounded corners (corporate uses 0.25rem)
