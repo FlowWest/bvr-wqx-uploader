@@ -29,6 +29,16 @@ installed_deps <- installed.packages()
 
 for (dep in deps){
   if (dep %in% installed_deps){
+      if (dep == "httr2") {
+          current_version <- packageVersion("httr2")
+          if (current_version != "1.2.2") {
+              message("Reinstalling httr version 1.2.2 (current: ", current_version, ")")
+              install.packages(
+                  "httr2",
+                  repos = "https://cloud.r-project.org"
+              )
+          }
+      }
     next
   }else {
       if(dep == "emo"){
