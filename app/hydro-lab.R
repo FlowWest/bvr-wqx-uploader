@@ -1,24 +1,36 @@
 parse_hydrolab <- function(filepath) {
     regex_pattern <- "\\w+"
-    raw_name <- readLines(filepath, 1)
+    raw_name <- readLines(filepath, 1, warn = FALSE)
     location_for_selected_hydrolab <- unlist(str_extract_all(raw_name, regex_pattern))[4]
     depth_cols <- c("Depth10", "Dep25")
     turb_cols <- c("Turb", "TurbSC")
-    data <- read_csv(filepath,
-             skip = 5,
-             col_types = "c",
-             col_select = c(1:28)) |>
-        mutate_if(is.character, utf8::utf8_encode) |>
+    
+    # Read all columns as character, then drop empty/unnamed ones
+    data <- read_csv(
+        filepath,
+        skip = 5,
+        col_types = cols(.default = "c"),
+        show_col_types = FALSE
+    ) |>
+        # Remove unnamed columns (empty columns between data)
         select(-starts_with("...")) |>
-        mutate("location_id" = location_for_selected_hydrolab) |>
-        mutate("project_id" = project_id_lookup[location_id]) |> 
-        filter(grepl("^[0-9]", Date))
+        # Filter to only data rows (start with digit in Date column)
+        filter(grepl("^[0-9]", Date)) |>
+        mutate(
+            location_id = location_for_selected_hydrolab,
+            project_id = project_id_lookup[location_id]
+        )
+    
     turb <- turb_cols[turb_cols %in% colnames(data)]
     depth <- depth_cols[depth_cols %in% colnames(data)]
-    print(colnames(data))
-    data <- data |> 
-        rename("Turbidity" = turb,
-               "Depth" = depth)
+    
+    if (length(turb) > 0) {
+        data <- data |> rename("Turbidity" = all_of(turb))
+    }
+    if (length(depth) > 0) {
+        data <- data |> rename("Depth" = all_of(depth))
+    }
+    
     return(data)
 }
 

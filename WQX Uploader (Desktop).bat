@@ -1,56 +1,56 @@
 @echo off
-SETLOCAL
-setlocal enabledelayedexpansion
+SETLOCAL EnableDelayedExpansion
 
-@echo off
-SETLOCAL
+:: BVR WQX Uploader Launcher
+:: Double-click to launch the Shiny app
 
+:: Find R installation dynamically
 SET "RPath="
 
-FOR %%G IN (
-    "C:\Program Files\R\R-4.4.0\bin\x64",
-    "C:\Users\%USERNAME%\AppData\Local\Programs\R\R-4.3.2\bin\x64",
-    "C:\Users\%USERNAME%\Documents\R\R-4.1.2\bin\x64",
-    "C:\Program Files\R\R-4.3.0\bin\x64",
-    "C:\Program Files\R\R-4.3.2\bin\x64",
-    "C:\Program Files\R\R-4.2.1\bin\x64"
-) DO (
-    IF EXIST %%G (
-        SET "RPath=%%G"
-        GOTO Found
+:: Check common R installation locations (newest versions first)
+FOR %%V IN (4.5.2 4.5.1 4.5.0 4.4.2 4.4.1 4.4.0 4.3.3 4.3.2 4.3.1 4.3.0 4.2.3 4.2.2 4.2.1 4.2.0 4.1.3 4.1.2) DO (
+    IF EXIST "C:\Program Files\R\R-%%V\bin\x64\Rscript.exe" (
+        SET "RPath=C:\Program Files\R\R-%%V\bin\x64"
+        GOTO :FoundR
+    )
+    IF EXIST "C:\Users\%USERNAME%\AppData\Local\Programs\R\R-%%V\bin\x64\Rscript.exe" (
+        SET "RPath=C:\Users\%USERNAME%\AppData\Local\Programs\R\R-%%V\bin\x64"
+        GOTO :FoundR
     )
 )
 
-:Found
-IF NOT DEFINED RPath (
-    echo R directory not found.
-) ELSE (
-    echo Found R directory: %RPath%
+:: Check if R is in PATH
+WHERE Rscript.exe >nul 2>&1
+IF %ERRORLEVEL% EQU 0 (
+    FOR /F "tokens=*" %%i IN ('WHERE Rscript.exe') DO (
+        SET "RPath=%%~dpi"
+        GOTO :FoundR
+    )
 )
 
-
-set "downloadsFolder=%USERPROFILE%\Downloads"
-set "latestVersion="
-
-for /f "tokens=*" %%a in ('dir /b /ad /o-n "%downloadsFolder%\bvr-wqx-uploader-*" 2^>nul') do (
-    set "latestVersion=%%a"
-    goto :found
-)
-
-:found
-if not "%latestVersion%"=="" (
-    cd "%downloadsFolder%\%latestVersion%\%latestVersion%"
-    echo Latest version found: %latestVersion%
-) else (
-    echo No version of bvr-wqx-uploader found in the Downloads folder.
-)
-
-
-cd app
-
-%Rpath%\RScript.exe install-deps.R
-%Rpath%\RScript.exe python-setup.R
-%Rpath%\R.exe -e "shiny::runApp('.', launch.browser = TRUE)"
+echo.
+echo ERROR: R installation not found.
+echo Please install R from https://cran.r-project.org/
+echo.
 pause
+EXIT /B 1
+
+:FoundR
+echo Found R at: %RPath%
+echo.
+
+:: Change to app directory (same folder as this batch file)
+cd /d "%~dp0app"
+
+:: Install dependencies if needed (first run)
+echo Checking dependencies...
+"%RPath%\Rscript.exe" install-deps.R
+
+:: Launch the app
+echo.
+echo Starting WQX Uploader...
+echo (A browser window will open shortly)
+echo.
+"%RPath%\R.exe" -e "shiny::runApp('.', launch.browser = TRUE)"
 
 ENDLOCAL

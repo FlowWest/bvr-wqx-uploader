@@ -3,8 +3,6 @@ message("checking to see what needs to be installed....")
 deps <- c("shinycssloaders", 
           "shinyWidgets",
           "spsComps",
-          "reticulate",
-          "validate",
           "bslib",
           "lubridate",
           "forcats",
@@ -20,21 +18,32 @@ deps <- c("shinycssloaders",
           "remotes",
           "DT",
           "emo",
-          "wqxWeb"
+          "httr2",
+          "digest",
+          "base64enc",
+          "jsonlite",
+          "readxl"
           )
 
 installed_deps <- installed.packages()
 
 for (dep in deps){
   if (dep %in% installed_deps){
+      if (dep == "httr2") {
+          current_version <- packageVersion("httr2")
+          if (current_version != "1.2.2") {
+              message("Reinstalling httr version 1.2.2 (current: ", current_version, ")")
+              install.packages(
+                  "httr2",
+                  repos = "https://cloud.r-project.org"
+              )
+          }
+      }
     next
   }else {
       if(dep == "emo"){
           message(paste("installing:", dep))
           remotes::install_github("hadley/emo")
-      }else if(dep == "wqxWeb"){
-          message(paste("installing:", dep))
-          remotes::install_github("flowwest/wqxWeb")
       }else{
           message(paste("installing:", dep))
           install.packages(dep, repos='https://cloud.r-project.org')  
