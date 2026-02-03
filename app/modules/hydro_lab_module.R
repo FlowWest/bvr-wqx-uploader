@@ -4,32 +4,34 @@ hydro_lab_ui <- function(id){
           
           tags$h2("Hydro Lab Data"),
           sidebarLayout(
-              sidebarPanel(width = 3,
-                           fileInput(ns("hydro_lab_file"), "Select Hydro Lab File", multiple = TRUE),
-                           actionButton(ns("reset"), "Reset"),
-                           conditionalPanel(condition="input.tabs == 'additional'",
-                               selectInput(ns("selected_location"), "Select Monitoring Location:", choices = NULL),
-                               selectInput(ns("selected_day"), "Select Monitoring Day:", choices = NULL),
-                               numericInput(ns("temperature_air"), "Enter Air Temperature Measurement", value = ""),
-                               textAreaInput(ns("result_comment"), "Enter Result Comment", rows = 2),
-                               actionButton(ns("add_result"), "Add Result"),
-                               br(),
-                               actionButton(ns("delete_result"), "Delete Last Added Result")
-                               )
-                             ),
+              sidebarPanel(
+                  width = 3,
+                  fileInput(ns("hydro_lab_file"), "Select Hydro Lab File", multiple = TRUE),
+                  div(class = "mb-3",
+                      actionButton(ns("reset"), "Reset", class = "btn-secondary w-100")
+                  ),
+                  conditionalPanel(
+                      condition = "input.tabs == 'additional'",
+                      hr(),
+                      selectInput(ns("selected_location"), "Select Monitoring Location:", choices = NULL),
+                      selectInput(ns("selected_day"), "Select Monitoring Day:", choices = NULL),
+                      numericInput(ns("temperature_air"), "Enter Air Temperature Measurement", value = ""),
+                      textAreaInput(ns("result_comment"), "Enter Result Comment", rows = 2),
+                      div(class = "d-grid gap-2 mt-3",
+                          actionButton(ns("add_result"), "Add Result", class = "btn-primary"),
+                          actionButton(ns("delete_result"), "Delete Last Added Result", class = "btn-outline-danger")
+                      )
+                  )
+              ),
               mainPanel(
                         tabsetPanel(
                             id = "tabs",
                             type = "pills",
                             tabPanel(
-                                "Qa/
-                                Qc",
+                                "QA/QC",
                                 value = "qa_qc",
-                                tagList(
-                                    tags$p(class = "p-3 border rounded",
-                                           "This section provides view of raw data, as well as results for Qa/Qc checks. Verify that
-                                           all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application.")
-                                ),
+                                tags$p(class = "p-3 border rounded mb-3",
+                                       "This section provides view of raw data, as well as results for QA/QC checks. Verify that all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application."),
                                 card(card_header("Raw Data"), card_body(DT::dataTableOutput(ns("hydro_lab_table")),
                                                                         style = "height: 600px; width: 100%;"))
                                 # tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - 'O', - test passed, ', 'X' - test failed, '!' - verify manually (usually safe to ignore)"),
@@ -42,31 +44,38 @@ hydro_lab_ui <- function(id){
                             tabPanel(
                                 "Enter Additional Data",
                                 value = "additional",
-                                tags$p(class = "p-3 border rounded",
+                                tags$p(class = "p-3 border rounded mb-3",
                                        "Enter additional AccuWeather 'Temperature, Air' measurement and 'Result Comment' for each date and location in the sidebar panel."),
                                 card(card_header("Edit Data"), card_body(
                                     DT::dataTableOutput(ns("temperature_data_table")),
                                     style = "height: 1000px; width: 100%;"
                                 )),
-                                actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data"),
-                                textOutput(ns("check_df_message")),
-                                tags$p(class = "p-3 border rounded",
+                                div(class = "my-4",
+                                    actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data", class = "btn-primary btn-lg"),
+                                    div(class = "mt-2", textOutput(ns("check_df_message")))
+                                ),
+                                tags$p(class = "p-3 border rounded mb-3",
                                        "If water body is too shallow, click on button below to generate empty dataframe after inputing air temperature and result comment."),
-                                actionButton(ns("generate_df"), "Generate Empty WQX Data Sheet"),
-                                textOutput(ns("check_empty_df_message")),
+                                div(class = "mb-4",
+                                    actionButton(ns("generate_df"), "Generate Empty WQX Data Sheet", class = "btn-secondary"),
+                                    div(class = "mt-2", textOutput(ns("check_empty_df_message")))
+                                )
                             ),
                             tabPanel(
                                 "Formatted Data",
-                                tags$p(class = "p-3 border rounded",
+                                tags$p(class = "p-3 border rounded mb-3",
                                        "Review WQX formatted data. Click 'Download' and then 'Upload to WQX' when ready."),
-                                bslib::layout_columns(
-                                    col_widths = c(2, 2, 2),
-                                    downloadButton(ns("hydro_lab_download")),
-                                    actionButton(ns("hydro_lab_upload"), label = "Upload to WQX", icon = shiny::icon("rocket")),
-                                    conditionalPanel(condition="$('html').hasClass('shiny-busy')",
-                                                     tags$div(HTML("<b> Starting WQX upload. Please wait 25 seconds for the upload status from CDX...</b>"),id="loadmessage")),
-                                    uiOutput(ns("hydro_upload_status"))
+                                div(class = "d-flex gap-3 align-items-center mb-3",
+                                    downloadButton(ns("hydro_lab_download"), class = "btn-primary"),
+                                    actionButton(ns("hydro_lab_upload"), label = "Upload to WQX", icon = shiny::icon("rocket"), class = "btn-success")
                                 ),
+                                conditionalPanel(
+                                    condition = "$('html').hasClass('shiny-busy')",
+                                    div(class = "alert alert-info",
+                                        HTML("<b>Starting WQX upload. Please wait 25 seconds for the upload status from CDX...</b>")
+                                    )
+                                ),
+                                uiOutput(ns("hydro_upload_status")),
                                 card(card_header("Preview Final Upload"), card_body(
                                     DT::dataTableOutput(ns("hydro_lab_wqx_formatted")),
                                     style = "height: 1500px; width: 100%;"
@@ -134,7 +143,7 @@ hydro_lab_server <- function(input, output, session, account_info){
         editable_cols <- rep(TRUE, 16)
         editable_cols[1:2] <- FALSE
         editable_cols[16] <- FALSE
-        validate(need(input$hydro_lab_file, message = "Select a file to view"))
+        shiny::validate(shiny::need(input$hydro_lab_file, message = "Select a file to view"))
         DT::datatable(rvals$data, 
                       editable = list(target = "cell"), 
                                       # disable = list(columns = c(1,2, 16))),
@@ -375,8 +384,13 @@ hydro_lab_server <- function(input, output, session, account_info){
                       caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
     })
     output$hydro_lab_wqx_formatted <- DT::renderDataTable({
-        
-        DT::datatable(common_hydro_lab_wqx_data(),
+        # Show formatted data - either from generated data or directly from hydro_lab_data
+        data_to_show <- common_hydro_lab_wqx_data()
+        if (is.null(data_to_show)) {
+            data_to_show <- hydro_lab_data$formatted_data
+        }
+        shiny::validate(shiny::need(data_to_show, "Upload a file and add additional data, then click 'Generate WQX Ready Data'"))
+        DT::datatable(data_to_show,
                       options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
                       caption = "Preview data before download.")
     })
@@ -410,7 +424,8 @@ hydro_lab_server <- function(input, output, session, account_info){
         }
     )
     hydro_wqx_status <- eventReactive(input$hydro_lab_upload, {
-        downloads_path <- file.path(Sys.getenv("USERPROFILE"), "Downloads")
+        home_dir <- Sys.getenv("USERPROFILE", Sys.getenv("HOME"))
+        downloads_path <- file.path(home_dir, "Downloads")
         print(downloads_path)
         path_to_most_recent <- str_replace_all(
             paste(
@@ -447,7 +462,7 @@ hydro_lab_server <- function(input, output, session, account_info){
     })
 
     output$hydro_upload_status <- renderUI({
-        validate(need(hydro_wqx_status(), "start upload, status of upload will be shown here after completion"))
+        shiny::validate(shiny::need(hydro_wqx_status(), "start upload, status of upload will be shown here after completion"))
         if (hydro_wqx_status()$StatusName == "Import Failed") {
             tags$p(tags$b("Import failed."), "Please retry upload.", style = "{color: red;}")
         } else
