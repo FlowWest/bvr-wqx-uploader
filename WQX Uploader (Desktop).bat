@@ -2,7 +2,55 @@
 SETLOCAL EnableDelayedExpansion
 
 :: BVR WQX Uploader Launcher
-:: Double-click to launch the Shiny app
+:: Double-click to launch the Shiny app (auto-updates from GitHub)
+
+SET "REPO=FlowWest/bvr-wqx-uploader"
+SET "APP_DIR=%~dp0app"
+SET "VERSION_FILE=%~dp0VERSION"
+
+echo ============================================
+echo   BVR WQX Uploader
+echo ============================================
+echo.
+
+:: Check for updates using PowerShell
+echo Checking for updates...
+powershell -ExecutionPolicy Bypass -Command ^
+    "$ErrorActionPreference = 'Stop'; ^
+    try { ^
+        $release = Invoke-RestMethod -Uri 'https://api.github.com/repos/%REPO%/releases/latest' -TimeoutSec 10; ^
+        $latestVersion = $release.tag_name; ^
+        $localVersion = ''; ^
+        if (Test-Path '%VERSION_FILE%') { $localVersion = (Get-Content '%VERSION_FILE%' -Raw).Trim() }; ^
+        if ($latestVersion -ne $localVersion) { ^
+            Write-Host \"Update available: $localVersion -> $latestVersion\"; ^
+            Write-Host 'Downloading update...'; ^
+            $zipUrl = $release.zipball_url; ^
+            $tempZip = Join-Path $env:TEMP 'bvr-wqx-update.zip'; ^
+            $tempExtract = Join-Path $env:TEMP 'bvr-wqx-extract'; ^
+            Invoke-WebRequest -Uri $zipUrl -OutFile $tempZip -TimeoutSec 120; ^
+            if (Test-Path $tempExtract) { Remove-Item $tempExtract -Recurse -Force }; ^
+            Expand-Archive -Path $tempZip -DestinationPath $tempExtract -Force; ^
+            $extractedFolder = Get-ChildItem $tempExtract | Select-Object -First 1; ^
+            $sourceApp = Join-Path $extractedFolder.FullName 'app'; ^
+            if (Test-Path $sourceApp) { ^
+                Write-Host 'Installing update...'; ^
+                if (Test-Path '%APP_DIR%') { Remove-Item '%APP_DIR%' -Recurse -Force }; ^
+                Copy-Item $sourceApp -Destination '%APP_DIR%' -Recurse; ^
+            }; ^
+            $latestVersion | Out-File -FilePath '%VERSION_FILE%' -NoNewline -Encoding ASCII; ^
+            Remove-Item $tempZip -Force; ^
+            Remove-Item $tempExtract -Recurse -Force; ^
+            Write-Host 'Update complete!'; ^
+        } else { ^
+            Write-Host \"You have the latest version ($localVersion)\"; ^
+        } ^
+    } catch { ^
+        Write-Host \"Could not check for updates: $_\"; ^
+        Write-Host 'Continuing with current version...'; ^
+    }"
+
+echo.
 
 :: Find R installation dynamically
 SET "RPath="
@@ -39,8 +87,8 @@ EXIT /B 1
 echo Found R at: %RPath%
 echo.
 
-:: Change to app directory (same folder as this batch file)
-cd /d "%~dp0app"
+:: Change to app directory
+cd /d "%APP_DIR%"
 
 :: Install dependencies if needed (first run)
 echo Checking dependencies...
