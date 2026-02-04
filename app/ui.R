@@ -1,3 +1,13 @@
+# Read version from VERSION file (created by launcher)
+app_version <- tryCatch({
+    version_file <- file.path(dirname(getwd()), "VERSION")
+    if (file.exists(version_file)) {
+        trimws(readLines(version_file, n = 1, warn = FALSE))
+    } else {
+        "dev"
+    }
+}, error = function(e) "dev")
+
 # DaisyUI Corporate theme: clean, professional, slightly rounded
 corporate_theme <- bslib::bs_theme(
     version = 5,
@@ -41,7 +51,10 @@ corporate_theme <- bslib::bs_theme(
 
 shinyUI(
     bslib::page_navbar(
-        title = "BVR WQX Uploader",
+        title = tags$span(
+            "BVR WQX Uploader",
+            tags$span(app_version, class = "text-muted ms-2", style = "font-size: 0.75rem; font-weight: normal;")
+        ),
         theme = corporate_theme,
         header = tagList(
             shinyWidgets::useSweetAlert(),
