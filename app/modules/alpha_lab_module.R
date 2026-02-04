@@ -1,71 +1,47 @@
 alpha_lab_ui <- function(id){
     ns <- NS(id)
     tabPanel("Alpha Lab",
-             
-             tags$h2("Alpha Lab Data"),
-             sidebarLayout(
-                 sidebarPanel(width = 3,
-                              fileInput(ns("alpha_lab_file"), "Select Alpha Lab File", multiple = FALSE),
-                              actionButton(ns("reset"), "Reset")
+             tags$h4("Alpha Lab Data", class = "mb-2"),
+             bslib::layout_sidebar(
+                 sidebar = bslib::sidebar(
+                     width = 280,
+                     padding = 10,
+                     fileInput(ns("alpha_lab_file"), "Select Alpha Lab File", multiple = FALSE),
+                     actionButton(ns("reset"), "Reset", class = "btn-secondary btn-sm w-100")
                  ),
-                 mainPanel(
-                     tabsetPanel(
-                         id = "tabs",
-                         type = "pills",
-                         tabPanel(
-                             "Qa/
-                                Qc",
-                             value = "qa_qc",
-                             tagList(
-                                 tags$p(class = "p-3 border rounded",
-                                        "This section provides view of raw data, as well as results for Qa/Qc checks. Verify that
-                                           all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application.")
-                             ),
-                             card(card_header("Raw Data"), card_body(
-                                 DT::dataTableOutput(ns("alpha_lab_table")),
-                                 style = "height: 1400px; width: 100%;"
-                             )
-                             )
-                             # tags$p(class = "p-3 border rounded", "Qa/Qc Results: check for failed test, make changes in the raw data and try to import again. The following icons are used - 'O', - test passed, ', 'X' - test failed, '!' - verify manually (usually safe to ignore)"),
-                             # layout_column_wrap(
-                             #     width = 1/2,
-                             #     card(card_header("Range based rules"), card_body(tableOutput(ns("alpha_lab_qaqc_table")))),
-                             #     card(card_header("Custom rules"), card_body(tableOutput(ns("alpha_lab_custom_qaqc_table"))))
-                             # )
-                         ),
-                         tabPanel(
-                             "Enter Additional Data",
-                             value = "additional",
-                             tags$p(class = "p-3 border rounded",
-                                    "Edit the table below to enter 'Activity Depth/Height Measure', 'Activity Depth/Height Unit', and 'Result Comment'. Click 'Generate WQX Ready Data' to reformat 'Activity ID'."),
-                             card(card_header("Edit Data"), card_body(
-                                 DT::dataTableOutput(ns("edited_wqx_table")),
-                                 style = "height: 1000px; width: 100%;"
-                             )
-                             ),
-                             actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data"),
-                             textOutput(ns("check_df_message"))
-                         ),
-                         tabPanel(
-                             "Formatted Data",
-                             tags$p(class = "p-3 border rounded",
-                                    "Review WQX formatted data. Click 'Download' and then 'Upload to WQX' when ready."),
-                             bslib::layout_columns(
-                                 col_widths = c(2, 2, 2),
-                                 downloadButton(ns("alpha_lab_download")),
-                                 actionButton(ns("alpha_lab_upload"), label = "Upload to WQX", icon = shiny::icon("rocket")),
-                                 conditionalPanel(condition="$('html').hasClass('shiny-busy')",
-                                                  tags$div(HTML("<b> Starting WQX upload. Please wait 25 seconds for the upload status from CDX...</b>"),id="loadmessage")),
-                                 uiOutput(ns("alpha_lab_upload_status"))
-                             ),
-                             card(card_header("Preview Final Upload"), card_body(
-                                 DT::dataTableOutput(ns("alpha_lab_wqx_formatted")),
-                                 style = "height: 1400px; width: 100%;"
-                             ))
+                 tabsetPanel(
+                     id = ns("tabs"),
+                     type = "pills",
+                     tabPanel(
+                         "QA/QC",
+                         value = "qa_qc",
+                         tags$p(class = "p-2 border rounded mb-2 small",
+                                "This section provides view of raw data, as well as results for QA/QC checks. Verify that all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application."),
+                         DT::dataTableOutput(ns("alpha_lab_table"))
+                     ),
+                     tabPanel(
+                         "Enter Additional Data",
+                         value = "additional",
+                         tags$p(class = "p-2 border rounded mb-2 small",
+                                "Edit the table below to enter 'Activity Depth/Height Measure', 'Activity Depth/Height Unit', and 'Result Comment'. Click 'Generate WQX Ready Data' to reformat 'Activity ID'."),
+                         DT::dataTableOutput(ns("edited_wqx_table")),
+                         div(class = "my-2",
+                             actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data", class = "btn-primary"),
+                             span(class = "ms-2", textOutput(ns("check_df_message"), inline = TRUE))
                          )
+                     ),
+                     tabPanel(
+                         "Formatted Data",
+                         tags$p(class = "p-2 border rounded mb-2 small",
+                                "Review WQX formatted data. Download the file, then use the 'Upload to WQX' tab to submit."),
+                         div(class = "mb-2",
+                             downloadButton(ns("alpha_lab_download"), class = "btn-primary btn-sm")
+                         ),
+                         DT::dataTableOutput(ns("alpha_lab_wqx_formatted"))
                      )
                  )
-             ))
+             )
+    )
 }
 
 alpha_lab_server <- function(input, output, session, account_info){
@@ -306,58 +282,4 @@ alpha_lab_server <- function(input, output, session, account_info){
             write.csv(common_alpha_lab_wqx_data$wqx_data, file, row.names = FALSE)
         }
     )
-    alpha_lab_wqx_status <- eventReactive(input$alpha_lab_upload, {
-        home_dir <- Sys.getenv("USERPROFILE", Sys.getenv("HOME"))
-        downloads_path <- file.path(home_dir, "Downloads")
-        path_to_most_recent <- str_replace_all(
-            paste(
-                downloads_path,
-                "/alpha_lab-data-",
-                alpha_signature(),
-                ".csv",
-                sep = ""
-            ),
-            "\\\\",
-            "/"
-        )
-        
-        API_KEY = account_info$selectedApiKey()
-        USER_ID = account_info$selectedUsername()
-        CONFIG_ID = account_info$selectedConfigId()
-        FILE_PATH = path_to_most_recent
-        FILE_NAME =  paste("alpha_lab-data-", alpha_signature(), ".csv", sep = "")
-        
-        spsComps::shinyCatch({message("sending request to CDX Web")}, position = "bottom-full-width")
-        
-        session <- cdx(USER_ID, API_KEY, FILE_PATH, FILE_NAME)
-        file_id <- cdx_upload(session = session)
-        dataset_id <-
-            cdx_import(
-                session = session,
-                file_id = file_id,
-                config_id = CONFIG_ID,
-                params = c("newOrExistingData", "0")
-            )
-        
-        Sys.sleep(25)
-        return(cdx_get_status(session, dataset_id))
-        
-    })
-    
-    output$alpha_lab_upload_status <- renderUI({
-        shiny::validate(shiny::need(alpha_lab_wqx_status(), "start upload, status of upload will be shown here after completion"))
-        if (alpha_lab_wqx_status()$StatusName == "Import Failed") {
-            tags$p(tags$b("Import failed."), "Please retry upload.", style = "{color: red;}")
-        } else
-        {
-            tags$p(
-                tags$b("Application is importing data onto CDX."),
-                tags$br(),
-                "You may now close this document. Check email or CDX website for the final upload confirmation."
-            )
-        }
-    })
-    
-    
-    
 }

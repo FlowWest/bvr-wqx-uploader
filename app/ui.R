@@ -103,7 +103,7 @@ shinyUI(
             "))
         ),
         navbarMenu(
-            "Upload",
+            "Format Data",
             tabPanel(title = 'Hydro Lab',
                      hydro_lab_ui('hydro_lab')),
             tabPanel(title = 'Bend Genetics',
@@ -111,7 +111,11 @@ shinyUI(
             tabPanel(title = 'Alpha Lab',
                      alpha_lab_ui('alpha_lab'))
         ),
+        tabPanel(title = "Upload to WQX",
+                 wqx_upload_ui('wqx_upload')),
         tabPanel(title = "User Account",
-                 user_account_ui('user_account'))
+                 user_account_ui('user_account')),
+        tabPanel(title = "Definitions",
+                 definitions_ui('definitions'))
     )
 )

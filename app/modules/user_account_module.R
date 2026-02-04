@@ -3,62 +3,23 @@ user_account_ui <- function(id){
     tabPanel(
         "User Account",
         div(
-            class = "container-fluid py-4",
+            class = "container-fluid py-2",
+            tags$h4("Manage WQX Credentials", class = "mb-2"),
             div(
-                class = "row justify-content-center",
+                class = "row",
                 div(
-                    class = "col-lg-8 col-xl-6",
-                    card(
-                        card_header(
-                            class = "bg-primary text-white",
-                            tags$h4(class = "mb-0", icon("user-cog"), " Manage WQX Credentials")
-                        ),
-                        card_body(
-                            class = "p-4",
-                            # Credential inputs
-                            div(
-                                class = "mb-4",
-                                selectInput(
-                                    ns("wqx_username"),
-                                    label = tags$span(icon("user"), " Username"),
-                                    choices = cdx_account$USER_ID,
-                                    width = "100%"
-                                )
-                            ),
-                            div(
-                                class = "mb-4",
-                                selectInput(
-                                    ns("wqx_api_key"),
-                                    label = tags$span(icon("key"), " API Key"),
-                                    choices = cdx_account$WQX_API_KEY,
-                                    width = "100%"
-                                )
-                            ),
-                            div(
-                                class = "mb-4",
-                                selectInput(
-                                    ns("wqx_config_id"),
-                                    label = tags$span(icon("cog"), " Config ID"),
-                                    choices = cdx_account$CONFIG_ID,
-                                    width = "100%"
-                                )
-                            ),
-                            # Action button
-                            div(
-                                class = "d-grid gap-2 mt-4",
-                                actionButton(
-                                    ns("load_credential"),
-                                    label = tagList(icon("sync"), " Reload Credentials"),
-                                    class = "btn-primary btn-lg"
-                                )
-                            ),
-                            # Status/error messages
-                            div(
-                                class = "mt-4",
-                                uiOutput(ns("error_message"))
-                            )
-                        )
-                    )
+                    class = "col-md-6",
+                    selectInput(ns("wqx_username"), label = "Username", choices = cdx_account$USER_ID, width = "100%"),
+                    selectInput(ns("wqx_api_key"), label = "API Key", choices = cdx_account$WQX_API_KEY, width = "100%"),
+                    selectInput(ns("wqx_config_id"), label = "Config ID", choices = cdx_account$CONFIG_ID, width = "100%"),
+                    textInput(ns("download_folder"), label = "Download Folder",
+                              value = if (!is.null(cdx_account$DOWNLOAD_FOLDER) && length(cdx_account$DOWNLOAD_FOLDER) > 0 && !is.na(cdx_account$DOWNLOAD_FOLDER[1])) cdx_account$DOWNLOAD_FOLDER[1] else default_download_folder,
+                              width = "100%"),
+                    tags$small(class = "text-muted", "Folder where exported CSV files will be saved"),
+                    div(class = "mt-2",
+                        actionButton(ns("load_credential"), label = "Reload Credentials", class = "btn-primary btn-sm")
+                    ),
+                    div(class = "mt-2", uiOutput(ns("error_message")))
                 )
             )
         )
@@ -96,7 +57,8 @@ user_account_server <- function(input, output, session){
         template <- data.frame(
             WQX_API_KEY = character(0),
             USER_ID = character(0),
-            CONFIG_ID = character(0)
+            CONFIG_ID = character(0),
+            DOWNLOAD_FOLDER = character(0)
         )
         dir.create(cdx_account_path, recursive = TRUE)
         write_csv(template, cdx_account_file)
@@ -127,11 +89,15 @@ user_account_server <- function(input, output, session){
         updateSelectInput(session, "wqx_username", "Username", choices = cdx_account$USER_ID)
         updateSelectInput(session, "wqx_api_key", "API Key", choices = cdx_account$WQX_API_KEY)
         updateSelectInput(session, "wqx_config_id", "Config ID", choices = cdx_account$CONFIG_ID)
+        if (!is.null(cdx_account$DOWNLOAD_FOLDER) && length(cdx_account$DOWNLOAD_FOLDER) > 0 && !is.na(cdx_account$DOWNLOAD_FOLDER[1])) {
+            updateTextInput(session, "download_folder", value = cdx_account$DOWNLOAD_FOLDER[1])
+        }
     })
     
     selectedUsername <- reactiveVal(NULL)
     selectedApiKey <- reactiveVal(NULL)
     selectedConfigId <- reactiveVal(NULL)
+    selectedDownloadFolder <- reactiveVal(default_download_folder)
     
     observeEvent(input$wqx_api_key, {
         selectedUsername(input$wqx_username)
@@ -145,9 +111,14 @@ user_account_server <- function(input, output, session){
         selectedConfigId(input$wqx_config_id)
     })
     
+    observeEvent(input$download_folder, {
+        selectedDownloadFolder(input$download_folder)
+    })
+    
     list(
         selectedApiKey = selectedApiKey,
         selectedUsername = selectedUsername,
-        selectedConfigId = selectedConfigId
+        selectedConfigId = selectedConfigId,
+        selectedDownloadFolder = selectedDownloadFolder
     )
 }

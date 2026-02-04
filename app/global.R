@@ -19,6 +19,8 @@ source("modules/hydro_lab_module.R")
 source("modules/bend_genetics_module.R")
 source('modules/alpha_lab_module.R')
 source('modules/user_account_module.R')
+source('modules/wqx_upload_module.R')
+source('modules/definitions_module.R')
 
 source("hydro-lab.R")
 source("alpha-lab.R")
@@ -47,4 +49,7 @@ if (home_dir == "") home_dir <- path.expand("~")
 cdx_account_path <- file.path(home_dir, "Documents", "CDX_Account")
 cdx_account_file <- file.path(cdx_account_path, "cdx-account-info.csv")
 cdx_account <- check_file(cdx_account_file)
+
+# Default download folder (used if not specified in config)
+default_download_folder <- file.path(home_dir, "Downloads")
 
