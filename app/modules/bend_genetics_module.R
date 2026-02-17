@@ -19,17 +19,17 @@ bend_genetics_ui <- function(id){
                                 "This section provides view of raw data, as well as results for QA/QC checks. Verify that all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application."),
                          DT::dataTableOutput(ns("bend_genetics_table"))
                      ),
-                     tabPanel(
-                         "Enter Additional Data",
-                         value = "additional",
-                         tags$p(class = "p-2 border rounded mb-2 small",
-                                "Edit the table below to enter 'Activity Depth/Height Measure', 'Activity Depth/Height Unit', and 'Result Comment'. Click 'Generate WQX Ready Data' to reformat 'Activity ID'."),
-                         DT::dataTableOutput(ns("edited_wqx_table")),
-                         div(class = "my-2",
-                             actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data", class = "btn-primary"),
-                             span(class = "ms-2", textOutput(ns("check_df_message"), inline = TRUE))
-                         )
-                     ),
+                    tabPanel(
+                          "Enter Additional Data",
+                          value = "additional",
+                          tags$p(class = "p-2 border rounded mb-2 small",
+                                 "Edit the table below to enter 'Activity Depth/Height Measure', 'Activity Depth/Height Unit', and 'Result Comment'. Click 'Generate WQX Ready Data' to reformat 'Activity ID'."),
+                          div(class = "my-2",
+                              actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data", class = "btn-primary"),
+                              span(class = "ms-2", textOutput(ns("check_df_message"), inline = TRUE))
+                          ),
+                          DT::dataTableOutput(ns("edited_wqx_table"))
+                      ),
                      tabPanel(
                          "Formatted Data",
                          tags$p(class = "p-2 border rounded mb-2 small",
@@ -236,7 +236,6 @@ bend_genetics_server <- function(input, output, session, account_info){
     })
     
     output$edited_wqx_table <- DT::renderDataTable({
-        
         DT::datatable(bend_edited$wqx_data,
                       editable = list(target = "cell"),
                                       # , disable = list(columns = c(0, 2:9, 12:34))),
