@@ -1,0 +1,50 @@
+name: Create Release
+
+on:
+  push:
+    branches:
+      - 'release/*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Extract version from branch name
+        id: get_version
+        run: |
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          VERSION="${BRANCH_NAME#release/}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+      
+      - name: Update VERSION file
+        run: |
+          echo "${{ steps.get_version.outputs.version }}" > VERSION
+          cat VERSION
+      
+      - name: Commit VERSION file
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add VERSION
+          git commit -m "Update VERSION file to ${{ steps.get_version.outputs.version }}" || echo "No changes to commit"
+          git push origin HEAD:${{ github.ref_name }}
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          name: Release ${{ steps.get_version.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
