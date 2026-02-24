@@ -14,6 +14,7 @@ user_account_ui <- function(id){
                     selectInput(ns("wqx_config_id"), label = "Config ID", choices = cdx_account$CONFIG_ID, width = "100%"),
                     textInput(ns("download_folder"), label = "Download Folder",
                               value = if (!is.null(cdx_account$DOWNLOAD_FOLDER) && length(cdx_account$DOWNLOAD_FOLDER) > 0 && !is.na(cdx_account$DOWNLOAD_FOLDER[1])) cdx_account$DOWNLOAD_FOLDER[1] else default_download_folder,
+                              # value = cdx_account$DOWNLOAD_FOLDER,
                               width = "100%"),
                     tags$small(class = "text-muted", "Folder where exported CSV files will be saved"),
                     div(class = "mt-2",
