@@ -3,44 +3,86 @@ wqx_upload_ui <- function(id) {
     tabPanel(
         "Upload to WQX",
         div(
-            class = "container-fluid py-2",
-            tags$h4("Upload to WQX", class = "mb-2"),
+            class = "container-fluid py-3",
+            tags$h4("Upload to WQX", class = "mb-3"),
             div(
-                class = "row mb-3",
+                class = "row g-3",
+                div(
+                    class = "col-lg-6",
+                    card(
+                        full_screen = TRUE,
+                        card_header(
+                            class = "d-flex justify-content-between align-items-center",
+                            tags$span(tags$i(class = "fa fa-clock-o me-2"), "Pending Files"),
+                            actionButton(ns("refresh_files"), label = "Refresh", icon = icon("refresh"), class = "btn-xs btn-outline-secondary")
+                        ),
+                        card_body(
+                            DT::dataTableOutput(ns("pending_files_table")),
+                            tags$p(class = "small text-muted mt-2 mb-0", "Files in your download folder with status 'downloaded'. Once uploaded, status changes to 'uploaded'.")
+                        )
+                    )
+                ),
+                div(
+                    class = "col-lg-6",
+                    card(
+                        full_screen = TRUE,
+                        card_header(
+                            class = "d-flex justify-content-between align-items-center",
+                            tags$span(tags$i(class = "fa fa-check-circle me-2"), "Uploaded Files"),
+                            actionButton(ns("refresh_uploaded"), label = "Refresh", icon = icon("refresh"), class = "btn-xs btn-outline-secondary")
+                        ),
+                        card_body(
+                            DT::dataTableOutput(ns("uploaded_files_table")),
+                            tags$p(class = "small text-muted mt-2 mb-0", "Files that have been successfully uploaded to WQX.")
+                        )
+                    )
+                )
+            ),
+            div(
+                class = "row mt-3",
                 div(
                     class = "col-12",
-                    tags$h5("Files to Upload", class = "d-inline-block mb-2"),
-                    actionButton(ns("refresh_files"), label = "Refresh", icon = icon("refresh"), class = "btn-xs btn-secondary mb-2 ms-2"),
-                    DT::dataTableOutput(ns("pending_files_table")),
-                    tags$p(class = "small text-muted mt-1", "Files in your download folder with status 'downloaded'. Once uploaded successfully, status changes to 'uploaded'.")
+                    card(
+                        full_screen = TRUE,
+                        card_header(
+                            tags$span(tags$i(class = "fa fa-cloud-upload me-2"), "Upload to CDX/WQX")
+                        ),
+                        card_body(
+                            div(
+                                class = "row g-3 align-items-end",
+                                div(
+                                    class = "col-md-6",
+                                    tags$p(class = "small text-muted mb-2", "Select a previously downloaded WQX-formatted CSV file to upload to CDX."),
+                                    fileInput(ns("wqx_file"), label = "Select CSV File", accept = ".csv", width = "100%")
+                                ),
+                                div(
+                                    class = "col-md-6",
+                                    actionButton(ns("upload_to_wqx"), label = "Upload to WQX", icon = icon("rocket"), class = "btn-success btn-lg"),
+                                    conditionalPanel(
+                                        condition = "$('html').hasClass('shiny-busy')",
+                                        ns = ns,
+                                        div(class = "alert alert-info mt-3 mb-0", tags$i(class = "fa fa-spinner fa-spin me-2"), "Uploading to WQX. Please wait 25 seconds for the status from CDX...")
+                                    )
+                                )
+                            ),
+                            div(class = "mt-3", uiOutput(ns("upload_status")))
+                        )
+                    )
                 )
             ),
             div(
-                class = "row mb-3",
+                class = "row mt-3",
                 div(
                     class = "col-12",
-                    tags$h5("Uploaded Files", class = "d-inline-block mb-2"),
-                    actionButton(ns("refresh_uploaded"), label = "Refresh", icon = icon("refresh"), class = "btn-xs btn-secondary mb-2 ms-2"),
-                    DT::dataTableOutput(ns("uploaded_files_table")),
-                    tags$p(class = "small text-muted mt-1", "Files that have been successfully uploaded to WQX.")
+                    card(
+                        full_screen = TRUE,
+                        card_header(tags$span(tags$i(class = "fa fa-table me-2"), "File Preview")),
+                        card_body(
+                            DT::dataTableOutput(ns("file_preview"))
+                        )
+                    )
                 )
-            ),
-            div(
-                class = "row",
-                div(
-                    class = "col-md-6",
-                    tags$p(class = "small text-muted mb-2", "Select a previously downloaded WQX-formatted CSV file to upload to CDX."),
-                    fileInput(ns("wqx_file"), label = "Select CSV File", accept = ".csv", width = "100%"),
-                    actionButton(ns("upload_to_wqx"), label = "Upload to WQX", icon = icon("rocket"), class = "btn-success btn-sm"),
-                    conditionalPanel(
-                        condition = "$('html').hasClass('shiny-busy')",
-                        ns = ns,
-                        div(class = "alert alert-info mt-2 small", "Uploading to WQX. Please wait 25 seconds for the status from CDX...")
-                    ),
-                    div(class = "mt-2", uiOutput(ns("upload_status")))
-                )
-            ),
-            div(class = "mt-2", DT::dataTableOutput(ns("file_preview")))
+            )
         )
     )
 }
