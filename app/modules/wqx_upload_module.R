@@ -239,9 +239,9 @@ wqx_upload_server <- function(input, output, session, account_info) {
             )
         } else {
             DT::datatable(
-                df[, c("filename", "lab_type", "upload_date")],
+                df[, c("filename", "lab_type", "status", "upload_date")],
                 rownames = FALSE,
-                colnames = c("Filename", "Lab Type", "Upload Date"),
+                colnames = c("Filename", "Lab Type", "Status", "Upload Date"),
                 options = list(pageLength = 10, scrollX = TRUE, dom = "ftip")
             )
         }
