@@ -76,16 +76,12 @@ alpha_lab_format_for_range_validation <- function(data) {
 }
 
 alpha_lab_to_wqx <- function(data) {
-    # date_columns <- c("SAMPDATE", "ANADATE")
-    # for (col in date_columns) {
-    #     if (is.character(data[[col]])) {
-    #         data[[col]] <- mdy_hms(data[[col]])
-    #     }
-    # }
-    
     data |>
         mutate(
-            "Project ID" = project_id_lookup[SAMPLENAME],
+            "Project ID" = ifelse(
+                is.na(SAMPLENAME), 
+                "Unknown", 
+                project_id_lookup[SAMPLENAME]),
             "Monitoring Location ID" = SAMPLENAME,
             "Activity ID User Supplied (PARENTs)" = "",
             "Activity Type" = "Sample-Routine",

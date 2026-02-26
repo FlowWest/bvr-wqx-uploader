@@ -53,5 +53,5 @@ cdx_account$DOWNLOAD_FOLDER <- gsub("\\\\", "/", cdx_account$DOWNLOAD_FOLDER)
 
 # Default download folder (used if not specified in config)
 # path_fixed <- gsub("\\\\", "/", home_dir)
-default_download_folder <- file.path(path_fixed, "Downloads")
+default_download_folder <- file.path(home_dir, "Downloads")
 
