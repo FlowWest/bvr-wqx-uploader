@@ -49,14 +49,15 @@ wqx_upload_ui <- function(id) {
                         ),
                         card_body(
                             div(
-                                class = "row g-3 align-items-end",
+                                class = "row g-3",
                                 div(
                                     class = "col-md-6",
                                     tags$p(class = "small text-muted mb-2", "Select a previously downloaded WQX-formatted CSV file to upload to CDX."),
-                                    fileInput(ns("wqx_file"), label = "Select CSV File", accept = ".csv", width = "100%")
+                                    fileInput(ns("wqx_file"), label = "Select CSV File", accept = ".csv", width = "100%"),
+                                    uiOutput(ns("download_folder_display"))
                                 ),
                                 div(
-                                    class = "col-md-6",
+                                    class = "col-md-6 d-flex align-items-end",
                                     actionButton(ns("upload_to_wqx"), label = "Upload to WQX", icon = icon("rocket"), class = "btn-success btn-lg"),
                                     conditionalPanel(
                                         condition = "$('html').hasClass('shiny-busy')",
@@ -161,6 +162,22 @@ wqx_upload_server <- function(input, output, session, account_info) {
     
     observeEvent(input$refresh_uploaded, {
         file_tracking_df(load_file_tracking())
+    })
+    
+    output$download_folder_display <- renderUI({
+        req(account_info$selectedDownloadFolder())
+        download_folder <- account_info$selectedDownloadFolder()
+        tagList(
+            tags$p(class = "small text-muted mb-1", "Download folder: ", download_folder,
+                tags$a(href = "#", onclick = paste0("Shiny.setInputValue('", ns("open_folder"), "', '", download_folder, "', {priority: 'event'}); return false;"), 
+                       "(open)")),
+            tags$small(class = "text-muted", "Files saved from Format Data tabs appear here"))
+    })
+    
+    observeEvent(input$open_folder, {
+        if (dir.exists(input$open_folder)) {
+            shell.exec(normalizePath(input$open_folder))
+        }
     })
     
     pending_files <- reactive({
