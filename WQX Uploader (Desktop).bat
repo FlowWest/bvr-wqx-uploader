@@ -16,13 +16,22 @@ echo ============================================
 echo.
 
 :: Create install directory if needed
-IF NOT EXIST "%INSTALL_DIR%" mkdir "%INSTALL_DIR%"
+echo [DEBUG] INSTALL_DIR=%INSTALL_DIR%
+echo [DEBUG] APP_DIR=%APP_DIR%
+echo [DEBUG] VERSION_FILE=%VERSION_FILE%
+echo [DEBUG] TEMP=%TEMP%
+IF NOT EXIST "%INSTALL_DIR%" (
+    echo [DEBUG] Creating install directory...
+    mkdir "%INSTALL_DIR%"
+)
 
 :: Check for updates
 echo Checking for updates...
 
 :: Get latest release tag from GitHub API
+echo [DEBUG] Calling curl...
 curl -s "https://api.github.com/repos/%REPO%/releases/latest" > "%TEMP%\bvr-release.json" 2>nul
+echo [DEBUG] curl exit code: %ERRORLEVEL%
 IF %ERRORLEVEL% NEQ 0 (
     echo Could not check for updates. Continuing with current version...
     GOTO :SkipUpdate
