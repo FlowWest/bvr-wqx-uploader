@@ -1,5 +1,6 @@
 # BVR WQX Uploader - Update Script
-# Called by the launcher to check for and download updates
+# Downloads/updates the app into a dedicated install directory,
+# keeping the source repo untouched.
 
 param(
     [string]$AppDir,
@@ -26,8 +27,12 @@ try {
 
     # Compare versions
     if ($latestVersion -ne $localVersion) {
-        Write-Host "Update available: $localVersion -> $latestVersion"
-        Write-Host "Downloading update..."
+        if ($localVersion -eq "") {
+            Write-Host "First install: downloading $latestVersion..."
+        } else {
+            Write-Host "Update available: $localVersion -> $latestVersion"
+        }
+        Write-Host "Downloading..."
 
         $zipUrl = $release.zipball_url
         $tempZip = Join-Path $env:TEMP "bvr-wqx-update.zip"
@@ -50,14 +55,25 @@ try {
 
         if (Test-Path $sourceApp) {
             Write-Host "Installing update..."
-            
-            # Remove old app folder
+
+            # Remove old app folder in install directory
             if (Test-Path $AppDir) {
                 Remove-Item $AppDir -Recurse -Force
             }
-            
-            # Copy new app folder
+
+            # Copy new app folder to install directory
             Copy-Item $sourceApp -Destination $AppDir -Recurse
+        }
+
+        # Also copy data folder if present in release
+        $sourceData = Join-Path $extractedFolder.FullName "data"
+        $installDir = Split-Path $AppDir -Parent
+        $destData = Join-Path $installDir "data"
+        if (Test-Path $sourceData) {
+            if (Test-Path $destData) {
+                Remove-Item $destData -Recurse -Force
+            }
+            Copy-Item $sourceData -Destination $destData -Recurse
         }
 
         # Save version

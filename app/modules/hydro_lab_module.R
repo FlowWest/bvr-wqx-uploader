@@ -54,7 +54,7 @@ hydro_lab_ui <- function(id){
                       tags$p(class = "p-2 border rounded mb-2 small",
                              "Review WQX formatted data. Download the file, then use the 'Upload to WQX' tab to submit."),
                       div(class = "mb-2",
-                          downloadButton(ns("hydro_lab_download"), class = "btn-primary btn-sm")
+                          actionButton(ns("hydro_lab_save"), "Save to Download Folder", class = "btn-primary btn-sm")
                       ),
                       DT::dataTableOutput(ns("hydro_lab_wqx_formatted"))
                   )
@@ -391,13 +391,16 @@ hydro_lab_server <- function(input, output, session, account_info){
     # })
     
     
-    output$hydro_lab_download <- downloadHandler(
-        filename = function() {
-            hydro_signature(format(lubridate::now(), "%Y%m%d_%H%M%S"))
-            paste('hydro-lab-data-', hydro_signature(), '.csv', sep='')
-        },
-        content = function(file) {
-            write.csv(common_hydro_lab_wqx_data(), file, row.names = FALSE)
-        }
-    )
+    observeEvent(input$hydro_lab_save, {
+       req(common_hydro_lab_wqx_data())
+       download_folder <- account_info$selectedDownloadFolder()
+       if (!dir.exists(download_folder)) {
+           dir.create(download_folder, recursive = TRUE)
+       }
+       hydro_signature(format(lubridate::now(), "%Y%m%d_%H%M%S"))
+       filename <- paste0('hydro-lab-data-', hydro_signature(), '.csv')
+       file_path <- file.path(download_folder, filename)
+       write.csv(common_hydro_lab_wqx_data(), file_path, row.names = FALSE)
+       showNotification(paste("File saved to:", file_path), type = "message")
+    })
 }
