@@ -14,8 +14,10 @@ user_account_ui <- function(id){
                     selectInput(ns("wqx_config_id"), label = "Config ID", choices = cdx_account$CONFIG_ID, width = "100%"),
                     textInput(ns("download_folder"), label = "Download Folder",
                               value = if (!is.null(cdx_account$DOWNLOAD_FOLDER) && length(cdx_account$DOWNLOAD_FOLDER) > 0 && !is.na(cdx_account$DOWNLOAD_FOLDER[1])) cdx_account$DOWNLOAD_FOLDER[1] else default_download_folder,
+                              # value = cdx_account$DOWNLOAD_FOLDER,
                               width = "100%"),
                     tags$small(class = "text-muted", "Folder where exported CSV files will be saved"),
+                    uiOutput(ns("folder_validation")),
                     div(class = "mt-2",
                         actionButton(ns("load_credential"), label = "Reload Credentials", class = "btn-primary btn-sm")
                     ),
@@ -113,6 +115,18 @@ user_account_server <- function(input, output, session){
     
     observeEvent(input$download_folder, {
         selectedDownloadFolder(input$download_folder)
+    })
+    
+    output$folder_validation <- renderUI({
+        folder <- input$download_folder
+        if (is.null(folder) || folder == "") {
+            return(NULL)
+        }
+        if (!dir.exists(folder)) {
+            div(class = "alert alert-warning mt-2 mb-0", 
+                icon("exclamation-triangle"), 
+                " Folder does not exist. It will be created when saving files.")
+        }
     })
     
     list(
