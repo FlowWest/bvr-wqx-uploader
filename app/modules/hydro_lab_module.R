@@ -121,67 +121,86 @@ hydro_lab_server <- function(input, output, session, account_info){
         editable_cols[1:2] <- FALSE
         editable_cols[16] <- FALSE
         shiny::validate(shiny::need(input$hydro_lab_file, message = "Select a file to view"))
-        DT::datatable(rvals$data, 
+            dt <- DT::datatable(rvals$data, 
                       editable = list(target = "cell"), 
                                       # disable = list(columns = c(1,2, 16))),
                       options = list(scrollX = TRUE, 
                                      ordering = FALSE, 
-                                     pageLength = 10)) |>
-            DT::formatStyle(
-                c("CHL"),
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0.03, 1000), c("#f29f99", "white", "#f29f99"))
-            ) |>
-            DT::formatStyle(
-                c("Temp"),
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0, 30), c("#f29f99", "white", "#f29f99"))
-            ) |>
-            DT::formatStyle(
-                c("Depth"),
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0.01,10), c("#f29f99", "white", "#f29f99"))
-            ) |>
-            DT::formatStyle(
-                c("SpCond"),
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0.01, 1), c("#f29f99", "white", "#f29f99"))
-            ) |>
-            DT::formatStyle(
-                c("Sal"),
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0.01, 1), c("#f29f99", "white", "#f29f99"))
-            ) |>
-            DT::formatStyle(
-                c("TDS"),
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0.01, 1), c("#f29f99", "white", "#f29f99"))
-            ) |>
-            DT::formatStyle(
-                c("DO%"),
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0.01, 150), c("#f29f99", "white", "#f29f99"))
-            ) |>
-            DT::formatStyle(
-                c("DO"),
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(0, 20), c("#f29f99", "white", "#f29f99"))
-            ) |>
-            DT::formatStyle(
-                c("pH"),
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(5, 11), c("#f29f99", "white", "#f29f99"))
-            ) |>
-            DT::formatStyle(
-                c("Turbidity"),
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(1.5, 1000), c("#f29f99", "white", "#f29f99"))
-            ) |>
-            DT::formatStyle(
-                c("PCY"),
-                target = "cel",
-                backgroundColor = DT::styleInterval(c(100, 200000), c("#f29f99", "white", "#f29f99"))
-            )
+                                     pageLength = 10))
+            
+            if ("CHL" %in% names(rvals$data)) {
+                dt <- dt |>
+                    DT::formatStyle(
+                        c("CHL"),
+                        target = "cel",
+                        backgroundColor = DT::styleInterval(c(0.03, 1000), c("#f29f99", "white", "#f29f99"))
+                    )
+            }
+            
+                if ("DO%" %in% names(rvals$data) || "LDO%" %in% names(rvals$data)) {
+                    cols <- c(if ("DO%" %in% names(rvals$data)) "DO%" else NULL,
+                              if ("LDO%" %in% names(rvals$data)) "LDO%" else NULL)
+                    dt <- dt |>
+                        DT::formatStyle(
+                            cols,
+                            target = "cel",
+                            backgroundColor = DT::styleInterval(c(0.01, 150), c("#f29f99", "white", "#f29f99"))
+                        )
+                }
+                
+                if ("DO" %in% names(rvals$data) || "LDO" %in% names(rvals$data)) {
+                    cols <- c(if ("DO" %in% names(rvals$data)) "DO" else NULL,
+                              if ("LDO" %in% names(rvals$data)) "LDO" else NULL)
+                    dt <- dt |>
+                        DT::formatStyle(
+                            cols,
+                            target = "cel",
+                            backgroundColor = DT::styleInterval(c(0, 20), c("#f29f99", "white", "#f29f99"))
+                        )
+                }
+                
+                dt <- dt |>
+                DT::formatStyle(
+                    c("Depth"),
+                    target = "cel",
+                    backgroundColor = DT::styleInterval(c(0.01,10), c("#f29f99", "white", "#f29f99"))
+                ) |>
+                DT::formatStyle(
+                    c("SpCond"),
+                    target = "cel",
+                    backgroundColor = DT::styleInterval(c(0.01, 1), c("#f29f99", "white", "#f29f99"))
+                ) |>
+                DT::formatStyle(
+                    c("Sal"),
+                    target = "cel",
+                    backgroundColor = DT::styleInterval(c(0.01, 1), c("#f29f99", "white", "#f29f99"))
+                ) |>
+                DT::formatStyle(
+                    c("TDS"),
+                    target = "cel",
+                    backgroundColor = DT::styleInterval(c(0.01, 1), c("#f29f99", "white", "#f29f99"))
+                ) |>
+                DT::formatStyle(
+                    c("pH"),
+                    target = "cel",
+                    backgroundColor = DT::styleInterval(c(5, 11), c("#f29f99", "white", "#f29f99"))
+                ) |>
+                DT::formatStyle(
+                    c("Turbidity"),
+                    target = "cel",
+                    backgroundColor = DT::styleInterval(c(1.5, 1000), c("#f29f99", "white", "#f29f99"))
+                )
+            
+            if ("PCY" %in% names(rvals$data)) {
+                dt <- dt |>
+                    DT::formatStyle(
+                        c("PCY"),
+                        target = "cel",
+                        backgroundColor = DT::styleInterval(c(100, 200000), c("#f29f99", "white", "#f29f99"))
+                    )
+            }
+            
+            dt
     })
     
     
@@ -227,9 +246,17 @@ hydro_lab_server <- function(input, output, session, account_info){
     hydro_wqx_status <- reactiveVal(NULL)
     common_hydro_lab_wqx_data <- reactiveVal(NULL)
     hydro_lab_data <- reactiveValues(formatted_data = NULL)
-    
+    observe({
+        print(rvals$data$location_id)
+    })
     hydro_lab_data_wqx <- reactive({
-        hydro_lab_data$formatted_data <- hydro_lab_to_wqx(rvals$data)
+        if(any(rvals$data$location_id %in% c("AC1", "AC3", "AC4", "AC6"))){
+            hydro_lab_data$formatted_data <- hydro_lab_to_wqx_ac(rvals$data)
+        }
+        else{
+            hydro_lab_data$formatted_data <- hydro_lab_to_wqx(rvals$data)
+        }
+            
     })
     
     observe({
