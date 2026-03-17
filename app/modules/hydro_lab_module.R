@@ -30,24 +30,24 @@ hydro_lab_ui <- function(id){
                       value = "qa_qc",
                       tags$p(class = "p-2 border rounded mb-2 small",
                              "This section provides view of raw data, as well as results for QA/QC checks. Verify that all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application."),
-                      DT::dataTableOutput(ns("hydro_lab_table"))
+                      shinycssloaders::withSpinner(DT::dataTableOutput(ns("hydro_lab_table")))
                   ),
                   tabPanel(
                       "Enter Additional Data",
                       value = "additional",
                       tags$p(class = "p-2 border rounded mb-2 small",
                              "Enter additional AccuWeather 'Temperature, Air' measurement and 'Result Comment' for each date and location in the sidebar panel."),
-                      DT::dataTableOutput(ns("temperature_data_table")),
-                      div(class = "my-2",
-                          actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data", class = "btn-primary"),
-                          span(class = "ms-2", textOutput(ns("check_df_message"), inline = TRUE))
-                      ),
-                      tags$p(class = "p-2 border rounded mb-2 small",
-                             "If water body is too shallow, click on button below to generate empty dataframe after inputing air temperature and result comment."),
-                      div(class = "mb-2",
-                          actionButton(ns("generate_df"), "Generate Empty WQX Data Sheet", class = "btn-secondary btn-sm"),
-                          span(class = "ms-2", textOutput(ns("check_empty_df_message"), inline = TRUE))
-                      )
+                       shinycssloaders::withSpinner(DT::dataTableOutput(ns("temperature_data_table"))),
+                       div(class = "my-2",
+                           actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data", class = "btn-primary"),
+                           uiOutput(ns("check_df_message"))
+                       ),
+                       tags$p(class = "p-2 border rounded mb-2 small",
+                              "If water body is too shallow, click on button below to generate empty dataframe after inputing air temperature and result comment."),
+                       div(class = "mb-2",
+                           actionButton(ns("generate_df"), "Generate Empty WQX Data Sheet", class = "btn-secondary btn-sm"),
+                           uiOutput(ns("check_empty_df_message"))
+                       )
                   ),
                   tabPanel(
                       "Formatted Data",
@@ -56,7 +56,7 @@ hydro_lab_ui <- function(id){
                       div(class = "mb-2",
                           actionButton(ns("hydro_lab_save"), "Save to Download Folder", class = "btn-primary btn-sm")
                       ),
-                      DT::dataTableOutput(ns("hydro_lab_wqx_formatted"))
+                      shinycssloaders::withSpinner(DT::dataTableOutput(ns("hydro_lab_wqx_formatted")))
                   )
               )
           )
@@ -366,17 +366,17 @@ hydro_lab_server <- function(input, output, session, account_info){
     
     observeEvent(input$generate_formatted_df, {
         common_hydro_lab_wqx_data(hydro_lab_data_wqx_formatted())
-        output$check_df_message <- renderText({
-            Sys.sleep(0.5)
-            "Check Formatted Data tab for generated WQX data sheet. To delete the added data, click on 'Delete Last Added Result'."
+        output$check_df_message <- renderUI({
+            tags$div(class = "alert alert-info mt-2", role = "alert",
+                    tags$strong("Important: "), "Check 'Formatted Data' tab for generated WQX data sheet. To delete the added data, click on 'Delete Last Added Result'.")
         })
     })
     
     observeEvent(input$generate_df, {
         common_hydro_lab_wqx_data(hydro_lab_data_wqx_empty())
-        output$check_empty_df_message <- renderText({
-            Sys.sleep(0.5)
-            "Check 'Formatted Data' tab for generated empty data sheet. To delete the added data, click on 'Delete Last Added Result' button."
+        output$check_empty_df_message <- renderUI({
+            tags$div(class = "alert alert-info mt-2", role = "alert",
+                    tags$strong("Important: "), "Check 'Formatted Data' tab for generated empty data sheet. To delete the added data, click on 'Delete Last Added Result' button.")
         })
     })
     

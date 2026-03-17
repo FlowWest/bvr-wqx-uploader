@@ -13,11 +13,11 @@ wqx_upload_ui <- function(id) {
                         full_screen = TRUE,
                         card_header(
                             class = "d-flex justify-content-between align-items-center",
-                            tags$span(tags$i(class = "fa fa-clock-o me-2"), "Pending Files"),
+                            tags$span(tags$i(class = "fa fa-clock-o me-2"), "Files Pending Review"),
                             actionButton(ns("refresh_files"), label = "Refresh", icon = icon("refresh"), class = "btn-xs btn-outline-secondary")
                         ),
                         card_body(
-                            DT::dataTableOutput(ns("pending_files_table")),
+                            shinycssloaders::withSpinner(DT::dataTableOutput(ns("pending_files_table"))),
                             tags$p(class = "small text-muted mt-2 mb-0", "Files in your download folder with status 'downloaded'. Once uploaded, status changes to 'uploaded'.")
                         )
                     )
@@ -28,11 +28,11 @@ wqx_upload_ui <- function(id) {
                         full_screen = TRUE,
                         card_header(
                             class = "d-flex justify-content-between align-items-center",
-                            tags$span(tags$i(class = "fa fa-check-circle me-2"), "Uploaded Files"),
+                            tags$span(tags$i(class = "fa fa-check-circle me-2"), "Completed File Uploads "),
                             actionButton(ns("refresh_uploaded"), label = "Refresh", icon = icon("refresh"), class = "btn-xs btn-outline-secondary")
                         ),
                         card_body(
-                            DT::dataTableOutput(ns("uploaded_files_table")),
+                            shinycssloaders::withSpinner(DT::dataTableOutput(ns("uploaded_files_table"))),
                             tags$p(class = "small text-muted mt-2 mb-0", "Files that have been successfully uploaded to WQX.")
                         )
                     )
@@ -73,16 +73,16 @@ wqx_upload_ui <- function(id) {
             ),
             div(
                 class = "row mt-3",
-                div(
-                    class = "col-12",
-                    card(
-                        full_screen = TRUE,
-                        card_header(tags$span(tags$i(class = "fa fa-table me-2"), "File Preview")),
-                        card_body(
-                            DT::dataTableOutput(ns("file_preview"))
-                        )
+            div(
+                class = "col-12",
+                card(
+                    full_screen = TRUE,
+                    card_header(tags$span(tags$i(class = "fa fa-table me-2"), "File Preview")),
+                    card_body(
+                        shinycssloaders::withSpinner(DT::dataTableOutput(ns("file_preview")))
                     )
                 )
+            )
             )
         )
     )
@@ -95,7 +95,14 @@ wqx_upload_server <- function(input, output, session, account_info) {
     
     load_file_tracking <- function() {
         if (file.exists(upload_tracking_file)) {
-            read_csv(upload_tracking_file, show_col_types = FALSE)
+            df <- read_csv(upload_tracking_file, show_col_types = FALSE)
+            if ("uploaded_by" %in% names(df)) {
+                df <- df |> rename(username = uploaded_by)
+            }
+            if (!"username" %in% names(df)) {
+                df$username <- NA_character_
+            }
+            df
         } else {
             data.frame(
                 filename = character(),
@@ -103,6 +110,7 @@ wqx_upload_server <- function(input, output, session, account_info) {
                 status = character(),
                 date_added = character(),
                 upload_date = character(),
+                username = character(),
                 stringsAsFactors = FALSE
             )
         }
@@ -113,13 +121,19 @@ wqx_upload_server <- function(input, output, session, account_info) {
         write_csv(df, upload_tracking_file)
     }
     
-    update_file_status <- function(filename, new_status) {
+    update_file_status <- function(filename, new_status, username = NULL) {
         df <- load_file_tracking()
+        if (!"username" %in% names(df)) {
+            df$username <- NA_character_
+        }
         idx <- which(df$filename == filename)
         if (length(idx) > 0) {
             df$status[idx] <- new_status
             if (new_status == "uploaded") {
                 df$upload_date[idx] <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+            }
+            if (!is.null(username)) {
+                df$username[idx] <- username
             }
         } else {
             new_row <- data.frame(
@@ -128,6 +142,7 @@ wqx_upload_server <- function(input, output, session, account_info) {
                 status = new_status,
                 date_added = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
                 upload_date = if (new_status == "uploaded") format(Sys.time(), "%Y-%m-%d %H:%M:%S") else NA,
+                username = if (!is.null(username)) username else NA,
                 stringsAsFactors = FALSE
             )
             df <- rbind(df, new_row)
@@ -206,8 +221,9 @@ wqx_upload_server <- function(input, output, session, account_info) {
         
         new_files <- pending[!pending %in% tracking_df$filename]
         if (length(new_files) > 0) {
+            username <- account_info$selectedUsername()
             for (f in new_files) {
-                update_file_status(f, "downloaded")
+                update_file_status(f, "downloaded", username)
             }
             file_tracking_df(load_file_tracking())
             tracking_df <- file_tracking_df()
@@ -221,11 +237,12 @@ wqx_upload_server <- function(input, output, session, account_info) {
                 lab_type = character(),
                 status = character(),
                 date_added = character(),
+                username = character(),
                 stringsAsFactors = FALSE
             ))
         }
         
-        pending_df[, c("filename", "lab_type", "status", "date_added")]
+        pending_df[, c("filename", "lab_type", "status", "date_added", "username")]
     })
     
     output$pending_files_table <- DT::renderDataTable({
@@ -236,10 +253,14 @@ wqx_upload_server <- function(input, output, session, account_info) {
                 options = list(dom = "t", ordering = FALSE, searching = FALSE)
             )
         } else {
+            df$date_added <- format(
+                lubridate::with_tz(df$date_added, tzone = "America/Los_Angeles"),
+                "%Y-%m-%d %I:%M %p PST"
+            )
             DT::datatable(
                 df,
                 rownames = FALSE,
-                colnames = c("Filename", "Lab Type", "Status", "Date Added"),
+                colnames = c("Filename", "Lab Type", "Status", "Date Added", "Username"),
                 options = list(pageLength = 10, scrollX = TRUE, dom = "ftip")
             )
         }
@@ -255,10 +276,14 @@ wqx_upload_server <- function(input, output, session, account_info) {
                 options = list(dom = "t", ordering = FALSE, searching = FALSE)
             )
         } else {
+            df$upload_date <- format(
+                lubridate::with_tz(df$upload_date, tzone = "America/Los_Angeles"),
+                "%Y-%m-%d %I:%M %p PST"
+            )
             DT::datatable(
-                df[, c("filename", "lab_type", "status", "upload_date")],
+                df[, c("filename", "lab_type", "status", "upload_date", "username")],
                 rownames = FALSE,
-                colnames = c("Filename", "Lab Type", "Status", "Upload Date"),
+                colnames = c("Filename", "Lab Type", "Status", "Upload Date", "Username"),
                 options = list(pageLength = 10, scrollX = TRUE, dom = "ftip")
             )
         }
@@ -325,7 +350,8 @@ wqx_upload_server <- function(input, output, session, account_info) {
         req(input$wqx_file)
         
         if (upload_result()$StatusName != "Import Failed") {
-            update_file_status(input$wqx_file$name, "uploaded")
+            username <- account_info$selectedUsername()
+            update_file_status(input$wqx_file$name, "uploaded", username)
             file_tracking_df(load_file_tracking())
         }
     })
