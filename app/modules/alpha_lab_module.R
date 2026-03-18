@@ -17,17 +17,17 @@ alpha_lab_ui <- function(id){
                          value = "qa_qc",
                          tags$p(class = "p-2 border rounded mb-2 small",
                                 "This section provides view of raw data, as well as results for QA/QC checks. Verify that all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application."),
-                         DT::dataTableOutput(ns("alpha_lab_table"))
+                         shinycssloaders::withSpinner(DT::dataTableOutput(ns("alpha_lab_table")))
                      ),
                      tabPanel(
                          "Enter Additional Data",
                          value = "additional",
                          tags$p(class = "p-2 border rounded mb-2 small",
                                 "Edit the table below to enter 'Activity Depth/Height Measure', 'Activity Depth/Height Unit', and 'Result Comment'. Click 'Generate WQX Ready Data' to reformat 'Activity ID'."),
-                         DT::dataTableOutput(ns("edited_wqx_table")),
+                         shinycssloaders::withSpinner(DT::dataTableOutput(ns("edited_wqx_table"))),
                          div(class = "my-2",
                              actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data", class = "btn-primary"),
-                             span(class = "ms-2", textOutput(ns("check_df_message"), inline = TRUE))
+                             uiOutput(ns("check_df_message"))
                          )
                      ),
                      tabPanel(
@@ -37,7 +37,7 @@ alpha_lab_ui <- function(id){
                           div(class = "mb-2",
                               actionButton(ns("alpha_lab_save"), "Save to Download Folder", class = "btn-primary btn-sm")
                           ),
-                         DT::dataTableOutput(ns("alpha_lab_wqx_formatted"))
+                         shinycssloaders::withSpinner(DT::dataTableOutput(ns("alpha_lab_wqx_formatted")))
                      )
                  )
              )
@@ -259,11 +259,11 @@ alpha_lab_server <- function(input, output, session, account_info){
                                                                              activity_type = `Activity Type`,
                                                                              equipment_name = `Sample Collection Equipment Name`,
                                                                              depth = `Activity Depth/Height Measure`)) |> 
-            relocate("Activity ID (CHILD-subset)", .before = "Activity ID User Supplied (PARENTs)")
-        # common_alpha_lab_wqx_data(alpha_lab_data$formatted_data)
-        output$check_df_message <- renderText({
-            Sys.sleep(0.5)
-            "Check Formatted Data tab for generated WQX data sheet."
+             relocate("Activity ID (CHILD-subset)", .before = "Activity ID User Supplied (PARENTs)")
+         # common_alpha_lab_wqx_data(alpha_lab_data$formatted_data)
+        output$check_df_message <- renderUI({
+            tags$div(class = "alert alert-info mt-2", role = "alert",
+                    tags$strong("Important: "), "Check 'Formatted Data' tab for generated WQX data sheet.")
         })
     })
     output$alpha_lab_wqx_formatted <- DT::renderDataTable({
