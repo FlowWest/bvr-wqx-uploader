@@ -1,21 +1,55 @@
 parse_hydrolab <- function(filepath) {
+    stopifnot("File path is required" = !is.null(filepath) && length(filepath) > 0)
+    stopifnot("File path must be a single string" = length(filepath) == 1 && is.character(filepath))
+    
     regex_pattern <- "\\w+"
-    raw_name <- readLines(filepath, 1, warn = FALSE)
-    location_for_selected_hydrolab <- unlist(str_extract_all(raw_name, regex_pattern))[4]
+    
+    tryCatch({
+        raw_name <- readLines(filepath, 1, warn = FALSE)
+        if (length(raw_name) == 0 || raw_name == "") {
+            stop("File appears to be empty or has no header row")
+        }
+    }, error = function(e) {
+        stop("Cannot read file header")
+    })
+    
+    location_for_selected_hydrolab <- tryCatch({
+        unlist(str_extract_all(raw_name, regex_pattern))[4]
+    }, error = function(e) {
+        stop("Could not extract location from file header. Expected format: <something> <something> <location_id> ...")
+    })
+    
+    if (is.na(location_for_selected_hydrolab) || location_for_selected_hydrolab == "") {
+        stop("Location ID not found in file header (4th word)")
+    }
+    
     depth_cols <- c("Depth10", "Dep25")
     turb_cols <- c("Turb", "TurbSC")
     
-    # Read all columns as character, then drop empty/unnamed ones
-    data <- read_csv(
-        filepath,
-        skip = 5,
-        col_types = cols(.default = "c"),
-        show_col_types = FALSE
-    ) |>
-        # Remove unnamed columns (empty columns between data)
+    tryCatch({
+        data <- read_csv(
+            filepath,
+            skip = 5,
+            col_types = cols(.default = "c"),
+            show_col_types = FALSE
+        )
+    }, error = function(e) {
+        stop("Failed to parse CSV file")
+    })
+    
+    if (nrow(data) == 0) {
+        stop("No data rows found in file (file may be empty or incorrectly formatted)")
+    }
+    
+    data <- data |>
         select(-starts_with("...")) |>
-        # Filter to only data rows (start with digit in Date column)
-        filter(grepl("^[0-9]", Date)) |>
+        filter(grepl("^[0-9]", .data$Date))
+    
+    if (nrow(data) == 0) {
+        stop("No valid data rows found. Date column should start with a digit (e.g., '01/15/2024')")
+    }
+    
+    data <- data |>
         mutate(
             location_id = location_for_selected_hydrolab,
             project_id = project_id_lookup[location_id]
@@ -61,7 +95,105 @@ hydro_lab_make_activity_id <-
               equipment_comment,
               sep = ":")
     }
-
+hydro_lab_to_wqx_ac <- function(data) {
+    data |> 
+        select(-c("IBVSvr4")) |>
+        rename("Temperature, water" = "Temp",
+               "Specific conductance" = "SpCond",
+               "Salinity" = "Sal",
+               "Total dissolved solids" = "TDS",
+               "Dissolved oxygen saturation" = "LDO%",
+               "Dissolved oxygen (DO)" = "LDO",
+               "pH" = "pH",
+               # "Turbidity" = turb,
+               # "Depth" = depth,
+               "Monitoring Location ID" = location_id,
+               "Project ID" = project_id)|> 
+        pivot_longer(
+            !c(Date, Time, Depth, `Monitoring Location ID`, `Project ID`),
+            names_to = "Characteristic Name",
+            "values_to" = "Result Value"
+        ) |>
+        mutate("Activity ID User Supplied(PARENTs)" = "",
+               "Activity Type" = "Field Msr/Obs",
+               "Activity Media Name" = "Water",
+               "Activity Start Date" = format(mdy(Date), "%m/%d/%Y"),
+               "Activity Start Time" = format(parse_date_time(Time, c('HMS', 'HM')), "%H:%M"),
+               "Activity Start Time Zone" = "PST",
+               "Activity Depth/Height Measure" = as.numeric(Depth),
+               "Activity Depth/Height Unit" = "m",
+               "Sample Collection Method ID" = "BVR SWQAPP",
+               "Sample Collection Method Context" = "CA_BVR",
+               "Sample Collection Equipment Name" = "Probe/Sensor",
+               "Sample Collection Equipment Comment" = "Hydrolab Surveyor DS5 Multiprobe",
+               "Characteristic Name" = `Characteristic Name`,
+               "Result Unit" = hydro_unit_lookup[`Characteristic Name`],
+               "Characteristic Name User Supplied" = "",
+               "Method Speciation" = "",
+               "Result Detection Condition" = "",
+               "Result Value" = if_else(`Result Value`== 999999, "", `Result Value`),
+               "Result Unit" = `Result Unit`,
+               "Result Measure Qualifier" = "",
+               "Result Sample Fraction" = "",
+               "Result Status ID" = "Final",
+               "ResultTemperatureBasis" = "",
+               "Statistical Base Code" = "",
+               "ResultTimeBasis" = "",
+               "Result Value Type" = "Actual",
+               "Activity ID (CHILD-subset)" = hydro_lab_make_activity_id(location_id = `Monitoring Location ID`,
+                                                                         date = `Activity Start Date`,
+                                                                         time = `Activity Start Time`,
+                                                                         activity_type = `Activity Type`,
+                                                                         equipment_name = `Sample Collection Equipment Name`,
+                                                                         depth = `Activity Depth/Height Measure`,
+                                                                         equipment_comment = `Sample Collection Equipment Comment`),
+               "Result Analytical Method ID" = if_else(`Characteristic Name`== "Chlorophyll a", "Probe_C", ""),
+               "Result Analytical Method Context" = if_else(`Characteristic Name`== "Chlorophyll a", "CA_BVR", ""),
+               "Analysis Start Date" = "",
+               "Result Detection/Quantitation Limit Type" = "",
+               "Result Detection/Quantitation Limit Measure" = "",
+               "Result Detection/Quantitation Limit Unit" = "",
+               "Result Comment" = ""
+               
+        ) |> 
+        select(-c(Date, Time, Depth)) |>
+        relocate("Project ID",
+                 "Monitoring Location ID",
+                 "Activity ID (CHILD-subset)",
+                 "Activity ID User Supplied(PARENTs)",
+                 "Activity Type",
+                 "Activity Media Name",
+                 "Activity Start Date",
+                 "Activity Start Time",
+                 "Activity Start Time Zone",
+                 "Activity Depth/Height Measure",
+                 "Activity Depth/Height Unit",
+                 "Sample Collection Method ID",
+                 "Sample Collection Method Context",
+                 "Sample Collection Equipment Name",
+                 "Sample Collection Equipment Comment",
+                 "Characteristic Name",
+                 "Characteristic Name User Supplied",
+                 "Method Speciation",
+                 "Result Detection Condition",
+                 "Result Value",
+                 "Result Unit",
+                 "Result Measure Qualifier",
+                 "Result Sample Fraction",
+                 "Result Status ID",
+                 "ResultTemperatureBasis",
+                 "Statistical Base Code",
+                 "ResultTimeBasis",
+                 "Result Value Type",
+                 "Result Analytical Method ID",
+                 "Result Analytical Method Context",
+                 "Analysis Start Date",
+                 "Result Detection/Quantitation Limit Type",
+                 "Result Detection/Quantitation Limit Measure",
+                 "Result Detection/Quantitation Limit Unit",
+                 "Result Comment"
+        )
+}
 hydro_lab_to_wqx <- function(data) {
     data |> 
         select(-c("IBVSvr4")) |>

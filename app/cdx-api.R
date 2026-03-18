@@ -5,6 +5,42 @@ library(jsonlite)
 
 CDX_BASE_URL <- "https://cdx.epa.gov/WQXWeb/api/"
 
+CDXError <- function(message, details = NULL) {
+  err <- list(
+    message = message,
+    details = details,
+    class = "CDXError"
+  )
+  class(err) <- c("CDXError", "error")
+  err
+}
+
+format_cdx_error <- function(e) {
+  if (inherits(e, "CDXError")) {
+    msg <- e$message
+    if (!is.null(e$details)) {
+      msg <- paste0(msg, "\n\nDetails: ", e$details)
+    }
+    msg
+  } else {
+    conditionMessage(e)
+  }
+}
+
+is_cdx_error <- function(e) {
+  inherits(e, "CDXError")
+}
+
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
+cdx_check_response <- function(resp) {
+  status <- resp_status(resp)
+  if (status >= 200 && status < 300) {
+    return(invisible(TRUE))
+  }
+  stop(CDXError(paste("HTTP Error:", status)))
+}
+
 #' Generate HMAC-SHA256 signed headers for WQX API authentication
 #'
 #' @param user_id CDX user ID
@@ -13,17 +49,9 @@ CDX_BASE_URL <- "https://cdx.epa.gov/WQXWeb/api/"
 #' @param method HTTP method (GET, POST, etc.)
 #' @return Named list of headers
 cdx_auth_headers <- function(user_id, cdx_key, full_url, method) {
-  # Decode the base64-encoded key
-
-key_raw <- base64decode(cdx_key)
-  
-  # Timestamp in UTC: MM/DD/YYYY HH:MM:SS AM/PM
+  key_raw <- base64decode(cdx_key)
   timestamp <- format(Sys.time(), "%m/%d/%Y %I:%M:%S %p", tz = "UTC")
-  
- # Build signature string: user_id + timestamp + url + method
   signature_string <- paste0(user_id, timestamp, full_url, method)
-  
-  # HMAC-SHA256 digest, then base64 encode
   hmac_digest <- hmac(key_raw, signature_string, algo = "sha256", raw = TRUE)
   signature <- base64encode(hmac_digest)
   
@@ -59,10 +87,8 @@ cdx_upload <- function(session) {
   endpoint <- paste0("Upload/", session$file_name)
   full_url <- paste0(CDX_BASE_URL, endpoint)
   
-  # Read file as raw bytes
   file_data <- readBin(session$file_path, "raw", file.info(session$file_path)$size)
   
-  # Generate auth headers
   headers <- cdx_auth_headers(
     session$user_id,
     session$api_key,
@@ -70,13 +96,13 @@ cdx_upload <- function(session) {
     "POST"
   )
   
-  # Make request
   resp <- request(full_url) |>
     req_method("POST") |>
     req_headers(!!!headers) |>
     req_body_raw(file_data, type = "text/plain") |>
     req_perform()
   
+  cdx_check_response(resp)
   content <- resp_body_json(resp)
   content
 }
@@ -89,7 +115,6 @@ cdx_upload <- function(session) {
 #' @param params Optional named vector of additional parameters
 #' @return Dataset ID
 cdx_import <- function(session, file_id, config_id, params = NULL) {
-  # Build query parameters
   query_params <- list(
     importConfigurationId = config_id,
     fileId = file_id,
@@ -101,7 +126,6 @@ cdx_import <- function(session, file_id, config_id, params = NULL) {
     ignoreFirstRowOfFile = "true"
   )
   
-  # Override with any provided params
   if (!is.null(params)) {
     param_names <- params[seq(1, length(params), 2)]
     param_values <- params[seq(2, length(params), 2)]
@@ -110,7 +134,6 @@ cdx_import <- function(session, file_id, config_id, params = NULL) {
     }
   }
   
-  # Build full URL with query string for signing
   query_string <- paste(
     names(query_params),
     sapply(query_params, URLencode, reserved = TRUE),
@@ -119,7 +142,6 @@ cdx_import <- function(session, file_id, config_id, params = NULL) {
   )
   full_url <- paste0(CDX_BASE_URL, "StartImport?", query_string)
   
-  # Generate auth headers
   headers <- cdx_auth_headers(
     session$user_id,
     session$api_key,
@@ -127,14 +149,13 @@ cdx_import <- function(session, file_id, config_id, params = NULL) {
     "GET"
   )
   
-  # Make request
   resp <- request(full_url) |>
     req_method("GET") |>
     req_headers(!!!headers) |>
     req_perform()
   
-  content <- resp_body_json(resp)
-  content
+  cdx_check_response(resp)
+  resp_body_json(resp)
 }
 
 #' Get status of a dataset import
@@ -157,6 +178,7 @@ cdx_get_status <- function(session, dataset_id) {
     req_headers(!!!headers) |>
     req_perform()
   
+  cdx_check_response(resp)
   resp_body_json(resp)
 }
 
@@ -180,6 +202,7 @@ cdx_submit_to_cdx <- function(session, dataset_id) {
     req_headers(!!!headers) |>
     req_perform()
   
+  cdx_check_response(resp)
   resp_body_json(resp)
 }
 

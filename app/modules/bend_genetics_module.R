@@ -6,8 +6,8 @@ bend_genetics_ui <- function(id){
                  sidebar = bslib::sidebar(
                      width = 280,
                      padding = 10,
-                     fileInput(ns("bend_genetics_file"), "Select Bend Genetics File", multiple = FALSE),
-                     actionButton(ns("reset"), "Reset", class = "btn-secondary btn-sm w-100")
+                        fileInput(ns("bend_genetics_file"), "Select Bend Genetics File", multiple = FALSE),
+                        actionButton(ns("reset"), "Reset", class = "btn-secondary btn-sm w-100")
                  ),
                  tabsetPanel(
                      id = ns("tabs"),
@@ -17,27 +17,27 @@ bend_genetics_ui <- function(id){
                          value = "qa_qc",
                          tags$p(class = "p-2 border rounded mb-2 small",
                                 "This section provides view of raw data, as well as results for QA/QC checks. Verify that all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application."),
-                         DT::dataTableOutput(ns("bend_genetics_table"))
-                     ),
-                     tabPanel(
-                         "Enter Additional Data",
-                         value = "additional",
-                         tags$p(class = "p-2 border rounded mb-2 small",
-                                "Edit the table below to enter 'Activity Depth/Height Measure', 'Activity Depth/Height Unit', and 'Result Comment'. Click 'Generate WQX Ready Data' to reformat 'Activity ID'."),
-                         div(class = "my-2",
-                             actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data", class = "btn-primary"),
-                             span(class = "ms-2", textOutput(ns("check_df_message"), inline = TRUE))
-                         ),
-                         DT::dataTableOutput(ns("edited_wqx_table")),
-                     ),
-                     tabPanel(
-                         "Formatted Data",
-                         tags$p(class = "p-2 border rounded mb-2 small",
-                                "Review WQX formatted data. Download the file, then use the 'Upload to WQX' tab to submit."),
-                         div(class = "mb-2",
-                             actionButton(ns("bend_genetics_save"), "Save to Download Folder", class = "btn-primary btn-sm")
-                         ),
-                         DT::dataTableOutput(ns("bend_genetics_wqx_formatted"))
+                          shinycssloaders::withSpinner(DT::dataTableOutput(ns("bend_genetics_table")), type = 6, color = "#007bff")
+                      ),
+                      tabPanel(
+                          "Enter Additional Data",
+                          value = "additional",
+                          tags$p(class = "p-2 border rounded mb-2 small",
+                                 "Edit the table below to enter 'Activity Depth/Height Measure', 'Activity Depth/Height Unit', and 'Result Comment'. Click 'Generate WQX Ready Data' to reformat 'Activity ID'."),
+                          div(class = "my-2",
+                              actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data", class = "btn-primary"),
+                              uiOutput(ns("check_df_message"))
+                          ),
+                          shinycssloaders::withSpinner(DT::dataTableOutput(ns("edited_wqx_table")), type = 6, color = "#007bff"),
+                      ),
+                      tabPanel(
+                          "Formatted Data",
+                          tags$p(class = "p-2 border rounded mb-2 small",
+                                 "Review WQX formatted data. Download the file, then use the 'Upload to WQX' tab to submit."),
+                          div(class = "mb-2",
+                              actionButton(ns("bend_genetics_save"), "Save to Download Folder", class = "btn-primary btn-sm")
+                          ),
+                          shinycssloaders::withSpinner(DT::dataTableOutput(ns("bend_genetics_wqx_formatted")), type = 6, color = "#007bff")
                      )
                  )
              )
@@ -46,45 +46,122 @@ bend_genetics_ui <- function(id){
 
 bend_genetics_server <- function(input, output, session, account_info){
     ns <- session$ns
+    
+    show_error <- function(title, message, details = NULL) {
+      full_msg <- message
+      if (!is.null(details) && details != "") {
+        full_msg <- paste0(message, "\n\nDetails: ", details)
+      }
+      sendSweetAlert(
+        session = session,
+        title = title,
+        text = tags$div(
+          tags$p(message),
+          if (!is.null(details)) tags$small(class = "text-muted", paste("Details:", details))
+        ),
+        type = "error",
+        html = TRUE
+      )
+    }
+    
+    show_warning <- function(title, message) {
+      sendSweetAlert(
+        session = session,
+        title = title,
+        text = message,
+        type = "warning"
+      )
+    }
+    
+    show_success <- function(title, message) {
+      sendSweetAlert(
+        session = session,
+        title = title,
+        text = message,
+        type = "success"
+      )
+    }
+    
+    observeEvent(input$bend_genetics_file$datapath, {
+        output$check_df_message <- NULL
+        if (is.null(input$bend_genetics_file$datapath)) return()
+        if (!any(endsWith(input$bend_genetics_file$datapath, c("xlsm", "xls", "xlsx")))) {
+            show_error(
+              "Invalid File Type",
+              "Please upload a valid Bend Genetics data file with a '.xlsm', '.xls', or '.xlsx' extension.",
+              paste("Received:", basename(input$bend_genetics_file$datapath))
+            )
+            return()
+        }
+    }, ignoreInit = TRUE)
+    
+    validate_bend_file <- function(filepath) {
+      if (!file.exists(filepath)) {
+        list(valid = FALSE, error = "File not found", details = filepath)
+      } else if (file.info(filepath)$size == 0) {
+        list(valid = FALSE, error = "File is empty", details = filepath)
+      } else {
+        tryCatch({
+          sheet_names <- readxl::excel_sheets(filepath)
+          if (length(sheet_names) == 0) {
+            list(valid = FALSE, error = "No sheets found in Excel file", details = filepath)
+          } else {
+            list(valid = TRUE, sheets = sheet_names)
+          }
+        }, error = function(e) {
+          list(valid = FALSE, error = "Cannot read Excel file", details = conditionMessage(e))
+        })
+      }
+    }
+    
     uploaded_bend_genetics_data <- eventReactive(input$bend_genetics_file$datapath,{
         tryCatch({
             req(input$bend_genetics_file$datapath)
             
-            if (!any(endsWith(input$bend_genetics_file$datapath, c("xlsm", "xls")))) {
-                sendSweetAlert(
-                    session = session,
-                    title = "Error",
-                    text = "Please upload valid Bend Genetics data files with a '.xlsm' or '.xls' extension.",
-                    type = "error"
+            validation <- validate_bend_file(input$bend_genetics_file$datapath)
+            if (!validation$valid) {
+              show_error("File Validation Failed", validation$error, validation$details)
+              return(NULL)
+            }
+            
+            sheet_names <- readxl::excel_sheets(input$bend_genetics_file$datapath)
+            sample_sheets <- sheet_names[str_detect(sheet_names, "^Sample")]
+            if (length(sample_sheets) == 0) {
+                show_error(
+                  "No Sample Sheets Found",
+                  "No 'Sample' sheets were found in the Excel file.",
+                  paste("Available sheets:", paste(sheet_names, collapse = ", "))
                 )
                 return(NULL)
             }
-            # if(any(endsWith(input$bend_genetics_file$datapath, c("xlsm", "xls")))){
-            sheet_names <- readxl::excel_sheets(input$bend_genetics_file$datapath)
-            sample_sheets <- sheet_names[str_detect(sheet_names, "^Sample")]
+            
             file_path_vect <- rep(input$bend_genetics_file$datapath, length(sample_sheets))
             
-            all_sample_data<- purrr::map2(file_path_vect, sample_sheets, parse_bend_genetics_macro)
-            bind_rows(all_sample_data)
-                # return(full_data)
-                # full <- full_data |>
-                #     mutate(bend_type = "MACRO")
-                # full <- full |>
-                #     relocate(bend_type, .before = "Analysis Start Date")
-                # relocate("Result", .before = "Quantitation Limit") |> 
-                
-                # return("MACRO")
-            # }
+            all_sample_data <- tryCatch({
+              purrr::map2(file_path_vect, sample_sheets, parse_bend_genetics_macro) |>
+                bind_rows()
+            }, error = function(e) {
+              show_error(
+                "Error Reading Sample Sheets",
+                "Failed to parse one or more sample sheets.",
+                conditionMessage(e)
+              )
+              return(NULL)
+            })
+            
+            if (is.null(all_sample_data) || nrow(all_sample_data) == 0) {
+              show_warning("Empty Data", "The file was parsed but contains no sample data.")
+              return(NULL)
+            }
+            
+            all_sample_data
             },error = function(e) {
-                sendSweetAlert(
-                    session = session,
-                    title = "Error",
-                    text = paste("An error occurred:", e$message),
-                    type = "error"
+                show_error(
+                  "Error Parsing File",
+                  "Failed to parse the Bend Genetics file."
                 )
                 return(NULL)
             })
-            # return(all_sample_data)
         })
 
     # bend_genetics_comparison_table <- reactive({
@@ -127,6 +204,7 @@ bend_genetics_server <- function(input, output, session, account_info){
     })
     #
     output$bend_genetics_table <- DT::renderDataTable({
+        req(input$bend_genetics_file$datapath)
         if (is.null(bend_comparison$data)) {
             return(NULL)
         }
@@ -259,11 +337,11 @@ bend_genetics_server <- function(input, output, session, account_info){
                                                        activity_type = `Activity Type`,
                                                        equipment_name = `Sample Collection Equipment Name`,
                                                        depth = `Activity Depth/Height Measure`)) |> 
-            relocate("Activity ID (CHILD-subset)", .before = "Activity ID User Supplied (PARENTs)")
-        # common_bend_genetics_wqx_data(bend_genetics_data$formatted_data)
-        output$check_df_message <- renderText({
-            Sys.sleep(0.5)
-            "Check Formatted Data tab for generated WQX data sheet."
+             relocate("Activity ID (CHILD-subset)", .before = "Activity ID User Supplied (PARENTs)")
+         # common_bend_genetics_wqx_data(bend_genetics_data$formatted_data)
+        output$check_df_message <- renderUI({
+            tags$div(class = "alert alert-info mt-2", role = "alert",
+                    tags$strong("Important: "), "Check 'Formatted Data' tab for generated WQX data sheet.")
         })
     })
     output$bend_genetics_wqx_formatted <- DT::renderDataTable({
@@ -273,17 +351,42 @@ bend_genetics_server <- function(input, output, session, account_info){
                       caption = "Preview data before download.")
     })
             
-            #Could refactor
-    observeEvent(input$bend_genetics_save, {
-        req(common_bend_genetics_wqx_data$wqx_data)
-        download_folder <- account_info$selectedDownloadFolder()
-        if (!dir.exists(download_folder)) {
-            dir.create(download_folder, recursive = TRUE)
+            observeEvent(input$bend_genetics_save, {
+        if (is.null(common_bend_genetics_wqx_data$wqx_data) || nrow(common_bend_genetics_wqx_data$wqx_data) == 0) {
+          show_error("No Data to Save", "Please generate WQX formatted data first.")
+          return()
         }
+        
+        download_folder <- tryCatch({
+          account_info$selectedDownloadFolder()
+        }, error = function(e) {
+          show_error("Configuration Error", "Could not access download folder settings.", conditionMessage(e))
+          return(NULL)
+        })
+        
+        if (is.null(download_folder) || download_folder == "") {
+          show_error("Missing Download Folder", "Please configure a download folder in the User Account settings.")
+          return()
+        }
+        
+        tryCatch({
+          if (!dir.exists(download_folder)) {
+            dir.create(download_folder, recursive = TRUE)
+          }
+        }, error = function(e) {
+          show_error("Permission Error", "Could not create download folder.", conditionMessage(e))
+          return()
+        })
+        
         bend_signature(format(lubridate::now(), "%Y%m%d_%H%M%S"))
         filename <- paste0('bend_genetics-data-', bend_signature(), '.csv')
         file_path <- file.path(download_folder, filename)
-        write.csv(common_bend_genetics_wqx_data$wqx_data, file_path, row.names = FALSE)
-        showNotification(paste("File saved to:", file_path), type = "message")
+        
+        tryCatch({
+          write.csv(common_bend_genetics_wqx_data$wqx_data, file_path, row.names = FALSE)
+          show_success("File Saved", paste("Successfully saved to:", filename))
+        }, error = function(e) {
+          show_error("Save Failed", "Could not write file to disk.", conditionMessage(e))
+        })
     })
 }

@@ -1,10 +1,39 @@
 definitions_ui <- function(id) {
     ns <- NS(id)
     tagList(
+        tags$h2("Status Definitions"),
+        tags$p(class = "p-3 border rounded mb-4",
+               "This section explains what each file status means in the WQX upload workflow."),
+        
+        tags$table(class = "table table-bordered table-striped",
+            tags$thead(
+                tags$tr(
+                    tags$th("Status"),
+                    tags$th("Description")
+                )
+            ),
+            tags$tbody(
+                tags$tr(
+                    tags$td(tags$strong("Downloaded")),
+                    tags$td("File has been downloaded in WQX form to local computer and is ready for upload.")
+                ),
+                tags$tr(
+                    tags$td(tags$strong("Upload Failed")),
+                    tags$td("File failed to upload to WQX. Please check WQX for detailed error messages.")
+                ),
+                tags$tr(
+                    tags$td(tags$strong("Uploaded")),
+                    tags$td("File has been uploaded to WQX. Please check WQX for confirmation.")
+                )
+            )
+        ),
+        
+        tags$hr(),
+        
         tags$h2("Parameter Definitions"),
         tags$p(class = "p-3 border rounded mb-4",
                "This page displays the valid ranges for each parameter used in QA/QC validation. 
-               Values outside these ranges will be highlighted in the data tables."),
+                Values outside these ranges will be highlighted in the data tables."),
         
         tags$h4("Hydro Lab Parameters"),
         tableOutput(ns("hydro_lab_ranges")),

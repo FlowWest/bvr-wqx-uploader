@@ -6,8 +6,8 @@ alpha_lab_ui <- function(id){
                  sidebar = bslib::sidebar(
                      width = 280,
                      padding = 10,
-                     fileInput(ns("alpha_lab_file"), "Select Alpha Lab File", multiple = FALSE),
-                     actionButton(ns("reset"), "Reset", class = "btn-secondary btn-sm w-100")
+                      fileInput(ns("alpha_lab_file"), "Select Alpha Lab File", multiple = FALSE),
+                      actionButton(ns("reset"), "Reset", class = "btn-secondary btn-sm w-100")
                  ),
                  tabsetPanel(
                      id = ns("tabs"),
@@ -17,27 +17,27 @@ alpha_lab_ui <- function(id){
                          value = "qa_qc",
                          tags$p(class = "p-2 border rounded mb-2 small",
                                 "This section provides view of raw data, as well as results for QA/QC checks. Verify that all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application."),
-                         DT::dataTableOutput(ns("alpha_lab_table"))
-                     ),
-                     tabPanel(
-                         "Enter Additional Data",
-                         value = "additional",
-                         tags$p(class = "p-2 border rounded mb-2 small",
-                                "Edit the table below to enter 'Activity Depth/Height Measure', 'Activity Depth/Height Unit', and 'Result Comment'. Click 'Generate WQX Ready Data' to reformat 'Activity ID'."),
-                         DT::dataTableOutput(ns("edited_wqx_table")),
-                         div(class = "my-2",
-                             actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data", class = "btn-primary"),
-                             span(class = "ms-2", textOutput(ns("check_df_message"), inline = TRUE))
-                         )
-                     ),
-                     tabPanel(
-                         "Formatted Data",
-                         tags$p(class = "p-2 border rounded mb-2 small",
-                                "Review WQX formatted data. Download the file, then use the 'Upload to WQX' tab to submit."),
-                          div(class = "mb-2",
-                              actionButton(ns("alpha_lab_save"), "Save to Download Folder", class = "btn-primary btn-sm")
+                          shinycssloaders::withSpinner(DT::dataTableOutput(ns("alpha_lab_table")), type = 6, color = "#007bff")
+                      ),
+                      tabPanel(
+                          "Enter Additional Data",
+                          value = "additional",
+                          tags$p(class = "p-2 border rounded mb-2 small",
+                                 "Edit the table below to enter 'Activity Depth/Height Measure', 'Activity Depth/Height Unit', and 'Result Comment'. Click 'Generate WQX Ready Data' to reformat 'Activity ID'."),
+                          div(class = "my-2",
+                              actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data", class = "btn-primary"),
+                              uiOutput(ns("check_df_message"))
                           ),
-                         DT::dataTableOutput(ns("alpha_lab_wqx_formatted"))
+                          shinycssloaders::withSpinner(DT::dataTableOutput(ns("edited_wqx_table")), type = 6, color = "#007bff")
+                      ),
+                      tabPanel(
+                          "Formatted Data",
+                          tags$p(class = "p-2 border rounded mb-2 small",
+                                 "Review WQX formatted data. Download the file, then use the 'Upload to WQX' tab to submit."),
+                           div(class = "mb-2",
+                               actionButton(ns("alpha_lab_save"), "Save to Download Folder", class = "btn-primary btn-sm")
+                           ),
+                          shinycssloaders::withSpinner(DT::dataTableOutput(ns("alpha_lab_wqx_formatted")), type = 6, color = "#007bff")
                      )
                  )
              )
@@ -45,26 +45,107 @@ alpha_lab_ui <- function(id){
 }
 
 alpha_lab_server <- function(input, output, session, account_info){
+    
+    show_error <- function(title, message, details = NULL) {
+      full_msg <- message
+      if (!is.null(details) && details != "") {
+        full_msg <- paste0(message, "\n\nDetails: ", details)
+      }
+      sendSweetAlert(
+        session = session,
+        title = title,
+        text = tags$div(
+          tags$p(message),
+          if (!is.null(details)) tags$small(class = "text-muted", paste("Details:", details))
+        ),
+        type = "error",
+        html = TRUE
+      )
+    }
+    
+    show_warning <- function(title, message) {
+      sendSweetAlert(
+        session = session,
+        title = title,
+        text = message,
+        type = "warning"
+      )
+    }
+    
+    show_success <- function(title, message) {
+      sendSweetAlert(
+        session = session,
+        title = title,
+        text = message,
+        type = "success"
+      )
+    }
+    
+    observeEvent(input$alpha_lab_file$datapath, {
+        output$check_df_message <- NULL
+        if (is.null(input$alpha_lab_file$datapath)) return()
+        if (!any(endsWith(input$alpha_lab_file$datapath, c(".xls", ".xlsx")))) {
+            show_error(
+              "Invalid File Type",
+              "Please upload a valid Alpha Lab data file with a '.xls' or '.xlsx' extension.",
+              paste("Received:", basename(input$alpha_lab_file$datapath))
+            )
+            return()
+        }
+    }, ignoreInit = TRUE)
+    
+    validate_alpha_file <- function(filepath) {
+      if (!file.exists(filepath)) {
+        list(valid = FALSE, error = "File not found", details = filepath)
+      } else if (file.info(filepath)$size == 0) {
+        list(valid = FALSE, error = "File is empty", details = filepath)
+      } else {
+        list(valid = TRUE)
+      }
+    }
+    
     uploaded_alpha_lab_data <- eventReactive(input$alpha_lab_file$datapath,{
         tryCatch({
             req(input$alpha_lab_file$datapath)
             
-            if (!any(endsWith(input$alpha_lab_file$datapath, c(".xls")))) {
-                sendSweetAlert(
-                    session = session,
-                    title = "Error",
-                    text = "Please upload valid Alpha Lab data files with a '.xls' extension.",
-                    type = "error"
-                )
-                return(NULL)
+            validation <- validate_alpha_file(input$alpha_lab_file$datapath)
+            if (!validation$valid) {
+              show_error("File Validation Failed", validation$error, validation$details)
+              return(NULL)
             }
-            purrr::map_df(input$alpha_lab_file$datapath, \(x) parse_alphalab(x))
-        },error = function(e) {
-            sendSweetAlert(
-                session = session,
-                title = "Error",
-                text = paste("An error occurred:", e$message),
-                type = "error"
+            
+            data <- purrr::map_df(input$alpha_lab_file$datapath, \(x) parse_alphalab(x))
+            
+            if (nrow(data) == 0) {
+              show_warning("Empty Data", "The file was parsed but contains no data rows.")
+              return(NULL)
+            }
+            
+            required_cols <- c("SAMPLENAME", "SAMPDATE", "ANALYTE", "RESULT")
+            missing_cols <- required_cols[!required_cols %in% toupper(names(data))]
+            if (length(missing_cols) > 0) {
+              show_warning(
+                "Missing Expected Columns",
+                paste("Some expected columns were not found:", paste(missing_cols, collapse = ", ")),
+                "The file may not be a valid Alpha Lab export."
+              )
+            }
+            
+            unknown_samples <- data$SAMPLENAME[!data$SAMPLENAME %in% names(project_id_lookup)]
+            unknown_samples <- unknown_samples[!is.na(unknown_samples)]
+            if (length(unknown_samples) > 0) {
+              show_warning(
+                "Unknown Sample Names",
+                paste("Some sample names are not recognized:", paste(unique(unknown_samples), collapse = ", ")),
+                "Please verify these are correct BVR monitoring locations."
+              )
+            }
+            
+            data
+        }, error = function(e) {
+            show_error(
+              "Error Parsing File",
+              "Failed to parse the Alpha Lab Excel file."
             )
             return(NULL)
         })
@@ -76,8 +157,8 @@ alpha_lab_server <- function(input, output, session, account_info){
     alpha_labs_data <- reactiveValues(formatted_data = NULL)
     
     observe({
-        # uploaded_data <- uploaded_alpha_lab_data()
-        alpha_comparison$data <- uploaded_alpha_lab_data() |>  
+        req(uploaded_alpha_lab_data())
+        alpha_comparison$data <- uploaded_alpha_lab_data() |>
             mutate(RESULT = ifelse(RESULT != "ND" 
                                  & RESULT != "Absent" 
                                  & RESULT != "Present", 
@@ -101,6 +182,7 @@ alpha_lab_server <- function(input, output, session, account_info){
     })
 
     output$alpha_lab_table <- DT::renderDataTable({
+        req(input$alpha_lab_file$datapath)
         if (is.null(alpha_comparison$data)) {
             return(NULL)
         }
@@ -259,11 +341,11 @@ alpha_lab_server <- function(input, output, session, account_info){
                                                                              activity_type = `Activity Type`,
                                                                              equipment_name = `Sample Collection Equipment Name`,
                                                                              depth = `Activity Depth/Height Measure`)) |> 
-            relocate("Activity ID (CHILD-subset)", .before = "Activity ID User Supplied (PARENTs)")
-        # common_alpha_lab_wqx_data(alpha_lab_data$formatted_data)
-        output$check_df_message <- renderText({
-            Sys.sleep(0.5)
-            "Check Formatted Data tab for generated WQX data sheet."
+             relocate("Activity ID (CHILD-subset)", .before = "Activity ID User Supplied (PARENTs)")
+         # common_alpha_lab_wqx_data(alpha_lab_data$formatted_data)
+        output$check_df_message <- renderUI({
+            tags$div(class = "alert alert-info mt-2", role = "alert",
+                    tags$strong("Important: "), "Check 'Formatted Data' tab for generated WQX data sheet.")
         })
     })
     output$alpha_lab_wqx_formatted <- DT::renderDataTable({
@@ -274,14 +356,41 @@ alpha_lab_server <- function(input, output, session, account_info){
     })    
     
     observeEvent(input$alpha_lab_save, {
-        req(common_alpha_lab_wqx_data$wqx_data)
-        download_folder <- account_info$selectedDownloadFolder()
-        if (!dir.exists(download_folder)) {
-            dir.create(download_folder, recursive = TRUE)
+        if (is.null(common_alpha_lab_wqx_data$wqx_data) || nrow(common_alpha_lab_wqx_data$wqx_data) == 0) {
+          show_error("No Data to Save", "Please generate WQX formatted data first.")
+          return()
         }
+        
+        download_folder <- tryCatch({
+          account_info$selectedDownloadFolder()
+        }, error = function(e) {
+          show_error("Configuration Error", "Could not access download folder settings.", conditionMessage(e))
+          return(NULL)
+        })
+        
+        if (is.null(download_folder) || download_folder == "") {
+          show_error("Missing Download Folder", "Please configure a download folder in the User Account settings.")
+          return()
+        }
+        
+        tryCatch({
+          if (!dir.exists(download_folder)) {
+            dir.create(download_folder, recursive = TRUE)
+          }
+        }, error = function(e) {
+          show_error("Permission Error", "Could not create download folder.", conditionMessage(e))
+          return()
+        })
+        
+        alpha_signature(format(lubridate::now(), "%Y%m%d_%H%M%S"))
         filename <- paste0('alpha_lab-data-', alpha_signature(), '-', format(lubridate::now(), "%Y%m%d_%H%M%S"), '.csv')
         file_path <- file.path(download_folder, filename)
-        write.csv(common_alpha_lab_wqx_data$wqx_data, file_path, row.names = FALSE)
-        showNotification(paste("File saved to:", file_path), type = "message")
+        
+        tryCatch({
+          write.csv(common_alpha_lab_wqx_data$wqx_data, file_path, row.names = FALSE)
+          show_success("File Saved", paste("Successfully saved to:", filename))
+        }, error = function(e) {
+          show_error("Save Failed", "Could not write file to disk.", conditionMessage(e))
+        })
     })
 }
