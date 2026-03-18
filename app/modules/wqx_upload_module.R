@@ -21,7 +21,7 @@ wqx_upload_ui <- function(id) {
                             ),
                             card_body(
                                 shinycssloaders::withSpinner(DT::dataTableOutput(ns("pending_files_table"))),
-                                tags$p(class = "small text-muted mt-2 mb-0", "Files ready to upload to WQX.")
+                                tags$p(class = "small text-muted mt-2 mb-0", "Click a row to preview and upload.")
                             )
                         )
                     )
@@ -68,6 +68,20 @@ wqx_upload_ui <- function(id) {
                     class = "col-12",
                     card(
                         full_screen = TRUE,
+                        card_header(tags$span(tags$i(class = "fa fa-table me-2"), "File Preview")),
+                        card_body(
+                            uiOutput(ns("selected_file_display")),
+                            DT::dataTableOutput(ns("file_preview"))
+                        )
+                    )
+                )
+            ),
+            div(
+                class = "row mt-3",
+                div(
+                    class = "col-12",
+                    card(
+                        full_screen = TRUE,
                         card_header(
                             tags$span(tags$i(class = "fa fa-cloud-upload me-2"), "Upload to CDX/WQX")
                         ),
@@ -76,8 +90,6 @@ wqx_upload_ui <- function(id) {
                                 class = "row g-3 align-items-center",
                                 div(
                                     class = "col-md-8",
-                                    tags$p(class = "small text-muted mb-2", "Select a previously downloaded WQX-formatted CSV file to upload to CDX."),
-                                    fileInput(ns("wqx_file"), label = "Select CSV File", accept = ".csv", width = "100%"),
                                     uiOutput(ns("download_folder_display"))
                                 ),
                                 div(
@@ -96,19 +108,7 @@ wqx_upload_ui <- function(id) {
                         )
                     )
                 )
-            ),
-            div(
-                class = "row mt-3",
-                div(
-                    class = "col-12",
-                    card(
-                        full_screen = TRUE,
-                        card_header(tags$span(tags$i(class = "fa fa-table me-2"), "File Preview")),
-                        card_body(
-                            shinycssloaders::withSpinner(DT::dataTableOutput(ns("file_preview")))
-                        )
-                    )
-                )
+
             )
         )
     )
@@ -293,9 +293,30 @@ wqx_upload_server <- function(input, output, session, account_info) {
             DT::datatable(
                 df,
                 rownames = FALSE,
+                selection = "single",
                 colnames = c("Filename", "Lab Type", "Status", "Date Added", "Username"),
                 options = list(pageLength = 10, scrollX = TRUE, dom = "ftip")
             )
+        }
+    })
+    
+    selected_file <- reactiveVal(NULL)
+    
+    observeEvent(input$pending_files_table_rows_selected, {
+        row <- input$pending_files_table_rows_selected
+        df <- pending_files()
+        if (!is.null(row) && row <= nrow(df)) {
+            download_folder <- normalizePath(account_info$selectedDownloadFolder(), mustWork = FALSE)
+            file_path <- file.path(download_folder, df$filename[row])
+            selected_file(list(name = df$filename[row], path = file_path))
+        }
+    })
+    
+    output$selected_file_display <- renderUI({
+        if (is.null(selected_file())) {
+            tags$p(class = "small text-muted mb-2", "Click a file in the Pending Files table to select it for upload.")
+        } else {
+            tags$p(class = "small mb-2", tags$i(class = "fa fa-file me-1"), tags$b(selected_file()$name))
         }
     })
     
@@ -346,21 +367,21 @@ wqx_upload_server <- function(input, output, session, account_info) {
     })
     
     output$file_preview <- DT::renderDataTable({
-        req(input$wqx_file)
-        df <- read_csv(input$wqx_file$datapath, show_col_types = FALSE)
+        req(selected_file())
+        req(file.exists(selected_file()$path))
+        df <- read_csv(selected_file()$path, show_col_types = FALSE)
         DT::datatable(df, options = list(pageLength = -1, scrollX = TRUE, searching = FALSE, lengthChange = FALSE, paging = FALSE, info = FALSE))
     })
     
     upload_result <- reactiveVal(NULL)
     
     observeEvent(input$upload_to_wqx, {
-        req(input$wqx_file)
+        req(selected_file())
         
         upload_result(NULL)
         
-        uploaded_file <- input$wqx_file
-        FILE_PATH <- uploaded_file$datapath
-        FILE_NAME <- uploaded_file$name
+        FILE_PATH <- selected_file()$path
+        FILE_NAME <- selected_file()$name
         
         API_KEY <- account_info$selectedApiKey()
         USER_ID <- account_info$selectedUsername()
@@ -454,17 +475,17 @@ SUCCESS", status_upper) || grepl("FAILED", status_upper)) {
     
     observeEvent(upload_result(), {
         req(upload_result())
-        req(input$wqx_file)
+        req(selected_file())
         
         status_name <- upload_result()$StatusName
         username <- account_info$selectedUsername()
         
         if (status_name == "Import Failed") {
-            update_file_status(input$wqx_file$name, "upload_failed", username)
+            update_file_status(selected_file()$name, "upload_failed", username)
         } else if (grepl("Success", status_name, ignore.case = TRUE)) {
-            update_file_status(input$wqx_file$name, "uploaded", username)
+            update_file_status(selected_file()$name, "uploaded", username)
         } else {
-            update_file_status(input$wqx_file$name, "pending_review", username)
+            update_file_status(selected_file()$name, "pending_review", username)
         }
         file_tracking_df(load_file_tracking())
     })
