@@ -28,35 +28,37 @@ hydro_lab_ui <- function(id){
                   tabPanel(
                       "QA/QC",
                       value = "qa_qc",
-                      tags$p(class = "p-2 border rounded mb-2 small",
-                             "This section provides view of raw data, as well as results for QA/QC checks. Verify that all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application."),
-                      shinycssloaders::withSpinner(DT::dataTableOutput(ns("hydro_lab_table")))
-                  ),
-                  tabPanel(
-                      "Enter Additional Data",
-                      value = "additional",
-                      tags$p(class = "p-2 border rounded mb-2 small",
-                             "Enter additional AccuWeather 'Temperature, Air' measurement and 'Result Comment' for each date and location in the sidebar panel."),
-                       shinycssloaders::withSpinner(DT::dataTableOutput(ns("temperature_data_table"))),
-                       div(class = "my-2",
-                           actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data", class = "btn-primary"),
-                           uiOutput(ns("check_df_message"))
-                       ),
                        tags$p(class = "p-2 border rounded mb-2 small",
+                              "This section provides view of raw data, as well as results for QA/QC checks. Verify that all validations pass, and proceed to next tab when ready. Click on 'Reset' to clear all saved data and values in application."),
+                       shinycssloaders::withSpinner(DT::dataTableOutput(ns("hydro_lab_table")), type = 6, color = "#007bff"),
+                       uiOutput(ns("hydro_loading_indicator"))
+                   ),
+                   tabPanel(
+                       "Enter Additional Data",
+                        value = "additional",
+                        tags$p(class = "p-2 border rounded mb-2 small",
+                               "Enter additional AccuWeather 'Temperature, Air' measurement and 'Result Comment' for each date and location in the sidebar panel."),
+                        div(class = "my-2",
+                            actionButton(ns("generate_formatted_df"), "Generate WQX Ready Data", class = "btn-primary"),
+                            uiOutput(ns("check_df_message"))
+                        ),
+                        shinycssloaders::withSpinner(DT::dataTableOutput(ns("temperature_data_table")), type = 6, color = "#007bff"),
+                        hr(class = "my-3"),
+                        tags$p(class = "p-2 border rounded mb-2 small",
                               "If water body is too shallow, click on button below to generate empty dataframe after inputing air temperature and result comment."),
                        div(class = "mb-2",
                            actionButton(ns("generate_df"), "Generate Empty WQX Data Sheet", class = "btn-secondary btn-sm"),
                            uiOutput(ns("check_empty_df_message"))
                        )
-                  ),
-                  tabPanel(
-                      "Formatted Data",
-                      tags$p(class = "p-2 border rounded mb-2 small",
-                             "Review WQX formatted data. Download the file, then use the 'Upload to WQX' tab to submit."),
-                      div(class = "mb-2",
-                          actionButton(ns("hydro_lab_save"), "Save to Download Folder", class = "btn-primary btn-sm")
-                      ),
-                      shinycssloaders::withSpinner(DT::dataTableOutput(ns("hydro_lab_wqx_formatted")))
+                   ),
+                   tabPanel(
+                       "Formatted Data",
+                       tags$p(class = "p-2 border rounded mb-2 small",
+                              "Review WQX formatted data. Download the file, then use the 'Upload to WQX' tab to submit."),
+                       div(class = "mb-2",
+                           actionButton(ns("hydro_lab_save"), "Save to Download Folder", class = "btn-primary btn-sm")
+                       ),
+                       shinycssloaders::withSpinner(DT::dataTableOutput(ns("hydro_lab_wqx_formatted")), type = 6, color = "#007bff")
                   )
               )
           )
@@ -65,29 +67,132 @@ hydro_lab_ui <- function(id){
 
 hydro_lab_server <- function(input, output, session, account_info){
     ns <- session$ns
+    
+    error_message <- reactiveVal(NULL)
+    
+    show_error <- function(title, message, details = NULL) {
+      full_msg <- message
+      if (!is.null(details) && details != "") {
+        full_msg <- paste0(message, "\n\nDetails: ", details)
+      }
+      sendSweetAlert(
+        session = session,
+        title = title,
+        text = tags$div(
+          tags$p(message),
+          if (!is.null(details)) tags$small(class = "text-muted", paste("Details:", details))
+        ),
+        type = "error",
+        html = TRUE
+      )
+      error_message(full_msg)
+    }
+    
+    show_warning <- function(title, message) {
+      sendSweetAlert(
+        session = session,
+        title = title,
+        text = message,
+        type = "warning"
+      )
+    }
+    
+    show_success <- function(title, message) {
+      sendSweetAlert(
+        session = session,
+        title = title,
+        text = message,
+        type = "success"
+      )
+    }
+    
+    observeEvent(input$hydro_lab_file$datapath, {
+        output$check_df_message <- NULL
+        output$check_empty_df_message <- NULL
+        error_message(NULL)
+        if (is.null(input$hydro_lab_file$datapath)) return()
+        if (!any(endsWith(input$hydro_lab_file$datapath, c(".csv", ".CSV")))) {
+            show_error(
+              "Invalid File Type",
+              "Please upload a valid Hydro Lab data file with a '.csv' extension.",
+              paste("Received:", paste(basename(input$hydro_lab_file$datapath), collapse = ", "))
+            )
+            return()
+        }
+    }, ignoreInit = TRUE)
+    
+    validate_hydro_file <- function(filepath) {
+      if (!file.exists(filepath)) {
+        list(valid = FALSE, error = "File not found", details = filepath)
+      } else if (file.info(filepath)$size == 0) {
+        list(valid = FALSE, error = "File is empty", details = filepath)
+      } else {
+        tryCatch({
+          first_lines <- readLines(filepath, n = 10, warn = FALSE)
+          if (length(first_lines) < 6) {
+            list(valid = FALSE, error = "File appears to be truncated or invalid", details = paste("Only", length(first_lines), "lines found, expected at least 6"))
+          } else {
+            list(valid = TRUE)
+          }
+        }, error = function(e) {
+          list(valid = FALSE, error = "Cannot read file", details = conditionMessage(e))
+        })
+      }
+    }
+    
     uploaded_hydro_lab_data <- eventReactive(input$hydro_lab_file$datapath,{
         tryCatch({
             req(input$hydro_lab_file$datapath)
             
-            if (!any(endsWith(input$hydro_lab_file$datapath, c(".csv", ".CSV")))) {
-                sendSweetAlert(
-                    session = session,
-                    title = "Error",
-                    text = "Please upload valid Hydro Lab data files with a '.csv' extension.",
-                    type = "error"
-                )
-                return(NULL)
+            validation <- validate_hydro_file(input$hydro_lab_file$datapath)
+            if (!validation$valid) {
+              show_error("File Validation Failed", validation$error, validation$details)
+              return(NULL)
             }
-            purrr::map_df(input$hydro_lab_file$datapath, \(x) parse_hydrolab(x))
-        },error = function(e) {
-            sendSweetAlert(
-                session = session,
-                title = "Error",
-                text = paste("An error occurred:", e$message),
-                type = "error"
+            
+            data <- purrr::map_df(input$hydro_lab_file$datapath, \(x) parse_hydrolab(x))
+            
+            if (nrow(data) == 0) {
+              show_warning("Empty Data", "The file was parsed but contains no data rows.")
+              return(NULL)
+            }
+            
+            required_cols <- c("Date", "Time", "Temp")
+            missing_cols <- setdiff(required_cols, names(data))
+            if (length(missing_cols) > 0) {
+              show_warning(
+                "Missing Expected Columns",
+                paste("Some expected columns were not found:", paste(missing_cols, collapse = ", ")),
+                "The file may not be a valid Hydro Lab export."
+              )
+            }
+            
+            unknown_locations <- data$location_id[!data$location_id %in% names(project_id_lookup)]
+            if (length(unknown_locations) > 0) {
+              show_warning(
+                "Unknown Location IDs",
+                paste("Some location IDs are not recognized:", paste(unique(unknown_locations), collapse = ", ")),
+                "Please verify these are correct BVR monitoring locations."
+              )
+            }
+            
+            data
+        }, error = function(e) {
+            show_error(
+              "Error Parsing File",
+              "Failed to parse the Hydro Lab file."
             )
             return(NULL)
         })
+    })
+    
+    output$hydro_loading_indicator <- renderUI({
+        req(input$hydro_lab_file$datapath)
+        NULL
+    })
+    
+    hydro_loading <- reactive({
+        req(input$hydro_lab_file$datapath)
     })
     
     # handle data editing by the user
@@ -113,6 +218,7 @@ hydro_lab_server <- function(input, output, session, account_info){
     })
     
     output$hydro_lab_table <- DT::renderDataTable({
+        req(input$hydro_lab_file$datapath)
         if (is.null(rvals$data)) {
             return(NULL)
         }
@@ -290,24 +396,44 @@ hydro_lab_server <- function(input, output, session, account_info){
     wqx_data <- reactiveValues(empty_data = NULL)
     
     observeEvent(input$add_result,{
+        if (is.null(input$selected_location) || input$selected_location == "") {
+          show_warning("Location Required", "Please select a monitoring location first.")
+          return()
+        }
+        if (is.null(input$selected_day) || input$selected_day == "") {
+          show_warning("Date Required", "Please select a monitoring day first.")
+          return()
+        }
+        if (is.null(input$temperature_air) || input$temperature_air == "" || is.na(as.numeric(input$temperature_air))) {
+          show_warning("Invalid Temperature", "Please enter a valid air temperature value.")
+          return()
+        }
+        
         if (!is.null(hydro_lab_data$formatted_data)){
-            hydro_lab_data_wqx_filtered <- hydro_lab_data$formatted_data |>
+            tryCatch({
+              hydro_lab_data_wqx_filtered <- hydro_lab_data$formatted_data |>
                 filter(`Activity Start Date` == input$selected_day & `Monitoring Location ID` == input$selected_location)
-            with_temp_data <- append_input_data(hydro_lab_data_wqx_filtered, input$temperature_air, input$result_comment)
-            with_temp_data <- with_temp_data |>
+              with_temp_data <- append_input_data(hydro_lab_data_wqx_filtered, input$temperature_air, input$result_comment)
+              with_temp_data <- with_temp_data |>
                 filter(`Characteristic Name` == "Temperature, Air") |>
                 tail(1)
-            hydro_lab_data$formatted_data <- hydro_lab_data$formatted_data |>
+              hydro_lab_data$formatted_data <- hydro_lab_data$formatted_data |>
                 mutate(`Result Comment` = ifelse(`Activity Start Date` == input$selected_day & `Monitoring Location ID` == input$selected_location, input$result_comment, `Result Comment`))
-            hydro_lab_data$formatted_data <- rbind(hydro_lab_data$formatted_data, with_temp_data)
-            temp_data$filtered_data <- rbind(temp_data$filtered_data, with_temp_data)
+              hydro_lab_data$formatted_data <- rbind(hydro_lab_data$formatted_data, with_temp_data)
+              temp_data$filtered_data <- rbind(temp_data$filtered_data, with_temp_data)
+            }, error = function(e) {
+              show_error("Error Adding Result", "Failed to add temperature result.", conditionMessage(e))
+            })
         }else{
-            with_temp_data <- generate_empty_data(input$temperature_air, input$result_comment) |>
+            tryCatch({
+              with_temp_data <- generate_empty_data(input$temperature_air, input$result_comment) |>
                 filter(`Characteristic Name` == "Temperature, Air")
-            temp_data$filtered_data <- rbind(temp_data$filtered_data, with_temp_data)
-            new_sheet <- generate_empty_data(input$temperature_air, input$result_comment)
-            wqx_data$empty_data <- rbind(wqx_data$empty_data, new_sheet)
-            
+              temp_data$filtered_data <- rbind(temp_data$filtered_data, with_temp_data)
+              new_sheet <- generate_empty_data(input$temperature_air, input$result_comment)
+              wqx_data$empty_data <- rbind(wqx_data$empty_data, new_sheet)
+            }, error = function(e) {
+              show_error("Error Creating Empty Data", "Failed to generate empty data sheet.", conditionMessage(e))
+            })
         }
     })
     
@@ -361,7 +487,10 @@ hydro_lab_server <- function(input, output, session, account_info){
     })
     
     hydro_lab_data_wqx_empty <- eventReactive(input$generate_df, {
-        wqx_data$empty_data
+        if (!is.null(wqx_data$empty_data)) {
+            return(wqx_data$empty_data)
+        }
+        generate_empty_data(input$temperature_air, input$result_comment)
     })
     
     observeEvent(input$generate_formatted_df, {
@@ -419,15 +548,42 @@ hydro_lab_server <- function(input, output, session, account_info){
     
     
     observeEvent(input$hydro_lab_save, {
-       req(common_hydro_lab_wqx_data())
-       download_folder <- account_info$selectedDownloadFolder()
-       if (!dir.exists(download_folder)) {
-           dir.create(download_folder, recursive = TRUE)
+       if (is.null(common_hydro_lab_wqx_data()) || nrow(common_hydro_lab_wqx_data()) == 0) {
+         show_error("No Data to Save", "Please generate WQX formatted data first.")
+         return()
        }
+       
+       download_folder <- tryCatch({
+         account_info$selectedDownloadFolder()
+       }, error = function(e) {
+         show_error("Configuration Error", "Could not access download folder settings.", conditionMessage(e))
+         return(NULL)
+       })
+       
+       if (is.null(download_folder) || download_folder == "") {
+         show_error("Missing Download Folder", "Please configure a download folder in the User Account settings.")
+         return()
+       }
+       
+       tryCatch({
+         if (!dir.exists(download_folder)) {
+           dir.create(download_folder, recursive = TRUE)
+           showNotification(paste("Created download folder:", download_folder), type = "message")
+         }
+       }, error = function(e) {
+         show_error("Permission Error", "Could not create download folder.", conditionMessage(e))
+         return()
+       })
+       
        hydro_signature(format(lubridate::now(), "%Y%m%d_%H%M%S"))
        filename <- paste0('hydro-lab-data-', hydro_signature(), '.csv')
        file_path <- file.path(download_folder, filename)
-       write.csv(common_hydro_lab_wqx_data(), file_path, row.names = FALSE)
-       showNotification(paste("File saved to:", file_path), type = "message")
+       
+       tryCatch({
+         write.csv(common_hydro_lab_wqx_data(), file_path, row.names = FALSE)
+         show_success("File Saved", paste("Successfully saved to:", filename))
+       }, error = function(e) {
+         show_error("Save Failed", "Could not write file to disk.", conditionMessage(e))
+       })
     })
 }
