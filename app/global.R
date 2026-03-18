@@ -8,6 +8,7 @@ library(readxl)
 library(httr2)
 library(digest)
 library(base64enc)
+library(memoise)
 library(jsonlite)
 
 load("../data/lookup_objects.rdata")

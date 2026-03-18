@@ -117,6 +117,10 @@ wqx_upload_ui <- function(id) {
 wqx_upload_server <- function(input, output, session, account_info) {
     ns <- session$ns
     
+    read_csv_cached <- memoise(function(path) {
+        read_csv(path, show_col_types = FALSE)
+    })
+    
     upload_tracking_file <- file.path(cdx_account_path, "file_tracking.csv")
     
     load_file_tracking <- function() {
@@ -369,7 +373,7 @@ wqx_upload_server <- function(input, output, session, account_info) {
     output$file_preview <- DT::renderDataTable({
         req(selected_file())
         req(file.exists(selected_file()$path))
-        df <- read_csv(selected_file()$path, show_col_types = FALSE)
+        df <- read_csv_cached(selected_file()$path)
         DT::datatable(df, options = list(pageLength = -1, scrollX = TRUE, searching = FALSE, lengthChange = FALSE, paging = FALSE, info = FALSE))
     })
     
