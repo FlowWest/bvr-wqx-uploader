@@ -84,6 +84,14 @@ alpha_lab_server <- function(input, output, session, account_info){
     observeEvent(input$alpha_lab_file$datapath, {
         output$check_df_message <- NULL
         if (is.null(input$alpha_lab_file$datapath)) return()
+        if (any(endsWith(input$alpha_lab_file$datapath, c(".csv", ".CSV")))) {
+            show_error(
+              "Invalid File Type",
+              "Alpha Lab files must be Excel format (.xls or .xlsx). Please convert your CSV file to Excel.",
+              paste("Received:", basename(input$alpha_lab_file$datapath))
+            )
+            return()
+        }
         if (!any(endsWith(input$alpha_lab_file$datapath, c(".xls", ".xlsx")))) {
             show_error(
               "Invalid File Type",
@@ -100,7 +108,12 @@ alpha_lab_server <- function(input, output, session, account_info){
       } else if (file.info(filepath)$size == 0) {
         list(valid = FALSE, error = "File is empty", details = filepath)
       } else {
-        list(valid = TRUE)
+        tryCatch({
+          readxl::excel_sheets(filepath)
+          list(valid = TRUE)
+        }, error = function(e) {
+          list(valid = FALSE, error = "File is not a valid Excel file", details = conditionMessage(e))
+        })
       }
     }
     
@@ -116,36 +129,36 @@ alpha_lab_server <- function(input, output, session, account_info){
             
             data <- purrr::map_df(input$alpha_lab_file$datapath, \(x) parse_alphalab(x))
             
+            issues <- character(0)
+            
             if (nrow(data) == 0) {
-              show_warning("Empty Data", "The file was parsed but contains no data rows.")
-              return(NULL)
+              issues <- c(issues, "The file was parsed but contains no data rows.")
             }
             
             required_cols <- c("SAMPLENAME", "SAMPDATE", "ANALYTE", "RESULT")
             missing_cols <- required_cols[!required_cols %in% toupper(names(data))]
             if (length(missing_cols) > 0) {
-              show_warning(
-                "Missing Expected Columns",
-                paste("Some expected columns were not found:", paste(missing_cols, collapse = ", ")),
-                "The file may not be a valid Alpha Lab export."
-              )
+              issues <- c(issues, paste("Missing expected columns:", paste(missing_cols, collapse = ", ")))
             }
             
-            unknown_samples <- data$SAMPLENAME[!data$SAMPLENAME %in% names(project_id_lookup)]
-            unknown_samples <- unknown_samples[!is.na(unknown_samples)]
-            if (length(unknown_samples) > 0) {
-              show_warning(
-                "Unknown Sample Names",
-                paste("Some sample names are not recognized:", paste(unique(unknown_samples), collapse = ", ")),
-                "Please verify these are correct BVR monitoring locations."
-              )
+            if ("SAMPLENAME" %in% names(data)) {
+              unknown_samples <- data$SAMPLENAME[!data$SAMPLENAME %in% names(project_id_lookup)]
+              unknown_samples <- unknown_samples[!is.na(unknown_samples)]
+              if (length(unknown_samples) > 0) {
+                issues <- c(issues, paste("Unknown sample names:", paste(unique(unknown_samples), collapse = ", ")))
+              }
+            }
+            
+            if (length(issues) > 0) {
+              show_warning("Data Issues Found", paste(issues, collapse = "\n\n"))
             }
             
             data
         }, error = function(e) {
             show_error(
               "Error Parsing File",
-              "Failed to parse the Alpha Lab Excel file."
+              "Failed to parse the Alpha Lab Excel file.",
+              conditionMessage(e)
             )
             return(NULL)
         })

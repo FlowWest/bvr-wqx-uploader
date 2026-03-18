@@ -52,7 +52,10 @@ wqx_upload_ui <- function(id) {
                             card_header(
                                 class = "d-flex justify-content-between align-items-center",
                                 tags$span(tags$i(class = "fa fa-exclamation-circle me-2"), "Failed Uploads"),
-                                actionButton(ns("refresh_failed"), label = "Refresh", icon = icon("refresh"), class = "btn-xs btn-outline-secondary")
+                                tagList(
+                                    actionButton(ns("log_failed_upload"), label = "Log Failed Upload", icon = icon("plus"), class = "btn-xs btn-outline-primary me-2"),
+                                    actionButton(ns("refresh_failed"), label = "Refresh", icon = icon("refresh"), class = "btn-xs btn-outline-secondary")
+                                )
                             ),
                             card_body(
                                 shinycssloaders::withSpinner(DT::dataTableOutput(ns("failed_files_table"))),
@@ -121,12 +124,9 @@ wqx_upload_server <- function(input, output, session, account_info) {
     
     load_file_tracking <- function() {
         if (file.exists(upload_tracking_file)) {
-            df <- read_csv(upload_tracking_file, show_col_types = FALSE)
-            if ("uploaded_by" %in% names(df)) {
-                df <- df |> rename(username = uploaded_by)
-            }
-            if (!"username" %in% names(df)) {
-                df$username <- NA_character_
+            df <- read_csv(upload_tracking_file, show_col_types = FALSE, col_types = cols(.default = "c"))
+            if (!"message" %in% names(df)) {
+                df$message <- ""
             }
             df
         } else {
@@ -137,6 +137,7 @@ wqx_upload_server <- function(input, output, session, account_info) {
                 date_added = character(),
                 upload_date = character(),
                 username = character(),
+                message = character(),
                 stringsAsFactors = FALSE
             )
         }
@@ -156,7 +157,7 @@ wqx_upload_server <- function(input, output, session, account_info) {
         if (length(idx) > 0) {
             df$status[idx] <- new_status
             if (new_status == "uploaded") {
-                df$upload_date[idx] <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+                df$upload_date[idx] <- format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = Sys.timezone())
             }
             if (!is.null(username)) {
                 df$username[idx] <- username
@@ -166,8 +167,8 @@ wqx_upload_server <- function(input, output, session, account_info) {
                 filename = filename,
                 lab_type = get_lab_type(filename),
                 status = new_status,
-                date_added = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
-                upload_date = if (new_status == "uploaded") format(Sys.time(), "%Y-%m-%d %H:%M:%S") else NA,
+                date_added = format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = Sys.timezone()),
+                upload_date = if (new_status == "uploaded") format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = Sys.timezone()) else NA,
                 username = if (!is.null(username)) username else NA,
                 stringsAsFactors = FALSE
             )
@@ -208,6 +209,42 @@ wqx_upload_server <- function(input, output, session, account_info) {
     
     observeEvent(input$refresh_uploaded, {
         file_tracking_df(load_file_tracking())
+    })
+    
+    observeEvent(input$log_failed_upload, {
+        showModal(modalDialog(
+            title = "Log Failed Upload",
+            fileInput(ns("failed_file"), "Select File",
+                      accept = c(".csv", ".xlsx", ".xls", ".xlsm"),
+                      multiple = FALSE),
+            selectInput(ns("failed_lab_type"), "Lab Type", 
+                        choices = c("Hydro Lab", "Alpha Lab", "Bend Genetics")),
+            textAreaInput(ns("failed_notes"), "Notes (optional)", rows = 3),
+            footer = tagList(
+                modalButton("Cancel"),
+                actionButton(ns("save_failed"), "Save", class = "btn-primary")
+            ),
+            easyClose = TRUE
+        ))
+    })
+    
+    observeEvent(input$save_failed, {
+        req(input$failed_file, input$failed_lab_type, account_info$selectedUsername())
+        df <- load_file_tracking()
+        new_entry <- data.frame(
+            filename = basename(input$failed_file$name),
+            lab_type = input$failed_lab_type,
+            status = "upload_failed",
+            date_added = format(Sys.time(), "%Y-%m-%d %H:%M:%S", tz = Sys.timezone()),
+            upload_date = as.character(NA),
+            username = as.character(account_info$selectedUsername()),
+            message = as.character(input$failed_notes),
+            stringsAsFactors = FALSE
+        )
+        df <- bind_rows(df, new_entry)
+        save_file_tracking(df)
+        file_tracking_df(load_file_tracking())
+        removeModal()
     })
     
     output$download_folder_display <- renderUI({
@@ -286,15 +323,45 @@ wqx_upload_server <- function(input, output, session, account_info) {
                 options = list(dom = "t", ordering = FALSE, searching = FALSE)
             )
         } else {
-            df$date_added <- format(
-                lubridate::with_tz(df$date_added, tzone = "America/Los_Angeles"),
-                "%Y-%m-%d %I:%M %p PST"
+            df$date_added <- ifelse(
+                is.na(df$date_added) | df$date_added == "",
+                "",
+                format(lubridate::ymd_hms(df$date_added, tz = Sys.timezone()), "%Y-%m-%d %I:%M %p")
             )
             DT::datatable(
                 df,
                 rownames = FALSE,
                 selection = "single",
                 colnames = c("Filename", "Lab Type", "Status", "Date Added", "Username"),
+                options = list(pageLength = 10, scrollX = TRUE, dom = "ftip")
+            )
+        }
+    })
+    
+    output$uploaded_files_table <- DT::renderDataTable({
+        uploaded_files_refresh()
+        df <- file_tracking_df()
+        df <- df[df$status == "uploaded", ]
+        if (nrow(df) == 0) {
+            DT::datatable(
+                data.frame(message = "No uploaded files"),
+                options = list(dom = "t", ordering = FALSE, searching = FALSE)
+            )
+        } else {
+            df$date_added <- ifelse(
+                is.na(df$date_added) | df$date_added == "",
+                "",
+                format(lubridate::ymd_hms(df$date_added, tz = Sys.timezone()), "%Y-%m-%d %I:%M %p")
+            )
+            df$upload_date <- ifelse(
+                is.na(df$upload_date) | df$upload_date == "",
+                "",
+                format(lubridate::ymd_hms(df$upload_date, tz = Sys.timezone()), "%Y-%m-%d %I:%M %p")
+            )
+            DT::datatable(
+                df[, c("filename", "lab_type", "status", "date_added", "upload_date", "username")],
+                rownames = FALSE,
+                colnames = c("Filename", "Lab Type", "Status", "Date Added", "Upload Date", "Username"),
                 options = list(pageLength = 10, scrollX = TRUE, dom = "ftip")
             )
         }
@@ -320,28 +387,7 @@ wqx_upload_server <- function(input, output, session, account_info) {
         }
     })
     
-    output$uploaded_files_table <- DT::renderDataTable({
-        uploaded_files_refresh()
-        df <- file_tracking_df()
-        df <- df[df$status == "uploaded", ]
-        if (nrow(df) == 0) {
-            DT::datatable(
-                data.frame(message = "No files have been uploaded yet"),
-                options = list(dom = "t", ordering = FALSE, searching = FALSE)
-            )
-        } else {
-            df$upload_date <- format(
-                lubridate::with_tz(df$upload_date, tzone = "America/Los_Angeles"),
-                "%Y-%m-%d %I:%M %p PST"
-            )
-            DT::datatable(
-                df[, c("filename", "lab_type", "status", "upload_date", "username")],
-                rownames = FALSE,
-                colnames = c("Filename", "Lab Type", "Status", "Upload Date", "Username"),
-                options = list(pageLength = 10, scrollX = TRUE, dom = "ftip")
-            )
-        }
-    })
+
     
     output$failed_files_table <- DT::renderDataTable({
         failed_files_refresh()
@@ -353,14 +399,17 @@ wqx_upload_server <- function(input, output, session, account_info) {
                 options = list(dom = "t", ordering = FALSE, searching = FALSE)
             )
         } else {
-            df$date_added <- format(
-                lubridate::with_tz(df$date_added, tzone = "America/Los_Angeles"),
-                "%Y-%m-%d %I:%M %p PST"
+            df$date_added <- ifelse(
+                is.na(df$date_added) | df$date_added == "",
+                "",
+                format(lubridate::ymd_hms(df$date_added, tz = Sys.timezone()), "%Y-%m-%d %I:%M %p")
             )
+            display_cols <- c("filename", "lab_type", "status", "date_added", "username", "message")
+            display_cols <- display_cols[display_cols %in% names(df)]
             DT::datatable(
-                df[, c("filename", "lab_type", "status", "date_added", "username")],
+                df[, display_cols, drop = FALSE],
                 rownames = FALSE,
-                colnames = c("Filename", "Lab Type", "Status", "Date", "Username"),
+                colnames = c("Filename", "Lab Type", "Status", "Date", "Username", "Notes")[1:length(display_cols)],
                 options = list(pageLength = 10, scrollX = TRUE, dom = "ftip")
             )
         }

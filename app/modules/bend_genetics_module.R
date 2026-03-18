@@ -149,16 +149,22 @@ bend_genetics_server <- function(input, output, session, account_info){
               return(NULL)
             })
             
+            issues <- character(0)
+            
             if (is.null(all_sample_data) || nrow(all_sample_data) == 0) {
-              show_warning("Empty Data", "The file was parsed but contains no sample data.")
-              return(NULL)
+              issues <- c(issues, "The file was parsed but contains no sample data.")
+            }
+            
+            if (length(issues) > 0) {
+              show_warning("Data Issues Found", paste(issues, collapse = "\n\n"))
             }
             
             all_sample_data
             },error = function(e) {
                 show_error(
                   "Error Parsing File",
-                  "Failed to parse the Bend Genetics file."
+                  "Failed to parse the Bend Genetics file.",
+                  conditionMessage(e)
                 )
                 return(NULL)
             })

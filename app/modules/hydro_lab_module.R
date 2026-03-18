@@ -152,35 +152,35 @@ hydro_lab_server <- function(input, output, session, account_info){
             
             data <- purrr::map_df(input$hydro_lab_file$datapath, \(x) parse_hydrolab(x))
             
+            issues <- character(0)
+            
             if (nrow(data) == 0) {
-              show_warning("Empty Data", "The file was parsed but contains no data rows.")
-              return(NULL)
+              issues <- c(issues, "The file was parsed but contains no data rows.")
             }
             
             required_cols <- c("Date", "Time", "Temp")
             missing_cols <- setdiff(required_cols, names(data))
             if (length(missing_cols) > 0) {
-              show_warning(
-                "Missing Expected Columns",
-                paste("Some expected columns were not found:", paste(missing_cols, collapse = ", ")),
-                "The file may not be a valid Hydro Lab export."
-              )
+              issues <- c(issues, paste("Missing expected columns:", paste(missing_cols, collapse = ", ")))
             }
             
-            unknown_locations <- data$location_id[!data$location_id %in% names(project_id_lookup)]
-            if (length(unknown_locations) > 0) {
-              show_warning(
-                "Unknown Location IDs",
-                paste("Some location IDs are not recognized:", paste(unique(unknown_locations), collapse = ", ")),
-                "Please verify these are correct BVR monitoring locations."
-              )
+            if ("location_id" %in% names(data)) {
+              unknown_locations <- data$location_id[!data$location_id %in% names(project_id_lookup)]
+              if (length(unknown_locations) > 0) {
+                issues <- c(issues, paste("Unknown location IDs:", paste(unique(unknown_locations), collapse = ", ")))
+              }
+            }
+            
+            if (length(issues) > 0) {
+              show_warning("Data Issues Found", paste(issues, collapse = "\n\n"))
             }
             
             data
         }, error = function(e) {
             show_error(
               "Error Parsing File",
-              "Failed to parse the Hydro Lab file."
+              "Failed to parse the Hydro Lab file.",
+              conditionMessage(e)
             )
             return(NULL)
         })
