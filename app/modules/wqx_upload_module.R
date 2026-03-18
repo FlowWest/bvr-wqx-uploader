@@ -8,29 +8,34 @@ wqx_upload_ui <- function(id) {
             div(
                 class = "row g-3",
                 div(
-                    class = "col-lg-6",
-                    card(
-                        full_screen = TRUE,
-                        card_header(
-                            class = "d-flex justify-content-between align-items-center",
-                            tags$span(tags$i(class = "fa fa-clock-o me-2"), "Pending Upload"),
-                            actionButton(ns("refresh_files"), label = "Refresh", icon = icon("refresh"), class = "btn-xs btn-outline-secondary")
-                        ),
-                        card_body(
-                            shinycssloaders::withSpinner(DT::dataTableOutput(ns("pending_files_table"))),
-                            tags$p(class = "small text-muted mt-2 mb-0", "Files ready to upload to WQX.")
+                    class = "col-lg-6 d-flex flex-column",
+                    div(
+                        class = "flex-grow-1",
+                        card(
+                            full_screen = TRUE,
+                            style = "height: 100%;",
+                            card_header(
+                                class = "d-flex justify-content-between align-items-center",
+                                tags$span(tags$i(class = "fa fa-clock-o me-2"), "Pending Upload"),
+                                actionButton(ns("refresh_files"), label = "Refresh", icon = icon("refresh"), class = "btn-xs btn-outline-secondary")
+                            ),
+                            card_body(
+                                shinycssloaders::withSpinner(DT::dataTableOutput(ns("pending_files_table"))),
+                                tags$p(class = "small text-muted mt-2 mb-0", "Files ready to upload to WQX.")
+                            )
                         )
                     )
                 ),
                 div(
-                    class = "col-lg-6",
+                    class = "col-lg-6 d-flex flex-column",
                     div(
-                        class = "mb-3",
+                        class = "mb-3 flex-grow-1",
                         card(
                             full_screen = TRUE,
+                            style = "background-color: #d4edda; height: 100%;",
                             card_header(
                                 class = "d-flex justify-content-between align-items-center",
-                                tags$span(tags$i(class = "fa fa-check-circle me-2"), "Successful Upload"),
+                                tags$span(tags$i(class = "fa fa-check-circle me-2"), "Successful Uploads"),
                                 actionButton(ns("refresh_uploaded"), label = "Refresh", icon = icon("refresh"), class = "btn-xs btn-outline-secondary")
                             ),
                             card_body(
@@ -39,16 +44,20 @@ wqx_upload_ui <- function(id) {
                             )
                         )
                     ),
-                    card(
-                        full_screen = TRUE,
-                        card_header(
-                            class = "d-flex justify-content-between align-items-center",
-                            tags$span(tags$i(class = "fa fa-exclamation-circle me-2"), "Failed Upload"),
-                            actionButton(ns("refresh_failed"), label = "Refresh", icon = icon("refresh"), class = "btn-xs btn-outline-secondary")
-                        ),
-                        card_body(
-                            shinycssloaders::withSpinner(DT::dataTableOutput(ns("failed_files_table"))),
-                            tags$p(class = "small text-muted mt-2 mb-0", "Files that failed to upload.")
+                    div(
+                        class = "flex-grow-1",
+                        card(
+                            full_screen = TRUE,
+                            style = "background-color: #f8d7da; height: 100%;",
+                            card_header(
+                                class = "d-flex justify-content-between align-items-center",
+                                tags$span(tags$i(class = "fa fa-exclamation-circle me-2"), "Failed Uploads"),
+                                actionButton(ns("refresh_failed"), label = "Refresh", icon = icon("refresh"), class = "btn-xs btn-outline-secondary")
+                            ),
+                            card_body(
+                                shinycssloaders::withSpinner(DT::dataTableOutput(ns("failed_files_table"))),
+                                tags$p(class = "small text-muted mt-2 mb-0", "Files that failed to upload.")
+                            )
                         )
                     )
                 )
@@ -90,16 +99,16 @@ wqx_upload_ui <- function(id) {
             ),
             div(
                 class = "row mt-3",
-            div(
-                class = "col-12",
-                card(
-                    full_screen = TRUE,
-                    card_header(tags$span(tags$i(class = "fa fa-table me-2"), "File Preview")),
-                    card_body(
-                        shinycssloaders::withSpinner(DT::dataTableOutput(ns("file_preview")))
+                div(
+                    class = "col-12",
+                    card(
+                        full_screen = TRUE,
+                        card_header(tags$span(tags$i(class = "fa fa-table me-2"), "File Preview")),
+                        card_body(
+                            shinycssloaders::withSpinner(DT::dataTableOutput(ns("file_preview")))
+                        )
                     )
                 )
-            )
             )
         )
     )
@@ -395,7 +404,8 @@ wqx_upload_server <- function(input, output, session, account_info) {
                 
                 if (!is.null(status) && !is.null(status$StatusName)) {
                     status_upper <- toupper(status$StatusName)
-                    if (grepl("SUCCESS", status_upper) || grepl("FAILED", status_upper)) {
+                    if (grepl("
+SUCCESS", status_upper) || grepl("FAILED", status_upper)) {
                         break
                     }
                 }
