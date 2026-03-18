@@ -16,42 +16,52 @@ bend_genetics_make_activity_id <- function(location_id, date, activity_type, equ
 
 
 parse_bend_genetics_macro <- function(file_path, sheet_name){
-    # file_path <- "data-raw/bend/20241004_BV_LIMS_report.xlsm"
-    # sheet_name <- "Sample1"
-    left_metadata_raw <- read_excel(file_path, sheet = sheet_name, range = "A3:B8", col_names = c("key", "value"))
-    right_metadata_raw <- read_excel(file_path, sheet = sheet_name, range = "D3:E8", col_names = c("key", "value"))
+    stopifnot("File path is required" = !is.null(file_path) && length(file_path) == 1)
+    stopifnot("Sheet name is required" = !is.null(sheet_name) && length(sheet_name) == 1)
     
-    #process metadata
-    left_metadata <- map2_dfc(left_metadata_raw$key, left_metadata_raw$value, function(x, y) {
-        if (!is.na(x)) {
-            
-            if (x == "Received:") {
-                as.Date(as.numeric(y) - 2, origin = "1900-01-01")
-            } else if (x == "Time:") {
-                format(as.POSIXct(as.numeric(y) * 86400, origin = "1970-01-01", tz = "UTC"), "%H:%M:%S")
-            } else if (x %in% c("Matrix:", "BG ID:")) {
-                y
-            } else if (x == "Reported:") {
-                as.POSIXct((as.numeric(y) - 2) * 86400, origin = "1900-01-01")
-            }
-        }
+    tryCatch({
+        left_metadata_raw <- read_excel(file_path, sheet = sheet_name, range = "A3:B8", col_names = c("key", "value"))
+        right_metadata_raw <- read_excel(file_path, sheet = sheet_name, range = "D3:E8", col_names = c("key", "value"))
+    }, error = function(e) {
+        stop(paste("Cannot read metadata from sheet '", sheet_name, "'"))
     })
     
-    right_metadata <- map2_dfc(right_metadata_raw$key, right_metadata_raw$value, function(x, y) {
-        if (!is.na(x)) {
-            
-            if (x == "Customer:") {
-                y
-            } else if (x == "Project:") {
-                y
-            } else if (x == "Location:"){
-                y
-            } else if (x == "Collected:") {
-                as.POSIXct((as.numeric(y) - 2) * 86400, origin = "1900-01-01")
-            } else if (x == "Sample ID:") {
-                y
+    tryCatch({
+        left_metadata <- map2_dfc(left_metadata_raw$key, left_metadata_raw$value, function(x, y) {
+            if (!is.na(x)) {
+                if (x == "Received:") {
+                    as.Date(as.numeric(y) - 2, origin = "1900-01-01")
+                } else if (x == "Time:") {
+                    format(as.POSIXct(as.numeric(y) * 86400, origin = "1970-01-01", tz = "UTC"), "%H:%M:%S")
+                } else if (x %in% c("Matrix:", "BG ID:")) {
+                    y
+                } else if (x == "Reported:") {
+                    as.POSIXct((as.numeric(y) - 2) * 86400, origin = "1900-01-01")
+                }
             }
-        }
+        })
+    }, error = function(e) {
+        stop("Error processing left metadata")
+    })
+    
+    tryCatch({
+        right_metadata <- map2_dfc(right_metadata_raw$key, right_metadata_raw$value, function(x, y) {
+            if (!is.na(x)) {
+                if (x == "Customer:") {
+                    y
+                } else if (x == "Project:") {
+                    y
+                } else if (x == "Location:"){
+                    y
+                } else if (x == "Collected:") {
+                    as.POSIXct((as.numeric(y) - 2) * 86400, origin = "1900-01-01")
+                } else if (x == "Sample ID:") {
+                    y
+                }
+            }
+        })
+    }, error = function(e) {
+        stop("Error processing right metadata")
     })
     
     left_col_names <- stringr::str_replace(left_metadata_raw$key[!is.na(left_metadata_raw$key)], ":", "")
@@ -59,15 +69,39 @@ parse_bend_genetics_macro <- function(file_path, sheet_name){
     right_col_names <- stringr::str_replace(right_metadata_raw$key[!is.na(right_metadata_raw$key)], ":", "")
     colnames(right_metadata) <- right_col_names
     
-    full_metadata <- cross_join(right_metadata, left_metadata) 
-    full_metadata_formatted <- full_metadata |> 
+    if (ncol(right_metadata) == 0 || nrow(right_metadata) == 0) {
+        stop(paste("No metadata found in sheet '", sheet_name, "'"))
+    }
+    
+    full_metadata <- tryCatch({
+        cross_join(right_metadata, left_metadata)
+    }, error = function(e) {
+        stop("Error combining metadata")
+    })
+    
+    full_metadata_formatted <- full_metadata |>
         mutate(
             Matrix = ifelse(Matrix == "Water Grab", "Water", "SPATT"),
             activity_start_date = format(as_date(Collected), "%m/%d/%Y"),
             activity_start_time = format(Collected, "%H:%M"))
     
-    bend_results <- read_excel(file_path, sheet = sheet_name, skip = 10) |>
-        filter(!is.na(`Method`)) |>
+    location_val <- full_metadata_formatted$Location[1]
+    if (is.na(location_val) || location_val == "") {
+        stop("Location not found in metadata")
+    }
+    
+    tryCatch({
+        bend_results <- read_excel(file_path, sheet = sheet_name, skip = 10) |>
+            filter(!is.na(`Method`))
+    }, error = function(e) {
+        stop(paste("Error reading results from sheet '", sheet_name, "'"))
+    })
+    
+    if (nrow(bend_results) == 0) {
+        stop(paste("No results found in sheet '", sheet_name, "'"))
+    }
+    
+    bend_results <- bend_results |>
         mutate(
             "Project ID" = project_id_lookup[full_metadata_formatted$Location],
             "Monitoring Location ID" = full_metadata_formatted$Location,

@@ -11,31 +11,71 @@ convert_to_datetime <- function(string_date_time_column) {
 }
 
 parse_alphalab <- function(filepath) {
-    col_names <- names(read_excel(filepath, n_max = 0))
-    samp_date_index <- which(col_names == "SAMPDATE")
-    ana_date_index <- which(col_names == "ANADATE")
+    stopifnot("File path is required" = !is.null(filepath) && length(filepath) > 0)
+    stopifnot("File path must be a single string" = length(filepath) == 1 && is.character(filepath))
+    
+    tryCatch({
+        col_names <- names(read_excel(filepath, n_max = 0))
+        if (length(col_names) == 0) {
+            stop("Excel file appears to be empty or has no columns")
+        }
+    }, error = function(e) {
+        stop("Cannot read Excel file")
+    })
+    
+    tryCatch({
+        samp_date_index <- which(col_names == "SAMPDATE")
+        if (length(samp_date_index) == 0) {
+            stop("Required column 'SAMPDATE' not found in Excel file")
+        }
+        
+        ana_date_index <- which(col_names == "ANADATE")
+        if (length(ana_date_index) == 0) {
+            stop("Required column 'ANADATE' not found in Excel file")
+        }
+    }, error = function(e) {
+        stop("Required columns not found in Excel file")
+    })
+    
     col_types <- rep("guess", length(col_names))
     col_types[samp_date_index] <- "text"
     col_types[ana_date_index] <- "text"
-    # col_types
-    file <- read_excel(filepath, col_types = col_types)
-    file[["SAMPDATE"]] <- convert_to_datetime(file[["SAMPDATE"]])
-    file[["ANADATE"]] <- convert_to_datetime(file[["ANADATE"]]) 
+    
+    tryCatch({
+        file <- read_excel(filepath, col_types = col_types)
+    }, error = function(e) {
+        stop("Failed to read Excel data")
+    })
+    
+    if (nrow(file) == 0) {
+        stop("Excel file contains no data rows")
+    }
+    
+    tryCatch({
+        file[["SAMPDATE"]] <- convert_to_datetime(file[["SAMPDATE"]])
+        file[["ANADATE"]] <- convert_to_datetime(file[["ANADATE"]]) 
+    }, error = function(e) {
+        stop("Failed to parse date columns")
+    })
+    
     names(file) <- toupper(names(file))
     
-    # file <- readxl::read_excel(filepath, , col_types = col_types)
-    file <- file |>
-        tidyr::separate(SAMPLENAME,
-                        into = c("sample1", "sample2"),
-                        sep = " ") |> # TODO this looks a little too hard-coded
-        dplyr::mutate(SAMPLENAME = ifelse(sample1 %in% names(project_id_lookup), sample1, sample2)) |>
-        dplyr::select(-sample1, -sample2) |>
-        dplyr::relocate(SAMPLENAME, .before = LABSAMPID) |>
-        mutate(
-            SAMPLENAME = ifelse(SAMPLENAME == "BVSWDI", "BVSWD1", SAMPLENAME),
-            SAMPLENAME = ifelse(SAMPLENAME == "BVRTCI", "BVRTC1", SAMPLENAME),
-            SAMPLENAME = ifelse(SAMPLENAME == "BVCLI", "BVCL1", SAMPLENAME)
-        ) 
+    tryCatch({
+        file <- file |>
+            tidyr::separate(SAMPLENAME,
+                            into = c("sample1", "sample2"),
+                            sep = " ") |>
+            dplyr::mutate(SAMPLENAME = ifelse(sample1 %in% names(project_id_lookup), sample1, sample2)) |>
+            dplyr::select(-sample1, -sample2) |>
+            dplyr::relocate(SAMPLENAME, .before = LABSAMPID) |>
+            mutate(
+                SAMPLENAME = ifelse(SAMPLENAME == "BVSWDI", "BVSWD1", SAMPLENAME),
+                SAMPLENAME = ifelse(SAMPLENAME == "BVRTCI", "BVRTC1", SAMPLENAME),
+                SAMPLENAME = ifelse(SAMPLENAME == "BVCLI", "BVCL1", SAMPLENAME)
+            )
+    }, error = function(e) {
+        stop("Failed to process sample names")
+    })
 }
 
 alpha_lab_make_activity_id <- function(location_id,

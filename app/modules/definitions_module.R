@@ -15,11 +15,11 @@ definitions_ui <- function(id) {
             tags$tbody(
                 tags$tr(
                     tags$td(tags$strong("Downloaded")),
-                    tags$td("File has been downloaded in WQX form and is ready for upload.")
+                    tags$td("File has been downloaded in WQX form to local computer and is ready for upload.")
                 ),
                 tags$tr(
                     tags$td(tags$strong("Upload Failed")),
-                    tags$td("File failed to upload to WQX. Please check WQX error messages for details.")
+                    tags$td("File failed to upload to WQX. Please check WQX for detailed error messages.")
                 ),
                 tags$tr(
                     tags$td(tags$strong("Uploaded")),
