@@ -106,81 +106,44 @@ hydro_lab_server <- function(input, output, session, account_info){
       )
     }
     
-    observeEvent(input$hydro_lab_file$datapath, {
-        output$check_df_message <- NULL
-        output$check_empty_df_message <- NULL
-        error_message(NULL)
-        if (is.null(input$hydro_lab_file$datapath)) return()
-        if (!any(endsWith(input$hydro_lab_file$datapath, c(".csv", ".CSV")))) {
-            show_error(
-              "Invalid File Type",
-              "Please upload a valid Hydro Lab data file with a '.csv' extension.",
-              paste("Received:", paste(basename(input$hydro_lab_file$datapath), collapse = ", "))
-            )
-            return()
-        }
-    }, ignoreInit = TRUE)
-    
-    validate_hydro_file <- function(filepath) {
-      if (!file.exists(filepath)) {
-        list(valid = FALSE, error = "File not found", details = filepath)
-      } else if (file.info(filepath)$size == 0) {
-        list(valid = FALSE, error = "File is empty", details = filepath)
-      } else {
-        tryCatch({
-          first_lines <- readLines(filepath, n = 10, warn = FALSE)
-          if (length(first_lines) < 6) {
-            list(valid = FALSE, error = "File appears to be truncated or invalid", details = paste("Only", length(first_lines), "lines found, expected at least 6"))
-          } else {
-            list(valid = TRUE)
-          }
-        }, error = function(e) {
-          list(valid = FALSE, error = "Cannot read file", details = conditionMessage(e))
-        })
-      }
-    }
-    
     uploaded_hydro_lab_data <- eventReactive(input$hydro_lab_file$datapath,{
         tryCatch({
             req(input$hydro_lab_file$datapath)
             
-            validation <- validate_hydro_file(input$hydro_lab_file$datapath)
-            if (!validation$valid) {
-              show_error("File Validation Failed", validation$error, validation$details)
-              return(NULL)
+            if (!any(endsWith(input$hydro_lab_file$datapath, c(".csv", ".CSV")))) {
+                sendSweetAlert(
+                    session = session,
+                    title = "Error",
+                    text = "Please upload valid Hydro Lab data files with a '.csv' extension.",
+                    type = "error"
+                )
+                return(NULL)
             }
             
-            data <- purrr::map_df(input$hydro_lab_file$datapath, \(x) parse_hydrolab(x))
+            parsed_data <- purrr::map_df(input$hydro_lab_file$datapath, \(x) parse_hydrolab(x))
             
-            if (nrow(data) == 0) {
-              show_warning("Empty Data", "The file was parsed but contains no data rows.")
-              return(NULL)
+            unknown_locs <- unique(parsed_data$location_id[is.na(parsed_data$project_id)])
+            unknown_locs <- unknown_locs[!is.na(unknown_locs)]
+            
+            if (length(unknown_locs) > 0) {
+                sendSweetAlert(
+                    session = session,
+                    title = "Warning",
+                    text = paste("Some location IDs are not recognized:", 
+                                  paste(unique(unknown_locs), collapse = ", "),
+                    ". Please verify these are correct BVR monitoring locations."
+                    ),
+                    type = "warning"
+                )
             }
             
-            required_cols <- c("Date", "Time", "Temp")
-            missing_cols <- setdiff(required_cols, names(data))
-            if (length(missing_cols) > 0) {
-              show_warning(
-                "Missing Expected Columns",
-                paste("Some expected columns were not found:", paste(missing_cols, collapse = ", ")),
-                "The file may not be a valid Hydro Lab export."
-              )
-            }
-            
-            unknown_locations <- data$location_id[!data$location_id %in% names(project_id_lookup)]
-            if (length(unknown_locations) > 0) {
-              show_warning(
-                "Unknown Location IDs",
-                paste("Some location IDs are not recognized:", paste(unique(unknown_locations), collapse = ", ")),
-                "Please verify these are correct BVR monitoring locations."
-              )
-            }
-            
-            data
-        }, error = function(e) {
-            show_error(
-              "Error Parsing File",
-              "Failed to parse the Hydro Lab file."
+            parsed_data
+        },error = function(e) {
+            sendSweetAlert(
+                session = session,
+                title = "Error",
+                text = paste("An error occurred: cannot parse file. Check file format."),
+                type = "error"
             )
             return(NULL)
         })

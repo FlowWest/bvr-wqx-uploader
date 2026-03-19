@@ -1,55 +1,21 @@
 parse_hydrolab <- function(filepath) {
-    stopifnot("File path is required" = !is.null(filepath) && length(filepath) > 0)
-    stopifnot("File path must be a single string" = length(filepath) == 1 && is.character(filepath))
-    
     regex_pattern <- "\\w+"
-    
-    tryCatch({
-        raw_name <- readLines(filepath, 1, warn = FALSE)
-        if (length(raw_name) == 0 || raw_name == "") {
-            stop("File appears to be empty or has no header row")
-        }
-    }, error = function(e) {
-        stop("Cannot read file header")
-    })
-    
-    location_for_selected_hydrolab <- tryCatch({
-        unlist(str_extract_all(raw_name, regex_pattern))[4]
-    }, error = function(e) {
-        stop("Could not extract location from file header. Expected format: <something> <something> <location_id> ...")
-    })
-    
-    if (is.na(location_for_selected_hydrolab) || location_for_selected_hydrolab == "") {
-        stop("Location ID not found in file header (4th word)")
-    }
-    
+    raw_name <- readLines(filepath, 1, warn = FALSE)
+    location_for_selected_hydrolab <- unlist(str_extract_all(raw_name, regex_pattern))[4]
     depth_cols <- c("Depth10", "Dep25")
     turb_cols <- c("Turb", "TurbSC")
     
-    tryCatch({
-        data <- read_csv(
-            filepath,
-            skip = 5,
-            col_types = cols(.default = "c"),
-            show_col_types = FALSE
-        )
-    }, error = function(e) {
-        stop("Failed to parse CSV file")
-    })
-    
-    if (nrow(data) == 0) {
-        stop("No data rows found in file (file may be empty or incorrectly formatted)")
-    }
-    
-    data <- data |>
+    # Read all columns as character, then drop empty/unnamed ones
+    data <- read_csv(
+        filepath,
+        skip = 5,
+        col_types = cols(.default = "c"),
+        show_col_types = FALSE
+    ) |>
+        # Remove unnamed columns (empty columns between data)
         select(-starts_with("...")) |>
-        filter(grepl("^[0-9]", .data$Date))
-    
-    if (nrow(data) == 0) {
-        stop("No valid data rows found. Date column should start with a digit (e.g., '01/15/2024')")
-    }
-    
-    data <- data |>
+        # Filter to only data rows (start with digit in Date column)
+        filter(grepl("^[0-9]", Date)) |>
         mutate(
             location_id = location_for_selected_hydrolab,
             project_id = project_id_lookup[location_id]

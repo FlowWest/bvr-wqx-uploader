@@ -47,123 +47,43 @@ bend_genetics_ui <- function(id){
 bend_genetics_server <- function(input, output, session, account_info){
     ns <- session$ns
     
-    show_error <- function(title, message, details = NULL) {
-      full_msg <- message
-      if (!is.null(details) && details != "") {
-        full_msg <- paste0(message, "\n\nDetails: ", details)
-      }
-      sendSweetAlert(
-        session = session,
-        title = title,
-        text = tags$div(
-          tags$p(message),
-          if (!is.null(details)) tags$small(class = "text-muted", paste("Details:", details))
-        ),
-        type = "error",
-        html = TRUE
-      )
-    }
-    
-    show_warning <- function(title, message) {
-      sendSweetAlert(
-        session = session,
-        title = title,
-        text = message,
-        type = "warning"
-      )
-    }
-    
-    show_success <- function(title, message) {
-      sendSweetAlert(
-        session = session,
-        title = title,
-        text = message,
-        type = "success"
-      )
-    }
-    
-    observeEvent(input$bend_genetics_file$datapath, {
-        output$check_df_message <- NULL
-        if (is.null(input$bend_genetics_file$datapath)) return()
-        if (!any(endsWith(input$bend_genetics_file$datapath, c("xlsm", "xls", "xlsx")))) {
-            show_error(
-              "Invalid File Type",
-              "Please upload a valid Bend Genetics data file with a '.xlsm', '.xls', or '.xlsx' extension.",
-              paste("Received:", basename(input$bend_genetics_file$datapath))
-            )
-            return()
-        }
-    }, ignoreInit = TRUE)
-    
-    validate_bend_file <- function(filepath) {
-      if (!file.exists(filepath)) {
-        list(valid = FALSE, error = "File not found", details = filepath)
-      } else if (file.info(filepath)$size == 0) {
-        list(valid = FALSE, error = "File is empty", details = filepath)
-      } else {
-        tryCatch({
-          sheet_names <- readxl::excel_sheets(filepath)
-          if (length(sheet_names) == 0) {
-            list(valid = FALSE, error = "No sheets found in Excel file", details = filepath)
-          } else {
-            list(valid = TRUE, sheets = sheet_names)
-          }
-        }, error = function(e) {
-          list(valid = FALSE, error = "Cannot read Excel file", details = conditionMessage(e))
-        })
-      }
-    }
-    
     uploaded_bend_genetics_data <- eventReactive(input$bend_genetics_file$datapath,{
         tryCatch({
             req(input$bend_genetics_file$datapath)
             
-            validation <- validate_bend_file(input$bend_genetics_file$datapath)
-            if (!validation$valid) {
-              show_error("File Validation Failed", validation$error, validation$details)
-              return(NULL)
+            if (!any(endsWith(input$bend_genetics_file$datapath, c("xlsm", "xls")))) {
+                sendSweetAlert(
+                    session = session,
+                    title = "Error",
+                    text = "Please upload valid Bend Genetics data files with a '.xlsm' or '.xls' extension.",
+                    type = "error"
+                )
+                return(NULL)
             }
-            
+            # if(any(endsWith(input$bend_genetics_file$datapath, c("xlsm", "xls")))){
             sheet_names <- readxl::excel_sheets(input$bend_genetics_file$datapath)
             sample_sheets <- sheet_names[str_detect(sheet_names, "^Sample")]
-            if (length(sample_sheets) == 0) {
-                show_error(
-                  "No Sample Sheets Found",
-                  "No 'Sample' sheets were found in the Excel file.",
-                  paste("Available sheets:", paste(sheet_names, collapse = ", "))
-                )
-                return(NULL)
-            }
-            
             file_path_vect <- rep(input$bend_genetics_file$datapath, length(sample_sheets))
             
-            all_sample_data <- tryCatch({
-              purrr::map2(file_path_vect, sample_sheets, parse_bend_genetics_macro) |>
-                bind_rows()
-            }, error = function(e) {
-              show_error(
-                "Error Reading Sample Sheets",
-                "Failed to parse one or more sample sheets.",
-                conditionMessage(e)
-              )
-              return(NULL)
-            })
-            
-            if (is.null(all_sample_data) || nrow(all_sample_data) == 0) {
-              show_warning("Empty Data", "The file was parsed but contains no sample data.")
-              return(NULL)
-            }
-            
-            all_sample_data
-            },error = function(e) {
-                show_error(
-                  "Error Parsing File",
-                  "Failed to parse the Bend Genetics file."
-                )
-                return(NULL)
-            })
+            all_sample_data<- purrr::map2(file_path_vect, sample_sheets, parse_bend_genetics_macro)
+            bind_rows(all_sample_data)
+        },error = function(e) {
+            sendSweetAlert(
+                session = session,
+                title = "Error",
+                text = paste("An error occurred:", e$message),
+                type = "error"
+            )
+            return(NULL)
         })
-
+        # return(all_sample_data)
+    })
+    
+    # bend_genetics_comparison_table <- reactive({
+    #             uploaded_bend_genetics_data() |>
+    #                 tidyr::pivot_wider(names_from = "Target", values_from = "Result", values_fn = as.numeric) |>
+    #                 rename("Microcycstin Nod" = "Microcystin/Nod.")
+    #         })
     # bend_genetics_comparison_table <- reactive({
     #             uploaded_bend_genetics_data() |>
     #                 tidyr::pivot_wider(names_from = "Target", values_from = "Result", values_fn = as.numeric) |>

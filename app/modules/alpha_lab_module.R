@@ -161,9 +161,9 @@ alpha_lab_server <- function(input, output, session, account_info){
         req(uploaded_alpha_lab_data())
         alpha_comparison$data <- uploaded_alpha_lab_data() |>
             mutate(RESULT = ifelse(RESULT != "ND" 
-                                 & RESULT != "Absent" 
-                                 & RESULT != "Present", 
-                                 as.numeric(RESULT), RESULT)) |> 
+                                   & RESULT != "Absent" 
+                                   & RESULT != "Present", 
+                                   as.numeric(RESULT), RESULT)) |> 
             pivot_wider(names_from = "ANALYTE", values_from = "RESULT")
             
         # alpha_comparison$data <- alpha_comparison$data |> 
