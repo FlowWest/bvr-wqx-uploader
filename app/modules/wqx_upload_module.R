@@ -121,78 +121,6 @@ wqx_upload_server <- function(input, output, session, account_info) {
         read_csv(path, show_col_types = FALSE)
     })
     
-    upload_tracking_file <- file.path(cdx_account_path, "file_tracking.csv")
-    
-    load_file_tracking <- function() {
-        if (file.exists(upload_tracking_file)) {
-            df <- read_csv(upload_tracking_file, show_col_types = FALSE)
-            if ("uploaded_by" %in% names(df)) {
-                df <- df |> rename(username = uploaded_by)
-            }
-            if (!"username" %in% names(df)) {
-                df$username <- NA_character_
-            }
-            df
-        } else {
-            data.frame(
-                filename = character(),
-                lab_type = character(),
-                status = character(),
-                date_added = character(),
-                upload_date = character(),
-                username = character(),
-                stringsAsFactors = FALSE
-            )
-        }
-    }
-    
-    save_file_tracking <- function(df) {
-        dir.create(cdx_account_path, recursive = TRUE, showWarnings = FALSE)
-        write_csv(df, upload_tracking_file)
-    }
-    
-    update_file_status <- function(filename, new_status, username = NULL) {
-        df <- load_file_tracking()
-        if (!"username" %in% names(df)) {
-            df$username <- NA_character_
-        }
-        idx <- which(df$filename == filename)
-        if (length(idx) > 0) {
-            df$status[idx] <- new_status
-            if (new_status == "uploaded") {
-                df$upload_date[idx] <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
-            }
-            if (!is.null(username)) {
-                df$username[idx] <- username
-            }
-        } else {
-            new_row <- data.frame(
-                filename = filename,
-                lab_type = get_lab_type(filename),
-                status = new_status,
-                date_added = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
-                upload_date = if (new_status == "uploaded") format(Sys.time(), "%Y-%m-%d %H:%M:%S") else NA,
-                username = if (!is.null(username)) username else NA,
-                stringsAsFactors = FALSE
-            )
-            df <- rbind(df, new_row)
-        }
-        save_file_tracking(df)
-        return(df)
-    }
-    
-    get_lab_type <- function(filename) {
-        if (grepl("^hydro-lab-data-", filename)) {
-            "Hydro Lab"
-        } else if (grepl("^alpha_lab-data-", filename)) {
-            "Alpha Lab"
-        } else if (grepl("^bend_genetics-data-", filename)) {
-            "Bend Genetics"
-        } else {
-            "Unknown"
-        }
-    }
-    
     file_tracking_df <- reactiveVal(load_file_tracking())
     pending_files_refresh <- reactiveVal(0)
     uploaded_files_refresh <- reactiveVal(0)
@@ -232,41 +160,10 @@ wqx_upload_server <- function(input, output, session, account_info) {
     
     pending_files <- reactive({
         pending_files_refresh()
-        req(account_info$selectedDownloadFolder())
-        download_folder <- normalizePath(account_info$selectedDownloadFolder(), mustWork = FALSE)
-        
-        if (!dir.exists(download_folder)) {
-            return(data.frame(
-                filename = character(),
-                lab_type = character(),
-                stringsAsFactors = FALSE
-            ))
-        }
-        
-        all_files <- list.files(download_folder, pattern = "\\.csv$", full.names = TRUE)
-        file_names <- basename(all_files)
-        
-        pattern <- "hydro-lab-data-|alpha_lab-data-|bend_genetics-data-"
-        wqx_files <- file_names[grepl(pattern, file_names)]
-        
+        file_tracking_df(load_file_tracking())
         tracking_df <- file_tracking_df()
-        uploaded_files <- tracking_df$filename[tracking_df$status == "uploaded"]
-        failed_files <- tracking_df$filename[tracking_df$status == "upload_failed"]
-        exclude_files <- c(uploaded_files, failed_files)
         
-        pending <- wqx_files[!wqx_files %in% exclude_files]
-        
-        new_files <- pending[!pending %in% tracking_df$filename]
-        if (length(new_files) > 0) {
-            username <- account_info$selectedUsername()
-            for (f in new_files) {
-                update_file_status(f, "downloaded", username)
-            }
-            file_tracking_df(load_file_tracking())
-            tracking_df <- file_tracking_df()
-        }
-        
-        pending_df <- tracking_df[tracking_df$status == "downloaded", ]
+        pending_df <- tracking_df[tracking_df$status == "pending", ]
         
         if (nrow(pending_df) == 0) {
             return(data.frame(
@@ -291,7 +188,7 @@ wqx_upload_server <- function(input, output, session, account_info) {
             )
         } else {
             df$date_added <- format(
-                lubridate::with_tz(df$date_added, tzone = "America/Los_Angeles"),
+                lubridate::with_tz(as.POSIXct(df$date_added, tz = "UTC"), tzone = "America/Los_Angeles"),
                 "%Y-%m-%d %I:%M %p PST"
             )
             DT::datatable(
@@ -335,7 +232,7 @@ wqx_upload_server <- function(input, output, session, account_info) {
             )
         } else {
             df$upload_date <- format(
-                lubridate::with_tz(df$upload_date, tzone = "America/Los_Angeles"),
+                lubridate::with_tz(as.POSIXct(df$upload_date, tz = "UTC"), tzone = "America/Los_Angeles"),
                 "%Y-%m-%d %I:%M %p PST"
             )
             DT::datatable(
@@ -358,7 +255,7 @@ wqx_upload_server <- function(input, output, session, account_info) {
             )
         } else {
             df$date_added <- format(
-                lubridate::with_tz(df$date_added, tzone = "America/Los_Angeles"),
+                lubridate::with_tz(as.POSIXct(df$date_added, tz = "UTC"), tzone = "America/Los_Angeles"),
                 "%Y-%m-%d %I:%M %p PST"
             )
             DT::datatable(

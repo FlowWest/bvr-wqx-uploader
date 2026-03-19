@@ -388,6 +388,7 @@ alpha_lab_server <- function(input, output, session, account_info){
         
         tryCatch({
           write.csv(common_alpha_lab_wqx_data$wqx_data, file_path, row.names = FALSE)
+          update_file_status(filename, "pending")
           show_success("File Saved", paste("Successfully saved to:", filename))
         }, error = function(e) {
           show_error("Save Failed", "Could not write file to disk.", conditionMessage(e))

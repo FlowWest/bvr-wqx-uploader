@@ -10,6 +10,8 @@ library(digest)
 library(base64enc)
 library(memoise)
 library(jsonlite)
+library(DBI)
+library(RSQLite)
 
 load("../data/lookup_objects.rdata")
 
@@ -20,6 +22,7 @@ source("modules/hydro_lab_module.R")
 source("modules/bend_genetics_module.R")
 source('modules/alpha_lab_module.R')
 source('modules/user_account_module.R')
+source('tracking-db.R')
 source('modules/wqx_upload_module.R')
 source('modules/definitions_module.R')
 

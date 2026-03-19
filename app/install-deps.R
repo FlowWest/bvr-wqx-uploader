@@ -23,7 +23,9 @@ deps <- c("shinycssloaders",
           "base64enc",
           "jsonlite",
           "readxl",
-          "memoise"
+          "memoise",
+          "DBI",
+          "RSQLite"
           )
 
 installed_deps <- installed.packages()
