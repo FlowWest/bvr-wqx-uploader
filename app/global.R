@@ -8,7 +8,10 @@ library(readxl)
 library(httr2)
 library(digest)
 library(base64enc)
+library(memoise)
 library(jsonlite)
+library(DBI)
+library(RSQLite)
 
 load("../data/lookup_objects.rdata")
 
@@ -54,4 +57,6 @@ cdx_account$DOWNLOAD_FOLDER <- gsub("\\\\", "/", cdx_account$DOWNLOAD_FOLDER)
 # Default download folder (used if not specified in config)
 # path_fixed <- gsub("\\\\", "/", home_dir)
 default_download_folder <- file.path(home_dir, "Downloads")
+
+source('tracking-db.R')
 
