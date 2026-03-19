@@ -22,7 +22,6 @@ source("modules/hydro_lab_module.R")
 source("modules/bend_genetics_module.R")
 source('modules/alpha_lab_module.R')
 source('modules/user_account_module.R')
-source('tracking-db.R')
 source('modules/wqx_upload_module.R')
 source('modules/definitions_module.R')
 
@@ -58,4 +57,6 @@ cdx_account$DOWNLOAD_FOLDER <- gsub("\\\\", "/", cdx_account$DOWNLOAD_FOLDER)
 # Default download folder (used if not specified in config)
 # path_fixed <- gsub("\\\\", "/", home_dir)
 default_download_folder <- file.path(home_dir, "Downloads")
+
+source('tracking-db.R')
 

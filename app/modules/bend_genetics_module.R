@@ -215,6 +215,7 @@ bend_genetics_server <- function(input, output, session, account_info){
         datatable <- DT::datatable(bend_comparison$data, 
                               editable = list(target = "cell"), 
                                               # disable = list(columns = c(1,3:9, 10:11))),
+                              selection = "single",
                               options = list(scrollX = TRUE,
                                              pageLength = 10))
         for (analyte in nm1) {
@@ -318,6 +319,7 @@ bend_genetics_server <- function(input, output, session, account_info){
         DT::datatable(bend_edited$wqx_data,
                       editable = list(target = "cell"),
                                       # , disable = list(columns = c(0, 2:9, 12:34))),
+                      selection = "single",
                       options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
                       caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
     })
@@ -347,6 +349,7 @@ bend_genetics_server <- function(input, output, session, account_info){
     output$bend_genetics_wqx_formatted <- DT::renderDataTable({
         
         DT::datatable(common_bend_genetics_wqx_data$wqx_data,
+                      selection = "single",
                       options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
                       caption = "Preview data before download.")
     })

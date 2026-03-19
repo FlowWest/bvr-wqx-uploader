@@ -63,11 +63,11 @@ alpha_lab_server <- function(input, output, session, account_info){
       )
     }
     
-    show_warning <- function(title, message) {
+    show_warning <- function(title, message, details = NULL) {
       sendSweetAlert(
         session = session,
         title = title,
-        text = message,
+        text = if (!is.null(details)) paste(message, details, sep = "\n") else message,
         type = "warning"
       )
     }
@@ -145,7 +145,8 @@ alpha_lab_server <- function(input, output, session, account_info){
         }, error = function(e) {
             show_error(
               "Error Parsing File",
-              "Failed to parse the Alpha Lab Excel file."
+              "Failed to parse the Alpha Lab Excel file.",
+              conditionMessage(e)
             )
             return(NULL)
         })
@@ -200,6 +201,7 @@ alpha_lab_server <- function(input, output, session, account_info){
         datatable <- DT::datatable(alpha_comparison$data, 
                                    editable = list(target = "cell", 
                                                    disable = list(columns = c(1, 3:4, 6:45))),
+                                   selection = "single",
                                    options = list(scrollX = TRUE,
                                                   pageLength = 10))
         for (analyte in nm1) {
@@ -295,9 +297,7 @@ alpha_lab_server <- function(input, output, session, account_info){
     # })
     
     observe({
-        if (is.null(alpha_comparison$data)) {
-            return(NULL)
-        }
+        req(alpha_comparison$data, uploaded_alpha_lab_data())
         alpha_labs_data$formatted_data <- alpha_comparison$data |>  
             pivot_longer(cols = (ncol(uploaded_alpha_lab_data())-1):ncol(alpha_comparison$data),
                          names_to = "ANALYTE",
@@ -324,6 +324,7 @@ alpha_lab_server <- function(input, output, session, account_info){
         
         DT::datatable(alpha_edited$wqx_data,
                       editable = list(target = "cell", disable = list(columns = c(0, 3:9, 12:34))),
+                      selection = "single",
                       options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
                       caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
     })
@@ -351,6 +352,7 @@ alpha_lab_server <- function(input, output, session, account_info){
     output$alpha_lab_wqx_formatted <- DT::renderDataTable({
          
         DT::datatable(common_alpha_lab_wqx_data$wqx_data,
+                      selection = "single",
                       options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
                       caption = "Preview data before download.")
     })    

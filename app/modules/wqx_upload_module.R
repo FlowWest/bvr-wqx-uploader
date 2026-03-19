@@ -238,6 +238,7 @@ wqx_upload_server <- function(input, output, session, account_info) {
             DT::datatable(
                 df[, c("filename", "lab_type", "status", "upload_date", "username")],
                 rownames = FALSE,
+                selection = "single",
                 colnames = c("Filename", "Lab Type", "Status", "Upload Date", "Username"),
                 options = list(pageLength = 10, scrollX = TRUE, dom = "ftip")
             )
@@ -261,6 +262,7 @@ wqx_upload_server <- function(input, output, session, account_info) {
             DT::datatable(
                 df[, c("filename", "lab_type", "status", "date_added", "username")],
                 rownames = FALSE,
+                selection = "single",
                 colnames = c("Filename", "Lab Type", "Status", "Date", "Username"),
                 options = list(pageLength = 10, scrollX = TRUE, dom = "ftip")
             )
@@ -271,7 +273,7 @@ wqx_upload_server <- function(input, output, session, account_info) {
         req(selected_file())
         req(file.exists(selected_file()$path))
         df <- read_csv_cached(selected_file()$path)
-        DT::datatable(df, options = list(pageLength = -1, scrollX = TRUE, searching = FALSE, lengthChange = FALSE, paging = FALSE, info = FALSE))
+        DT::datatable(df, selection = "single", options = list(pageLength = -1, scrollX = TRUE, searching = FALSE, lengthChange = FALSE, paging = FALSE, info = FALSE))
     })
     
     upload_result <- reactiveVal(NULL)

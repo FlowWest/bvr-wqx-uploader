@@ -230,6 +230,7 @@ hydro_lab_server <- function(input, output, session, account_info){
             dt <- DT::datatable(rvals$data, 
                       editable = list(target = "cell"), 
                                       # disable = list(columns = c(1,2, 16))),
+                      selection = "single",
                       options = list(scrollX = TRUE, 
                                      ordering = FALSE, 
                                      pageLength = 10))
@@ -462,6 +463,7 @@ hydro_lab_server <- function(input, output, session, account_info){
         
         DT::datatable(temp_data$filtered_data,
                       editable = list(target = "cell", disable = list(columns = c(2:35))),
+                      selection = "single",
                       options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
                       caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
     })
@@ -513,6 +515,7 @@ hydro_lab_server <- function(input, output, session, account_info){
         
         DT::datatable(temp_data$filtered_data,
                       editable = list(target = "cell", disable = list(columns = c(2:35))),
+                      selection = "single",
                       options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
                       caption = "Additional data - please check that the 'Monitoring Location ID' matches the 'Project ID'.")
     })
@@ -524,6 +527,7 @@ hydro_lab_server <- function(input, output, session, account_info){
         }
         shiny::validate(shiny::need(data_to_show, "Upload a file and add additional data, then click 'Generate WQX Ready Data'"))
         DT::datatable(data_to_show,
+                      selection = "single",
                       options = list(scrollX = TRUE, ordering = FALSE, pageLength = 10),
                       caption = "Preview data before download.")
     })
