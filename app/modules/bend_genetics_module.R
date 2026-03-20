@@ -46,7 +46,41 @@ bend_genetics_ui <- function(id){
 
 bend_genetics_server <- function(input, output, session, account_info){
     ns <- session$ns
+    show_error <- function(title, message, details = NULL) {
+        full_msg <- message
+        if (!is.null(details) && details != "") {
+            full_msg <- paste0(message, "\n\nDetails: ", details)
+        }
+        sendSweetAlert(
+            session = session,
+            title = title,
+            text = tags$div(
+                tags$p(message),
+                if (!is.null(details)) tags$small(class = "text-muted", paste("Details:", details))
+            ),
+            type = "error",
+            html = TRUE
+        )
+    }
     
+    show_warning <- function(title, message, details = NULL) {
+        sendSweetAlert(
+            session = session,
+            title = title,
+            text = if (!is.null(details)) paste(message, details, sep = "\n") else message,
+            type = "warning"
+        )
+    }
+    
+    show_success <- function(title, message) {
+        sendSweetAlert(
+            session = session,
+            title = title,
+            text = message,
+            type = "success"
+        )
+    }
+
     uploaded_bend_genetics_data <- eventReactive(input$bend_genetics_file$datapath,{
         tryCatch({
             req(input$bend_genetics_file$datapath)
@@ -71,27 +105,13 @@ bend_genetics_server <- function(input, output, session, account_info){
             sendSweetAlert(
                 session = session,
                 title = "Error",
-                text = paste("An error occurred:", e$message),
+                text = paste("An error occurred: cannot parse file. Check file format."),
                 type = "error"
             )
             return(NULL)
         })
-        # return(all_sample_data)
     })
     
-    # bend_genetics_comparison_table <- reactive({
-    #             uploaded_bend_genetics_data() |>
-    #                 tidyr::pivot_wider(names_from = "Target", values_from = "Result", values_fn = as.numeric) |>
-    #                 rename("Microcycstin Nod" = "Microcystin/Nod.")
-    #         })
-    # bend_genetics_comparison_table <- reactive({
-    #             uploaded_bend_genetics_data() |>
-    #                 tidyr::pivot_wider(names_from = "Target", values_from = "Result", values_fn = as.numeric) |>
-    #                 rename("Microcycstin Nod" = "Microcystin/Nod.")
-    #         })
-
-    # handle data editing by the user
-    # rvals <- reactiveValues(data = NULL)
     bend_comparison <- reactiveValues(data = NULL)
     bend_genetics_data <- reactiveValues(formatted_data = NULL)
     
