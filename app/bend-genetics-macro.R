@@ -171,16 +171,16 @@ bend_genetics_to_wqx <- function(data) {
                                                                           depth = `Activity Depth/Height Measure`)
         ) |> 
         select(-c("Method", "Analyte", "Result", "Reporting Limit", "Units"))
-        # relocate("Activity Start Date", .after = "Activity Media Name") |> 
-        # relocate("Activity Start Time", .after = "Activity Start Date") |> 
-        # relocate("Analysis Start Date", .before = "Result Analytical Method Context") |> 
+    # relocate("Activity Start Date", .after = "Activity Media Name") |> 
+    # relocate("Activity Start Time", .after = "Activity Start Date") |> 
+    # relocate("Analysis Start Date", .before = "Result Analytical Method Context") |> 
     bend_wqx_results <- bend_wqx_results[, c(
         "Project ID", 
         "Monitoring Location ID", 
         "Activity ID (CHILD-subset)", 
         "Activity ID User Supplied (PARENTs)",
         "Activity Type", 
-         "Activity Media Name", 
+        "Activity Media Name", 
         "Activity Start Date", 
         "Activity Start Time", 
         "Activity Start Time Zone", 

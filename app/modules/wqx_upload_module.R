@@ -188,8 +188,8 @@ wqx_upload_server <- function(input, output, session, account_info) {
             )
         } else {
             df$date_added <- format(
-                lubridate::with_tz(as.POSIXct(df$date_added, tz = "UTC"), tzone = "America/Los_Angeles"),
-                "%Y-%m-%d %I:%M %p PST"
+                lubridate::with_tz(as.POSIXct(df$date_added), "America/Los_Angeles"),
+                "%Y-%m-%d %I:%M %p %Z"
             )
             DT::datatable(
                 df,
@@ -232,8 +232,8 @@ wqx_upload_server <- function(input, output, session, account_info) {
             )
         } else {
             df$upload_date <- format(
-                lubridate::with_tz(as.POSIXct(df$upload_date, tz = "UTC"), tzone = "America/Los_Angeles"),
-                "%Y-%m-%d %I:%M %p PST"
+                lubridate::with_tz(as.POSIXct(df$date_added), "America/Los_Angeles"),
+                "%Y-%m-%d %I:%M %p %Z"
             )
             DT::datatable(
                 df[, c("filename", "lab_type", "status", "upload_date", "username")],
@@ -256,8 +256,8 @@ wqx_upload_server <- function(input, output, session, account_info) {
             )
         } else {
             df$date_added <- format(
-                lubridate::with_tz(as.POSIXct(df$date_added, tz = "UTC"), tzone = "America/Los_Angeles"),
-                "%Y-%m-%d %I:%M %p PST"
+                lubridate::with_tz(as.POSIXct(df$date_added), "America/Los_Angeles"),
+                "%Y-%m-%d %I:%M %p %Z"
             )
             DT::datatable(
                 df[, c("filename", "lab_type", "status", "date_added", "username")],
@@ -312,7 +312,7 @@ wqx_upload_server <- function(input, output, session, account_info) {
             status <- NULL
             start_time <- Sys.time()
             poll_interval <- 5
-            timeout_seconds <- 45
+            timeout_seconds <- 120
             
             while (TRUE) {
                 if (as.numeric(difftime(Sys.time(), start_time, units = "secs")) >= timeout_seconds) {

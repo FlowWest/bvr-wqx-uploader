@@ -54,6 +54,7 @@ definitions_server <- function(input, output, session) {
                 "Temperature, water (Temp)",
                 "Depth",
                 "Specific conductance (SpCond)",
+                "Resistivity",
                 "Salinity (Sal)",
                 "Total dissolved solids (TDS)",
                 "Dissolved oxygen saturation (DO%)",
@@ -63,9 +64,9 @@ definitions_server <- function(input, output, session) {
                 "Chlorophyll a (CHL)",
                 "Phycocyanin (PCY)"
             ),
-            `Min Value` = c(0, 0.01, 0.01, 0.01, 0.01, 0.01, 0, 5, 1.5, 0.03, 100),
-            `Max Value` = c(30, 10, 1, 1, 1, 150, 20, 11, 1000, 1000, 200000),
-            Units = c("°C", "m", "mS/cm", "ppt", "g/L", "%", "mg/L", "SU", "NTU", "µg/L", "cells/mL")
+            `Min Value` = c(0, 0.01, 0.01, 0,0.01, 0.01, 0.01, 0, 4, 1.5, 0.03, 100),
+            `Max Value` = c(30, 10, 1, 6, 1, 1, 150, 20, 11, 100, 1000, 200000),
+            Units = c("°C", "m", "mS/cm", "kOhm·cm","ppt", "g/L", "%", "mg/L", "SU", "NTU", "µg/L", "cells/mL")
         )
     }, striped = TRUE, bordered = TRUE, hover = TRUE)
     
@@ -81,7 +82,7 @@ definitions_server <- function(input, output, session) {
                 "Total Coliform"
             ),
             `Min Value` = c(0, 0, 0, 0, 0, 0, 0),
-            `Max Value` = c(3000, 10, 2, 10, 10, 300000, 300000),
+            `Max Value` = c(3000, 10, 2, 10, 10, 1600, 1600),
             Units = c("mg/L", "mg/L", "mg/L", "mg/L", "mg/L", "MPN/100mL", "MPN/100mL")
         )
     }, striped = TRUE, bordered = TRUE, hover = TRUE)
