@@ -97,7 +97,30 @@ project_id_lookup <- c(
     "AND01 (up)" = "CalWatch",
     "AND01 (down)" = "CalWatch",
     "SHC01" = "CalWatch",
-    "MIDSCOT01" = "CalWatch"
+    "MIDSCOT01" = "CalWatch",
+    "KC6"= "CS",
+    "CC3"= "CS",
+    "RAD01"= "HAB",
+    "KCM"= "CS",
+    "CC4"= "CS",
+    "TC5"= "CS",
+    "TC4"= "CS",
+    "TC3"= "CS",
+    "MCC2"= "CS",
+    "MC1.5"= "CS",
+    "KC8"= "CS",
+    "KC9"= "CS",
+    "MCM"= "CS",
+    "FC0"= "CS",
+    "CC6"= "CS",
+    "CC5"= "CS",
+    "CCM"= "CS",
+    "AC7"= "CS",
+    "AC6"= "CS",
+    "AC5"= "CS",
+    "AC2.5"= "CS",
+    "LP5"= "HAB"
+    
 )
 
 hydro_unit_lookup <- c(

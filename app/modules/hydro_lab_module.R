@@ -258,7 +258,7 @@ hydro_lab_server <- function(input, output, session, account_info){
                 DT::formatStyle(
                     c("Turbidity"),
                     target = "cel",
-                    backgroundColor = DT::styleInterval(c(1.5, 1000), c("#f29f99", "white", "#f29f99"))
+                    backgroundColor = DT::styleInterval(c(1.5, 100), c("#f29f99", "white", "#f29f99"))
                 )
             
             if ("PCY" %in% names(rvals$data)) {

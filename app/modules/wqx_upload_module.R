@@ -312,11 +312,11 @@ wqx_upload_server <- function(input, output, session, account_info) {
             status <- NULL
             start_time <- Sys.time()
             poll_interval <- 5
-            timeout_seconds <- 120
+            timeout_seconds <- 240
             
             while (TRUE) {
                 if (as.numeric(difftime(Sys.time(), start_time, units = "secs")) >= timeout_seconds) {
-                    status <- list(StatusName = "Import Failed", error_message = "Status check timed out after 45 seconds")
+                    status <- list(StatusName = "Import Timed Out", error_message = "Status check timed out. Please check CDX for file upload status.")
                     break
                 }
                 
