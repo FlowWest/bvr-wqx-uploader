@@ -312,7 +312,7 @@ wqx_upload_server <- function(input, output, session, account_info) {
             status <- NULL
             start_time <- Sys.time()
             poll_interval <- 5
-            timeout_seconds <- 240
+            timeout_seconds <- 200
             
             while (TRUE) {
                 if (as.numeric(difftime(Sys.time(), start_time, units = "secs")) >= timeout_seconds) {
