@@ -320,12 +320,7 @@ hydro_lab_server <- function(input, output, session, account_info){
         print(rvals$data$location_id)
     })
     hydro_lab_data_wqx <- reactive({
-        if(any(rvals$data$location_id %in% c("AC1", "AC3", "AC4", "AC6"))){
-            hydro_lab_data$formatted_data <- hydro_lab_to_wqx_ac(rvals$data)
-        }
-        else{
-            hydro_lab_data$formatted_data <- hydro_lab_to_wqx(rvals$data)
-        }
+        hydro_lab_data$formatted_data <- hydro_lab_to_wqx(rvals$data)
             
     })
     

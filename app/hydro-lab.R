@@ -61,126 +61,35 @@ hydro_lab_make_activity_id <-
               equipment_comment,
               sep = ":")
     }
-hydro_lab_to_wqx_ac <- function(data) {
-    data |> 
-        select(-c("IBVSvr4")) |>
-        rename("Temperature, water" = "Temp",
-               "Specific conductance" = "SpCond",
-               "Salinity" = "Sal",
-               "Total dissolved solids" = "TDS",
-               "Dissolved oxygen saturation" = "LDO%",
-               "Dissolved oxygen (DO)" = "LDO",
-               "pH" = "pH",
-               # "Turbidity" = turb,
-               # "Depth" = depth,
-               "Monitoring Location ID" = location_id,
-               "Project ID" = project_id)|> 
-        pivot_longer(
-            !c(Date, Time, Depth, `Monitoring Location ID`, `Project ID`),
-            names_to = "Characteristic Name",
-            "values_to" = "Result Value"
-        ) |>
-        mutate("Activity ID User Supplied(PARENTs)" = "",
-               "Activity Type" = "Field Msr/Obs",
-               "Activity Media Name" = "Water",
-               "Activity Start Date" = format(mdy(Date), "%m/%d/%Y"),
-               "Activity Start Time" = format(parse_date_time(Time, c('HMS', 'HM')), "%H:%M"),
-               "Activity Start Time Zone" = "PST",
-               "Activity Depth/Height Measure" = as.numeric(Depth),
-               "Activity Depth/Height Unit" = "m",
-               "Sample Collection Method ID" = "BVR SWQAPP",
-               "Sample Collection Method Context" = "CA_BVR",
-               "Sample Collection Equipment Name" = "Probe/Sensor",
-               "Sample Collection Equipment Comment" = "Hydrolab Surveyor DS5 Multiprobe",
-               "Characteristic Name" = `Characteristic Name`,
-               "Result Unit" = hydro_unit_lookup[`Characteristic Name`],
-               "Characteristic Name User Supplied" = "",
-               "Method Speciation" = "",
-               "Result Detection Condition" = "",
-               "Result Value" = if_else(`Result Value`== 999999, "", `Result Value`),
-               "Result Unit" = `Result Unit`,
-               "Result Measure Qualifier" = "",
-               "Result Sample Fraction" = "",
-               "Result Status ID" = "Final",
-               "ResultTemperatureBasis" = "",
-               "Statistical Base Code" = "",
-               "ResultTimeBasis" = "",
-               "Result Value Type" = "Actual",
-               "Activity ID (CHILD-subset)" = hydro_lab_make_activity_id(location_id = `Monitoring Location ID`,
-                                                                         date = `Activity Start Date`,
-                                                                         time = `Activity Start Time`,
-                                                                         activity_type = `Activity Type`,
-                                                                         equipment_name = `Sample Collection Equipment Name`,
-                                                                         depth = `Activity Depth/Height Measure`,
-                                                                         equipment_comment = `Sample Collection Equipment Comment`),
-               "Result Analytical Method ID" = if_else(`Characteristic Name`== "Chlorophyll a", "Probe_C", ""),
-               "Result Analytical Method Context" = if_else(`Characteristic Name`== "Chlorophyll a", "CA_BVR", ""),
-               "Analysis Start Date" = "",
-               "Result Detection/Quantitation Limit Type" = "",
-               "Result Detection/Quantitation Limit Measure" = "",
-               "Result Detection/Quantitation Limit Unit" = "",
-               "Result Comment" = ""
-               
-        ) |> 
-        select(-c(Date, Time, Depth)) |>
-        relocate("Project ID",
-                 "Monitoring Location ID",
-                 "Activity ID (CHILD-subset)",
-                 "Activity ID User Supplied(PARENTs)",
-                 "Activity Type",
-                 "Activity Media Name",
-                 "Activity Start Date",
-                 "Activity Start Time",
-                 "Activity Start Time Zone",
-                 "Activity Depth/Height Measure",
-                 "Activity Depth/Height Unit",
-                 "Sample Collection Method ID",
-                 "Sample Collection Method Context",
-                 "Sample Collection Equipment Name",
-                 "Sample Collection Equipment Comment",
-                 "Characteristic Name",
-                 "Characteristic Name User Supplied",
-                 "Method Speciation",
-                 "Result Detection Condition",
-                 "Result Value",
-                 "Result Unit",
-                 "Result Measure Qualifier",
-                 "Result Sample Fraction",
-                 "Result Status ID",
-                 "ResultTemperatureBasis",
-                 "Statistical Base Code",
-                 "ResultTimeBasis",
-                 "Result Value Type",
-                 "Result Analytical Method ID",
-                 "Result Analytical Method Context",
-                 "Analysis Start Date",
-                 "Result Detection/Quantitation Limit Type",
-                 "Result Detection/Quantitation Limit Measure",
-                 "Result Detection/Quantitation Limit Unit",
-                 "Result Comment"
-        )
-}
 hydro_lab_to_wqx <- function(data) {
-    data |> 
-        select(-c("IBVSvr4")) |>
-        rename("Temperature, water" = "Temp",
-               "Specific conductance" = "SpCond",
-               "Resistivity" = "Res",
-               "Salinity" = "Sal",
-               "Total dissolved solids" = "TDS",
-               "Dissolved oxygen saturation" = "DO%",
-               "Dissolved oxygen (DO)" = "DO",
-               "pH" = "pH",
-               # "Turbidity" = turb,
-               # "Depth" = depth,
-               "Chlorophyll a" = "CHL",
-               "Phycocyanin" = "PCY",
-               "Monitoring Location ID" = location_id,
-               "Project ID" = project_id)|> 
+    renames <- c(
+        "Temperature, water" = "Temp",
+        "Specific conductance" = "SpCond",
+        "Salinity" = "Sal",
+        "Total dissolved solids" = "TDS",
+        "pH" = "pH",
+        "Monitoring Location ID" = "location_id",
+        "Project ID" = "project_id"
+    )
+
+    # AC locations use LDO/LDO% column names; standard locations use DO/DO%
+    if ("LDO%" %in% names(data)) {
+        renames <- c(renames, "Dissolved oxygen saturation" = "LDO%", "Dissolved oxygen (DO)" = "LDO")
+    } else {
+        renames <- c(renames, "Dissolved oxygen saturation" = "DO%", "Dissolved oxygen (DO)" = "DO")
+    }
+
+    if ("Res" %in% names(data)) renames <- c(renames, "Resistivity" = "Res")
+    if ("CHL" %in% names(data)) renames <- c(renames, "Chlorophyll a" = "CHL")
+    if ("PCY" %in% names(data)) renames <- c(renames, "Phycocyanin" = "PCY")
+
+    data |>
+        select(-any_of("IBVSvr4")) |>
+        rename(!!!renames) |>
         pivot_longer(
             !c(Date, Time, Depth, `Monitoring Location ID`, `Project ID`),
             names_to = "Characteristic Name",
-            "values_to" = "Result Value"
+            values_to = "Result Value"
         ) |>
         mutate("Activity ID User Supplied(PARENTs)" = "",
                "Activity Type" = "Field Msr/Obs",
@@ -199,7 +108,7 @@ hydro_lab_to_wqx <- function(data) {
                "Characteristic Name User Supplied" = "",
                "Method Speciation" = "",
                "Result Detection Condition" = "",
-               "Result Value" = if_else(`Result Value`== 999999, "", `Result Value`),
+               "Result Value" = if_else(`Result Value` == 999999, "", `Result Value`),
                "Result Unit" = `Result Unit`,
                "Result Measure Qualifier" = "",
                "Result Sample Fraction" = "",
@@ -215,15 +124,14 @@ hydro_lab_to_wqx <- function(data) {
                                                                equipment_name = `Sample Collection Equipment Name`,
                                                                depth = `Activity Depth/Height Measure`,
                                                                equipment_comment = `Sample Collection Equipment Comment`),
-               "Result Analytical Method ID" = if_else(`Characteristic Name`== "Chlorophyll a", "Probe_C", ""),
-               "Result Analytical Method Context" = if_else(`Characteristic Name`== "Chlorophyll a", "CA_BVR", ""),
+               "Result Analytical Method ID" = if_else(`Characteristic Name` == "Chlorophyll a", "Probe_C", ""),
+               "Result Analytical Method Context" = if_else(`Characteristic Name` == "Chlorophyll a", "CA_BVR", ""),
                "Analysis Start Date" = "",
                "Result Detection/Quantitation Limit Type" = "",
                "Result Detection/Quantitation Limit Measure" = "",
                "Result Detection/Quantitation Limit Unit" = "",
                "Result Comment" = ""
-
-        ) |> 
+        ) |>
         select(-c(Date, Time, Depth)) |>
         relocate("Project ID",
                  "Monitoring Location ID",
