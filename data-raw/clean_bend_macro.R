@@ -25,7 +25,7 @@ make_activity_id <- function(location_id, date, activity_type, equipment_name, d
 
 file_path <- "data-raw/bend/20241004_BV_LIMS_report.xlsm"
 parse_bend_genetics_macro <- function(file_path, sheet_name){
-    bend_meta_data <- read_excel(file_path, sheet = sheet_name) 
+bend_meta_data <- read_excel(file_path, sheet = sheet_name) 
     activity_start_date <- ymd_hms("1899-12-30 00:00:00") + days(floor(as.numeric(bend_meta_data[5,5]))) 
     activity_fractional_day <- as.numeric(bend_meta_data[5,5]) %% 1
     activity_hours_part <- floor(activity_fractional_day * 24)
