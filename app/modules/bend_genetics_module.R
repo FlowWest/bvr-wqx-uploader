@@ -239,19 +239,10 @@ bend_genetics_server <- function(input, output, session, account_info){
     common_bend_genetics_wqx_data <- reactiveValues(wqx_data=NULL)
 
     observe({
-        if (is.null(bend_genetics_data$formatted_data)) {
-            return(NULL)
-        }
-        # View(bend_genetics_data$formatted_data)
-        bend_edited$wqx_data <- bend_genetics_to_wqx(bend_genetics_data$formatted_data)
-        
-    })
-            
-    observe({
-        if (is.null(bend_genetics_data$formatted_data)){
-            return(NULL)
-        }
-        bend_edited$wqx_data <- clean_bend_wqx(bend_edited$wqx_data)
+        req(bend_genetics_data$formatted_data)
+        bend_edited$wqx_data <- clean_bend_wqx(
+            bend_genetics_to_wqx(bend_genetics_data$formatted_data)
+        )
     })
     
     output$edited_wqx_table <- DT::renderDataTable({
